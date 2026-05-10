@@ -29,16 +29,17 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
     return NextResponse.json({ error: "Missing customer ID" }, { status: 400 });
   }
 
+  const updateFields: Record<string, unknown> = {};
+  if (updateData.name !== undefined) updateFields.name = updateData.name;
+  if (updateData.email !== undefined) updateFields.email = updateData.email;
+  if (updateData.phone !== undefined) updateFields.phone = updateData.phone;
+  if (updateData.location !== undefined) updateFields.location = updateData.location;
+  if (updateData.tier !== undefined) updateFields.tier = updateData.tier;
+  if (updateData.totalSpend !== undefined) updateFields.totalSpend = parseFloat(updateData.totalSpend);
+
   const customer = await prisma.customer.update({
     where: { id },
-    data: {
-      name: updateData.name,
-      email: updateData.email,
-      phone: updateData.phone,
-      location: updateData.location,
-      tier: updateData.tier,
-      totalSpend: updateData.totalSpend ? parseFloat(updateData.totalSpend) : undefined,
-    },
+    data: updateFields,
   });
 
   return NextResponse.json(customer);

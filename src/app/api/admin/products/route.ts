@@ -40,19 +40,21 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
   if (!id) {
     return NextResponse.json({ error: "Missing product ID" }, { status: 400 });
   }
+
+  const updateFields: Record<string, unknown> = {};
+  if (updateData.name !== undefined) updateFields.name = updateData.name;
+  if (updateData.description !== undefined) updateFields.description = updateData.description;
+  if (updateData.price !== undefined) updateFields.price = parseFloat(updateData.price);
+  if (updateData.originalPrice !== undefined) updateFields.originalPrice = updateData.originalPrice ? parseFloat(updateData.originalPrice) : null;
+  if (updateData.img !== undefined) updateFields.img = updateData.img;
+  if (updateData.hoverImg !== undefined) updateFields.hoverImg = updateData.hoverImg;
+  if (updateData.categories !== undefined) updateFields.categories = updateData.categories;
+  if (updateData.badge !== undefined) updateFields.badge = updateData.badge;
+  if (updateData.stock !== undefined) updateFields.stock = parseInt(updateData.stock);
+
   const product = await prisma.product.update({
     where: { id },
-    data: {
-      name: updateData.name,
-      description: updateData.description,
-      price: parseFloat(updateData.price),
-      originalPrice: updateData.originalPrice ? parseFloat(updateData.originalPrice) : null,
-      img: updateData.img,
-      hoverImg: updateData.hoverImg,
-      categories: updateData.categories,
-      badge: updateData.badge,
-      stock: parseInt(updateData.stock),
-    },
+    data: updateFields,
   });
   return NextResponse.json(product);
 }, "Failed to update product"));
