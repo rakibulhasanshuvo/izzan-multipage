@@ -9,6 +9,7 @@ type CMSItem = {
   key: string;
   value: string;
   section: string;
+  isLongText?: boolean;
 };
 
 interface CMSManagementProps {
@@ -17,7 +18,16 @@ interface CMSManagementProps {
 
 export default function CMSManagement({ initialSections }: CMSManagementProps) {
   const router = useRouter();
-  const [sections, setSections] = useState(initialSections);
+  const [sections, setSections] = useState(() => {
+    const initialized: Record<string, CMSItem[]> = {};
+    for (const [sectionName, items] of Object.entries(initialSections)) {
+      initialized[sectionName] = items.map(item => ({
+        ...item,
+        isLongText: item.value.length > 100
+      }));
+    }
+    return initialized;
+  });
   const [isSaving, setIsSaving] = useState<string | null>(null);
 
   const handleValueChange = (section: string, key: string, newValue: string) => {
@@ -63,23 +73,22 @@ export default function CMSManagement({ initialSections }: CMSManagementProps) {
                 <div className="flex justify-between items-start mb-2">
                   <label htmlFor={item.key} className="text-[12px] font-semibold text-zinc-700 uppercase tracking-widest">{item.key.replace(/_/g, " ")}</label>
                   <button
-                    aria-label={`Save ${item.key}`}
+                    aria-label={`Save ${item.key.replace(/_/g, " ")}`}
                     onClick={() => handleSave(item)}
                     disabled={isSaving === item.id}
                     className="text-[12px] font-medium text-primary hover:text-primary-dark disabled:opacity-50 transition-colors flex items-center gap-1"
                   >
                     {isSaving === item.id ? (
-                      <span className="material-symbols-outlined animate-spin text-[16px]">sync</span>
+                      <span className="material-symbols-outlined animate-spin text-[16px]" aria-hidden="true">sync</span>
                     ) : (
-                      <span className="material-symbols-outlined text-[16px]">save</span>
+                      <span className="material-symbols-outlined text-[16px]" aria-hidden="true">save</span>
                     )}
                     Save Changes
                   </button>
                 </div>
-                {item.value.length > 100 ? (
+                {item.isLongText ? (
                   <textarea
                     id={item.key}
-                    aria-label={item.key}
                     value={item.value}
                     onChange={(e) => handleValueChange(sectionName, item.key, e.target.value)}
                     rows={4}
@@ -88,7 +97,6 @@ export default function CMSManagement({ initialSections }: CMSManagementProps) {
                 ) : (
                   <input
                     id={item.key}
-                    aria-label={item.key}
                     type="text"
                     value={item.value}
                     onChange={(e) => handleValueChange(sectionName, item.key, e.target.value)}
