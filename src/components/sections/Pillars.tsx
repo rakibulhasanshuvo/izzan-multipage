@@ -36,7 +36,7 @@ const pillars = [
   }
 ];
 
-export function Pillars() {
+export function Pillars({ images = [] }: { images?: string[] }) {
   return (
     <section className="pt-32 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
       <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="text-center mb-12">
@@ -54,7 +54,7 @@ export function Pillars() {
         {pillars.map((pillar, idx) => (
           <motion.div key={idx} variants={fadeIn} className="relative aspect-[4/5] overflow-hidden rounded-3xl group cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500">
             <Image 
-              src={pillar.img} 
+              src={images[idx] || pillar.img}
               alt=""
               fill 
               className="object-cover group-hover:scale-110 transition-transform duration-1000 ease-out" 

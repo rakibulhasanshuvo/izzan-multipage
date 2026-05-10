@@ -26,7 +26,7 @@ const communityImages = [
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBVRS56JXxhvBOmwAnxPzsdkGHOqJHT9et-LYEFwMxGmVIUECqiH7lcXVXuu-XJUSkc_VvJ36f2FJrJpH6NJFuOU1rrbe04rY3A6japGe2FAiBaOPuHUiAdBW2Y0m-Sjn4bGbRH45ABHwEOkEZxncal_hrvss02p1Q9KMWAevVACZXBkuO2AeDa7gtFDqGrgYZjdK7ziqC_Kp5PzZ8sInDxWBI27-ylTsrd35nkix0xvOlTwz5sGteSeaH4upAk5_pBeZ1xJA0r7Z58"
 ];
 
-export function Community() {
+export function Community({ images = [] }: { images?: string[] }) {
   return (
     <section className="py-16 transition-colors duration-300">
       <div className="max-w-[1600px] mx-auto px-6 text-center">
@@ -44,7 +44,7 @@ export function Community() {
               <Image 
                 alt=""
                 className="object-cover hover:scale-105 transition-transform duration-500" 
-                src={img} 
+                src={images[idx] || img}
                 fill 
               />
             </motion.div>

@@ -20,7 +20,7 @@ const staggerContainer: Variants = {
   }
 };
 
-export function Story({ title, content }: { title?: string, content?: string }) {
+export function Story({ title, content, imgUrl }: { title?: string, content?: string, imgUrl?: string }) {
   return (
     <section id="story" className="py-24 px-6 md:px-12 max-w-[1600px] mx-auto scroll-mt-20">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center flex-col-reverse md:flex-row">
@@ -53,7 +53,7 @@ export function Story({ title, content }: { title?: string, content?: string }) 
           className="relative aspect-[4/3] w-full rounded-lg overflow-hidden shadow-xl order-1 md:order-2"
         >
           <Image
-            src="/images/story-workshop.png"
+            src={imgUrl || "/images/story-workshop.png"}
             alt="Hand pouring candles"
             fill
             className="object-cover"
