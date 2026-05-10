@@ -25,7 +25,7 @@ const testimonials = [
   { img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDQPXsP1CgPPqF1xvSW7f9T05SRu64pwlRphx1tvALx0wpiBDi2fgpib7qsoJifdDwj9STHpNkOfur_hVi80OURr2ZnaKqK-Nz6E-IgJLnMEh-1HY5dnv7svIMD77DfhYPVm5w4H5q1ene73Vep6u5np-0ossnRSb2VRN4WPD57GdFcKhq6BgWEOyaUNUTxhccO4kJkwbS5Bi9IaFJj0uoOV9yzOSCY9_BIDH3kWRxwbrbpfBI8cYLHguowm5nOZLdKWWlN1BtMj_er", quote: "\"They are my go-to gift for everyone.\"", author: "Jessica T." }
 ];
 
-export function Testimonials() {
+export function Testimonials({ images = [] }: { images?: string[] }) {
   return (
     <section id="reviews" className="bg-secondary-light dark:bg-secondary-dark py-20 transition-colors duration-300">
       <div className="px-6 md:px-12 max-w-[1600px] mx-auto text-center">
@@ -40,7 +40,7 @@ export function Testimonials() {
           {testimonials.map((testimonial, idx) => (
             <motion.div key={idx} variants={fadeIn} className="flex flex-col items-center bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
               <div className="w-full aspect-video relative overflow-hidden mb-6 rounded-md">
-                <Image alt="" className="object-cover" src={testimonial.img} fill />
+                <Image alt="" className="object-cover" src={images[idx] || testimonial.img} fill />
               </div>
               <p className="italic mb-4 text-gray-700 dark:text-gray-300">{testimonial.quote}</p>
               <p className="font-semibold text-sm mb-2 dark:text-gray-100">- {testimonial.author}</p>

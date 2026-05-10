@@ -39,21 +39,21 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
     <>
       <Header onViewAllProducts={useCallback(() => handleExplore("Full Collection", products), [handleExplore, products])} />
       <main className="flex-1">
-        <Hero title={cms.hero_title} subtitle={cms.hero_subtitle} />
-        <Pillars />
+        <Hero title={cms.hero_title} subtitle={cms.hero_subtitle} videoUrl={cms.hero_video_url} posterUrl={cms.hero_video_poster} />
+        <Pillars images={[cms.pillar_1_img, cms.pillar_2_img, cms.pillar_3_img].filter(Boolean)} />
         <ShopSection
           bestSellers={bestSellers}
           newArrivals={newArrivals}
           saleItems={saleItems}
           onExplore={handleExplore}
         />
-        <Spotlight />
-        <Story title={cms.story_title} content={cms.story_content} />
+        <Spotlight imgUrl={cms.spotlight_img} />
+        <Story title={cms.story_title} content={cms.story_content} imgUrl={cms.story_img} />
         <Features />
         <CareGuide />
-        <Testimonials />
+        <Testimonials images={[cms.testimonial_1_img, cms.testimonial_2_img, cms.testimonial_3_img].filter(Boolean)} />
         <FAQ />
-        <Community />
+        <Community images={[cms.community_1_img, cms.community_2_img, cms.community_3_img, cms.community_4_img, cms.community_5_img].filter(Boolean)} />
         <ContactSection />
       </main>
       <Footer />

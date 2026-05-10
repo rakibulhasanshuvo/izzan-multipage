@@ -31,7 +31,7 @@ const revealContainer: Variants = {
 };
 
 
-export function Hero({ title, subtitle }: { title?: string, subtitle?: string }) {
+export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string, subtitle?: string, videoUrl?: string, posterUrl?: string }) {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -50,8 +50,9 @@ export function Hero({ title, subtitle }: { title?: string, subtitle?: string })
           muted
           playsInline
           className="object-cover object-center w-full h-full absolute inset-0"
-          poster="https://lh3.googleusercontent.com/aida-public/AB6AXuAA-cKA0BI5PyiKmmlJ1V4jP1syMuPAzOAXIg7d-HjGJcIi-wOO_raH4mHQISILYP2dCAe3YP8niL9GpCqDGx6U8kAhAJPf1IJEPHryVq-UTqasBOwMnjEhr_6pcPLPG38UbgVhyUd0EDmxBB7oZqinh86xlSSHIGNXBltOus4NhdIR7NMUktxgeJh409TEpLaA5a_g0YFX-JUoUK6mH0gN5DaWIOvpOULZDRFWAnDvBNuh8UppFkbV0cNJjEgGinBO3d1T8xaM-Vu8"
+          poster={posterUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuAA-cKA0BI5PyiKmmlJ1V4jP1syMuPAzOAXIg7d-HjGJcIi-wOO_raH4mHQISILYP2dCAe3YP8niL9GpCqDGx6U8kAhAJPf1IJEPHryVq-UTqasBOwMnjEhr_6pcPLPG38UbgVhyUd0EDmxBB7oZqinh86xlSSHIGNXBltOus4NhdIR7NMUktxgeJh409TEpLaA5a_g0YFX-JUoUK6mH0gN5DaWIOvpOULZDRFWAnDvBNuh8UppFkbV0cNJjEgGinBO3d1T8xaM-Vu8"}
         >
+          {videoUrl && <source src={videoUrl} type="video/mp4" />}
           {/* Add your short video source here, e.g., <source src="/video.mp4" type="video/mp4" /> */}
         </video>
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/30 md:to-transparent dark:from-black/95 dark:via-black/70"></div>
