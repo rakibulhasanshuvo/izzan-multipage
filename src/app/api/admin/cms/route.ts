@@ -11,7 +11,7 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
   }
   const content = await prisma.cMSContent.update({
     where: { id },
-    data: { value },
+    data: { value: String(value) },
   });
 
   return NextResponse.json(content);
