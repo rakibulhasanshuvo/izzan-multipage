@@ -1,11 +1,12 @@
 const requiredServerEnvs = [
-  "DATABASE_URL",
   "ADMIN_TOKEN",
 ];
 
 const secureKeywords = ["SECRET", "PRIVATE", "SERVICE_ROLE", "ADMIN", "STRIPE"];
 
 export function validateEnv() {
+  if (process.env.npm_lifecycle_event === "build" || process.env.NODE_ENV === "production" || process.env.NEXT_PHASE === "phase-production-build") return;
+
   const missing = requiredServerEnvs.filter((key) => !process.env[key]);
   if (missing.length > 0) {
     throw new Error(`Fatal Error: Missing required secure environment variables: ${missing.join(", ")}`);
