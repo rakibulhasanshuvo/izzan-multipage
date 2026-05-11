@@ -44,7 +44,7 @@ export default function CMSManagement({ initialSections }: CMSManagementProps) {
     try {
       const response = await fetch("/api/admin/cms", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer admin_token_123" },
         body: JSON.stringify({ id: item.id, value: item.value }),
       });
 
