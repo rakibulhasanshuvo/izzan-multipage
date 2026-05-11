@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { env } from "./env";
 
 /**
  * Basic authentication check for admin routes.
@@ -12,6 +13,11 @@ export function checkAdminAuth(req: NextRequest): boolean {
   // Basic check to ensure a token is present
   const authHeader = req.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return false;
+  }
+
+  const token = authHeader.split(" ")[1];
+  if (token !== env.ADMIN_TOKEN) {
     return false;
   }
 

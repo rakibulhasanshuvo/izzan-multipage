@@ -43,12 +43,14 @@ import { CartProvider } from "@/context/CartContext";
 
 import { Toaster } from "sonner";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "Izzan",
-  "url": "https://izzan.com",
-  "logo": "https://izzan.com/logo.png",
+  "url": siteUrl,
+  "logo": `${siteUrl}/logo.png`,
   "description": "Handcrafted, Natural Candles & Essential Oils. Elevate Your Space.",
   "sameAs": [
     "https://instagram.com/izzan_moment",
