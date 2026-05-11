@@ -42,15 +42,57 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
   }
 
   const updateFields: Record<string, unknown> = {};
-  if (updateData.name !== undefined) updateFields.name = updateData.name;
+
+  if (updateData.name !== undefined) {
+    if (typeof updateData.name !== "string" || updateData.name.trim() === "") {
+      return NextResponse.json({ error: "Name must be a non-empty string" }, { status: 400 });
+    }
+    updateFields.name = updateData.name.trim();
+  }
+
   if (updateData.description !== undefined) updateFields.description = updateData.description;
-  if (updateData.price !== undefined) updateFields.price = parseFloat(updateData.price);
-  if (updateData.originalPrice !== undefined) updateFields.originalPrice = updateData.originalPrice ? parseFloat(updateData.originalPrice) : null;
+
+  if (updateData.price !== undefined) {
+    const parsedPrice = parseFloat(updateData.price);
+    if (isNaN(parsedPrice)) {
+      return NextResponse.json({ error: "Invalid price" }, { status: 400 });
+    }
+    updateFields.price = parsedPrice;
+  }
+
+  if (updateData.originalPrice !== undefined) {
+    if (updateData.originalPrice) {
+      const parsedOriginalPrice = parseFloat(updateData.originalPrice);
+      if (isNaN(parsedOriginalPrice)) {
+        return NextResponse.json({ error: "Invalid original price" }, { status: 400 });
+      }
+      updateFields.originalPrice = parsedOriginalPrice;
+    } else {
+      updateFields.originalPrice = null;
+    }
+  }
+
   if (updateData.img !== undefined) updateFields.img = updateData.img;
   if (updateData.hoverImg !== undefined) updateFields.hoverImg = updateData.hoverImg;
   if (updateData.categories !== undefined) updateFields.categories = updateData.categories;
   if (updateData.badge !== undefined) updateFields.badge = updateData.badge;
-  if (updateData.stock !== undefined) updateFields.stock = parseInt(updateData.stock);
+
+  if (updateData.stock !== undefined) {
+    const parsedStock = parseInt(updateData.stock, 10);
+    if (isNaN(parsedStock)) {
+      return NextResponse.json({ error: "Invalid stock" }, { status: 400 });
+    }
+    updateFields.stock = parsedStock;
+  }
+
+  // Prevent IDOR or update of non-existent record gracefully
+  const existingProduct = await prisma.product.findUnique({
+    where: { id }
+  });
+
+  if (!existingProduct) {
+    return NextResponse.json({ error: "Product not found" }, { status: 404 });
+  }
 
   const product = await prisma.product.update({
     where: { id },

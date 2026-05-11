@@ -30,12 +30,40 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
   }
 
   const updateFields: Record<string, unknown> = {};
-  if (updateData.name !== undefined) updateFields.name = updateData.name;
-  if (updateData.email !== undefined) updateFields.email = updateData.email;
+
+  if (updateData.name !== undefined) {
+    if (typeof updateData.name !== "string" || updateData.name.trim() === "") {
+      return NextResponse.json({ error: "Name must be a non-empty string" }, { status: 400 });
+    }
+    updateFields.name = updateData.name.trim();
+  }
+
+  if (updateData.email !== undefined) {
+    if (typeof updateData.email !== "string" || updateData.email.trim() === "" || !updateData.email.includes("@")) {
+      return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+    }
+    updateFields.email = updateData.email.trim();
+  }
+
   if (updateData.phone !== undefined) updateFields.phone = updateData.phone;
   if (updateData.location !== undefined) updateFields.location = updateData.location;
   if (updateData.tier !== undefined) updateFields.tier = updateData.tier;
-  if (updateData.totalSpend !== undefined) updateFields.totalSpend = parseFloat(updateData.totalSpend);
+
+  if (updateData.totalSpend !== undefined) {
+    const parsedSpend = parseFloat(updateData.totalSpend);
+    if (isNaN(parsedSpend)) {
+      return NextResponse.json({ error: "Invalid total spend" }, { status: 400 });
+    }
+    updateFields.totalSpend = parsedSpend;
+  }
+
+  const existingCustomer = await prisma.customer.findUnique({
+    where: { id }
+  });
+
+  if (!existingCustomer) {
+    return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+  }
 
   const customer = await prisma.customer.update({
     where: { id },

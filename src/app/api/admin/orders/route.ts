@@ -7,13 +7,25 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
   const data = await req.json();
   const { id, status } = data;
 
-  if (!id || !status) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  if (!id) {
+    return NextResponse.json({ error: "Missing order ID" }, { status: 400 });
+  }
+
+  if (status === undefined || typeof status !== "string" || status.trim() === "") {
+    return NextResponse.json({ error: "Status must be a non-empty string" }, { status: 400 });
+  }
+
+  const existingOrder = await prisma.order.findUnique({
+    where: { id }
+  });
+
+  if (!existingOrder) {
+    return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
 
   const order = await prisma.order.update({
     where: { id },
-    data: { status },
+    data: { status: status.trim() },
   });
 
   return NextResponse.json(order);
