@@ -1,6 +1,8 @@
 import pkg from '../src/generated/client/index.js';
 const { PrismaClient } = pkg;
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import bcrypt from 'bcrypt';
+
 import path from 'path';
 
 const dbPath = path.resolve(process.cwd(), 'prisma', 'dev.db');
@@ -85,6 +87,25 @@ async function main() {
         create: content,
       });
     }
+
+
+    // Create 4 Admins
+    console.log('Seeding Admins...');
+    const hashedPass = await bcrypt.hash('admin123', 10);
+    const admins = ['admin1', 'admin2', 'admin3', 'admin4'];
+
+    for (const username of admins) {
+      await prisma.admin.upsert({
+        where: { username },
+        update: {},
+        create: {
+          username,
+          password: hashedPass,
+        },
+      });
+    }
+    console.log('Admins seeded successfully.');
+
     
     console.log('Seeding finished.');
   } catch (err) {
