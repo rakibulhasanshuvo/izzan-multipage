@@ -47,7 +47,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         where: { id: { in: productIds } }
       });
 
-      const productMap = new Map(dbProducts.map(p => [p.id, p]));
+
       // Track in-memory stock to handle multiple entries of same product in one order
       const stockTracker = new Map(dbProducts.map(p => [p.id, p.stock]));
       // Consolidate stock updates to reduce DB calls

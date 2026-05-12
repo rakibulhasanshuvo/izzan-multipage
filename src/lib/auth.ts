@@ -52,3 +52,8 @@ export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Prom
     return handler(req, ...args);
   };
 }
+
+export function verifyToken(token?: string | null): boolean {
+  if (!token) return false;
+  return token === process.env.ADMIN_TOKEN;
+}
