@@ -108,7 +108,7 @@ test("PATCH /api/admin/products - Successful Update", async () => {
 
     const mockProduct = { id: "123", name: "Old Name", price: 10, stock: 5 };
     const findUniqueMock = mock.method(prisma.product, "findUnique", async () => mockProduct);
-    const updateMock = mock.method(prisma.product, "update", async ({ data }: any) => ({ ...mockProduct, ...data }));
+    const updateMock = mock.method(prisma.product, "update", async ({ data }: { data: unknown }) => ({ ...mockProduct, ...data }));
 
     const req = new NextRequest("http://localhost/api/admin/products", {
         method: "PATCH",
