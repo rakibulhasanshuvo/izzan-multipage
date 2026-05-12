@@ -100,7 +100,7 @@ export function Search({ onViewAll }: SearchProps) {
                   </div>
                 ) : results.length > 0 ? (
                   <div className="space-y-2">
-                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 px-2 mb-4">Search Results</p>
+                    <p className="text-xs uppercase tracking-[0.2em] font-bold text-gray-400 px-2 mb-4">Search Results</p>
                     {results.map((product) => (
                       <Link 
                         key={product.id} 

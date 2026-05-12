@@ -31,7 +31,7 @@ export function Header({ onViewAllProducts }: HeaderProps) {
 
   return (
     <>
-      <div className="w-full bg-primary text-white text-[10px] md:text-xs py-2 text-center flex justify-center items-center tracking-widest uppercase font-bold">
+      <div className="w-full bg-primary text-white text-xs md:text-sm py-2 text-center flex justify-center items-center tracking-widest uppercase font-bold">
         Free Shipping on orders over $50 <ArrowRight size={14} className="ml-2" />
       </div>
       <header className="w-full bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50 py-4 px-6 md:px-12 border-b border-gray-200 dark:border-gray-800 transition-all duration-300">
@@ -68,7 +68,7 @@ export function Header({ onViewAllProducts }: HeaderProps) {
             >
               <ShoppingCart size={20} />
               {mounted && cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-in zoom-in duration-300">
+                <span className="absolute -top-2 -right-2 bg-primary text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in duration-300">
                   {cartCount}
                 </span>
               )}
@@ -95,7 +95,7 @@ export function Header({ onViewAllProducts }: HeaderProps) {
                 aria-modal="true"
                 aria-label="Mobile Menu"
               >
-              <nav className="flex flex-col px-6 py-4 space-y-6">
+              <nav className="flex flex-col px-8 py-6 space-y-8">
                 <Link href="/#shop" onClick={closeMenu} className="text-sm tracking-widest uppercase hover:text-primary transition-colors">Shop</Link>
                 <Link href="/#story" onClick={closeMenu} className="text-sm tracking-widest uppercase hover:text-primary transition-colors">Story</Link>
                 <Link href="/#discover" onClick={closeMenu} className="text-sm tracking-widest uppercase hover:text-primary transition-colors">Discover</Link>

@@ -64,7 +64,7 @@ export function ShopSection({ bestSellers, newArrivals, saleItems, onExplore }: 
           variants={staggerContainer}
           className="text-center mb-12"
         >
-          <motion.span variants={fadeIn} className="text-[#607c64] font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">
+          <motion.span variants={fadeIn} className="text-[#607c64] font-bold tracking-[0.3em] uppercase text-xs mb-4 block">
             Curated for You
           </motion.span>
           <motion.h2 variants={fadeIn} className="text-4xl md:text-5xl font-display mb-4 dark:text-gray-100">
@@ -88,7 +88,7 @@ export function ShopSection({ bestSellers, newArrivals, saleItems, onExplore }: 
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative px-6 md:px-8 py-3 text-[11px] font-bold uppercase tracking-[0.15em] rounded-full transition-colors duration-300 cursor-pointer ${
+                className={`relative px-6 md:px-8 py-3 text-xs md:text-sm font-bold uppercase tracking-[0.15em] rounded-full transition-colors duration-300 cursor-pointer ${
                   activeTab === tab.id
                     ? "text-white"
                     : "text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
@@ -135,7 +135,7 @@ export function ShopSection({ bestSellers, newArrivals, saleItems, onExplore }: 
         >
           <button
             onClick={() => onExplore(activeTitle, activeProducts)}
-            className="group inline-flex items-center space-x-3 px-10 py-4 border border-[#607c64]/20 text-[#607c64] rounded-full font-bold tracking-[0.2em] text-[10px] uppercase hover:bg-[#607c64] hover:text-white hover:border-[#607c64] transition-all duration-500 hover:shadow-lg hover:shadow-[#607c64]/10 cursor-pointer"
+            className="group inline-flex items-center space-x-3 px-10 py-4 border border-[#607c64]/20 text-[#607c64] rounded-full font-bold tracking-[0.2em] text-xs md:text-sm uppercase hover:bg-[#607c64] hover:text-white hover:border-[#607c64] transition-all duration-500 hover:shadow-lg hover:shadow-[#607c64]/10 cursor-pointer"
           >
             <span>View All {tabs.find(t => t.id === activeTab)?.label}</span>
             <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />

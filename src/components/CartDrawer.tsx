@@ -58,7 +58,7 @@ export function CartDrawer() {
                 {cartItems.length > 0 && (
                   <button 
                     onClick={clearCart}
-                    className="text-[10px] uppercase tracking-widest font-bold text-gray-400 hover:text-red-500 transition-colors mr-2 cursor-pointer"
+                    className="text-xs uppercase tracking-widest font-bold text-gray-400 hover:text-red-500 transition-colors mr-2 cursor-pointer"
                   >
                     Clear All
                   </button>
@@ -124,14 +124,14 @@ export function CartDrawer() {
                         <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-sm">
                           <button 
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400"
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400"
                           >
                             <Minus size={14} />
                           </button>
                           <span className="w-8 text-center text-xs font-semibold dark:text-gray-200">{item.quantity}</span>
                           <button 
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400"
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400"
                           >
                             <Plus size={14} />
                           </button>
@@ -154,7 +154,7 @@ export function CartDrawer() {
                 <button onClick={() => setIsCheckoutOpen(true)} className="w-full bg-primary text-white py-4 rounded-sm text-sm font-bold uppercase tracking-[0.2em] hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl active:scale-[0.98] ">
                   Checkout Now
                 </button>
-                <p className="text-[10px] text-gray-400 text-center mt-4 uppercase tracking-widest">Free Shipping on all orders</p>
+                <p className="text-xs text-gray-400 text-center mt-4 uppercase tracking-widest">Free Shipping on all orders</p>
               </div>
             )}
             </motion.div>

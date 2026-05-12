@@ -74,10 +74,10 @@ export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string,
             {subtitle || "Handcrafted, Natural Candles & Essential Oils. Elevate Your Space."}
           </motion.p>
           <motion.div variants={fadeIn} className="flex flex-wrap gap-4">
-            <Link href="/#shop" className="inline-block bg-primary text-white px-10 py-4 tracking-widest text-[11px] font-bold uppercase hover:bg-primary-dark transition-all rounded-full shadow-2xl hover:shadow-primary/20 hover:-translate-y-1">
+            <Link href="/#shop" className="inline-block bg-primary text-white px-10 py-4 tracking-widest text-xs md:text-sm font-bold uppercase hover:bg-primary-dark transition-all rounded-full shadow-2xl hover:shadow-primary/20 hover:-translate-y-1">
               Shop the Collection
             </Link>
-            <Link href="/#story" className="inline-block bg-white/10 backdrop-blur-md border border-white/20 text-white px-10 py-4 tracking-widest text-[11px] font-bold uppercase hover:bg-white/20 transition-all rounded-full">
+            <Link href="/#story" className="inline-block bg-white/10 backdrop-blur-md border border-white/20 text-white px-10 py-4 tracking-widest text-xs md:text-sm font-bold uppercase hover:bg-white/20 transition-all rounded-full">
               Read Our Story
             </Link>
           </motion.div>
