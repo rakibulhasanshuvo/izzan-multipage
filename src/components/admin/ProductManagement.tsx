@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import ProductEditorModal from "./ProductEditorModal";
 import { toast } from "sonner";
+import { createProduct, updateProduct, deleteProduct } from "@/app/(admin)/admin/actions";
 
 import { Product } from "@/generated/client";
 
@@ -49,16 +51,11 @@ export default function ProductManagement({ initialProducts }: ProductManagement
 
   const handleSave = async (formData: Product) => {
     try {
-      const url = "/api/admin/products";
-      const method = formData.id ? "PATCH" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer admin_token_123" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) throw new Error("Failed to save product");
+      if (formData.id) {
+        await updateProduct(formData);
+      } else {
+        await createProduct(formData);
+      }
 
       toast.success(formData.id ? "Product updated" : "Product created");
       setIsModalOpen(false);
@@ -73,12 +70,7 @@ export default function ProductManagement({ initialProducts }: ProductManagement
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      const response = await fetch(`/api/admin/products?id=${id}`, {
-        method: "DELETE",
-        headers: { "Authorization": "Bearer admin_token_123" },
-      });
-
-      if (!response.ok) throw new Error("Failed to delete product");
+      await deleteProduct(id);
 
       toast.success("Product deleted");
       router.refresh();
@@ -206,8 +198,13 @@ export default function ProductManagement({ initialProducts }: ProductManagement
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-5">
                       <div className="w-14 h-14 rounded-2xl overflow-hidden border border-zinc-200/50 flex-shrink-0 shadow-sm relative bg-zinc-100">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={product.img} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                        <Image
+                          src={product.img}
+                          alt={product.name}
+                          fill
+                          sizes="56px"
+                          className="object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
                         <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl pointer-events-none"></div>
                       </div>
                       <div>

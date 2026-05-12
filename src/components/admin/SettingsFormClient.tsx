@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { updateSettings } from "@/app/(admin)/admin/actions";
 
 import { AdminSettings } from "@/generated/client";
 
@@ -26,15 +28,9 @@ export default function SettingsFormClient({ initialSettings }: { initialSetting
     setSaving(true);
     
     try {
-      const response = await fetch("/api/admin/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer admin_token_123" },
-        body: JSON.stringify({
-          firstName, lastName, email, bio, emailAlerts, orderNotifs, marketingUpdates
-        }),
+      await updateSettings({
+        firstName, lastName, email, bio, emailAlerts, orderNotifs, marketingUpdates
       });
-
-      if (!response.ok) throw new Error("Failed to save settings");
 
       toast.success("Settings saved successfully.");
       router.refresh();
@@ -56,9 +52,14 @@ export default function SettingsFormClient({ initialSettings }: { initialSetting
         </div>
 
         <div className="flex items-center gap-6 mb-10">
-          <div className="w-24 h-24 rounded-full bg-zinc-100 overflow-hidden border-4 border-white shadow-md flex-shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYBjMwG0nbuaC6Ox9ovV4Emlpn6-VBpvR9GaxVe4Ld8vPv6v8ljiLEFNx8N8A8nPAvIma3LAfjHBrb7BR3Z1ajg1SD81E_QMQSkp-8fV4bOkMfk_hQHup31b0mrfCxBd8Eroo8v84tQxjxRnhzy70t4GBNcGwVH8QG97giul_cDTih6Ypc7dvRnIKog-WXTR_8ZfEgUq4swwm5NPzL7EgBfIIp8z7MMFVoGE5OzXOmABt60XMurDQaXCmUAwYYKnm4ntze11LAbpA" alt="Avatar" className="w-full h-full object-cover" />
+          <div className="w-24 h-24 rounded-full bg-zinc-100 overflow-hidden border-4 border-white shadow-md flex-shrink-0 relative">
+            <Image
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYBjMwG0nbuaC6Ox9ovV4Emlpn6-VBpvR9GaxVe4Ld8vPv6v8ljiLEFNx8N8A8nPAvIma3LAfjHBrb7BR3Z1ajg1SD81E_QMQSkp-8fV4bOkMfk_hQHup31b0mrfCxBd8Eroo8v84tQxjxRnhzy70t4GBNcGwVH8QG97giul_cDTih6Ypc7dvRnIKog-WXTR_8ZfEgUq4swwm5NPzL7EgBfIIp8z7MMFVoGE5OzXOmABt60XMurDQaXCmUAwYYKnm4ntze11LAbpA"
+              alt="Avatar"
+              fill
+              sizes="96px"
+              className="object-cover"
+            />
           </div>
           <button type="button" className="px-6 py-2.5 bg-zinc-50 border border-zinc-200/80 text-zinc-700 rounded-full font-medium hover:bg-zinc-100 transition-colors shadow-sm">
             Change Avatar
