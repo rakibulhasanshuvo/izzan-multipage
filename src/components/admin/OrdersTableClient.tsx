@@ -65,7 +65,7 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
                       </div>
                       <div className="flex flex-col">
                         <span className="font-medium text-zinc-800">{order.customerName}</span>
-                        <span className="text-[12px] text-zinc-500">{order.customerEmail}</span>
+                        <span className="text-[12px] text-zinc-500">{order.customerPhone || order.customerEmail || 'No contact info'}</span>
                       </div>
                     </div>
                   </td>
