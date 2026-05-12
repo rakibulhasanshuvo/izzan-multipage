@@ -59,15 +59,27 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
            throw new Error(`Invalid item structure for ${item.name || 'unknown item'}`);
         }
 
-        const dbProduct = productMap.get(item.id);
+        let dbProduct = await tx.product.findUnique({
+          where: { id: item.id }
+        });
+
+        if (!dbProduct && item.name) {
+          // Fallback to name-based lookup if ID changed across DB resets
+          dbProduct = await tx.product.findFirst({
+            where: { name: item.name }
+          });
+        }
 
         if (!dbProduct) {
           throw new Error(`Product not found: ${item.name || item.id}`);
         }
 
-        const currentStock = stockTracker.get(item.id) || 0;
-        if (currentStock < item.quantity) {
-          throw new Error(`Insufficient stock for ${dbProduct.name}. Only ${currentStock} left.`);
+        // Ensure we're using the correct current ID from the DB
+        item.id = dbProduct.id;
+        item.price = dbProduct.price; // Update price from DB to avoid mismatched data
+
+        if (dbProduct.stock < item.quantity) {
+          throw new Error(`Insufficient stock for ${dbProduct.name}. Only ${dbProduct.stock} left.`);
         }
 
         // Update in-memory tracker
@@ -83,8 +95,8 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
       // Perform consolidated stock updates
       for (const [productId, quantity] of stockUpdates.entries()) {
         await tx.product.update({
-          where: { id: productId },
-          data: { stock: { decrement: quantity } }
+          where: { id: dbProduct.id },
+          data: { stock: { decrement: item.quantity } }
         });
       }
 
