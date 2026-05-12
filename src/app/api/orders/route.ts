@@ -4,10 +4,10 @@ import { apiHandler } from "@/lib/api";
 
 export const POST = apiHandler(async function POST(req: NextRequest) {
   const data = await req.json();
-  const { name, phone, email, zila, upozila, shippingAddress, items, totalAmount } = data;
+  const { name, phone, email, zila, upozila, shippingAddress, items } = data;
 
-  if (!name || !phone || !zila || !upozila || !shippingAddress || !items || totalAmount === undefined) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  if (!name || !phone || !zila || !upozila || !shippingAddress || !items || !Array.isArray(items) || items.length === 0) {
+    return NextResponse.json({ error: "Missing required fields or empty cart" }, { status: 400 });
   }
 
   // Find or create customer by phone
@@ -25,48 +25,102 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
     }
   }
 
-  const locationStr = `${shippingAddress}, ${upozila}, ${zila}`;
-
-  if (!customer) {
-    customer = await prisma.customer.create({
-      data: {
-        name,
-        phone,
-        email: email || null,
-        zila: zila || "",
-        upozila: upozila || "",
-        location: locationStr,
-        totalSpend: parseFloat(totalAmount),
-      }
+  // Handle unique constraint check for email if updating an existing customer
+  let finalEmail = email || null;
+  if (customer && email && customer.email !== email) {
+    const existingEmailCustomer = await prisma.customer.findUnique({
+      where: { email }
     });
-  } else {
-    customer = await prisma.customer.update({
-      where: { id: customer.id },
-      data: {
-        name,
-        email: email || customer.email,
-        zila: zila || customer.zila,
-        upozila: upozila || customer.upozila,
-        location: locationStr,
-        totalSpend: customer.totalSpend + parseFloat(totalAmount),
-      }
-    });
+    if (existingEmailCustomer && existingEmailCustomer.id !== customer.id) {
+      // Email is already in use by another customer, skip updating email to prevent unique constraint error
+      finalEmail = customer.email;
+    }
   }
 
-  const order = await prisma.order.create({
-    data: {
-      customerName: name,
-      customerEmail: email || null,
-      customerPhone: phone,
-      zila: zila || "",
-      upozila: upozila || "",
-      shippingAddress: shippingAddress || "",
-      items: JSON.stringify(items),
-      totalAmount: parseFloat(totalAmount),
-      customerId: customer.id,
-      status: "Pending",
-    }
-  });
+  const locationStr = `${shippingAddress}, ${upozila}, ${zila}`;
 
-  return NextResponse.json({ success: true, orderId: order.id });
+  try {
+    const orderResult = await prisma.$transaction(async (tx) => {
+      // 1. Price verification & Stock validation
+      let calculatedTotal = 0;
+      for (const item of items) {
+        if (!item.id || !item.quantity || item.quantity <= 0) {
+           throw new Error(`Invalid item structure for ${item.name || 'unknown item'}`);
+        }
+
+        const dbProduct = await tx.product.findUnique({
+          where: { id: item.id }
+        });
+
+        if (!dbProduct) {
+          throw new Error(`Product not found: ${item.name}`);
+        }
+
+        if (dbProduct.stock < item.quantity) {
+          throw new Error(`Insufficient stock for ${dbProduct.name}. Only ${dbProduct.stock} left.`);
+        }
+
+        // Calculate total securely from DB prices
+        calculatedTotal += dbProduct.price * item.quantity;
+
+        // Deduct stock
+        await tx.product.update({
+          where: { id: item.id },
+          data: { stock: { decrement: item.quantity } }
+        });
+      }
+
+      // 2. Customer Upsert
+      let txCustomer;
+      if (!customer) {
+        txCustomer = await tx.customer.create({
+          data: {
+            name,
+            phone,
+            email: finalEmail,
+            zila: zila || "",
+            upozila: upozila || "",
+            location: locationStr,
+            totalSpend: calculatedTotal,
+          }
+        });
+      } else {
+        txCustomer = await tx.customer.update({
+          where: { id: customer.id },
+          data: {
+            name,
+            email: finalEmail || customer.email,
+            zila: zila || customer.zila,
+            upozila: upozila || customer.upozila,
+            location: locationStr,
+            totalSpend: { increment: calculatedTotal },
+          }
+        });
+      }
+
+      // 3. Order Creation
+      const txOrder = await tx.order.create({
+        data: {
+          customerName: name,
+          customerEmail: finalEmail,
+          customerPhone: phone,
+          zila: zila || "",
+          upozila: upozila || "",
+          shippingAddress: shippingAddress || "",
+          items: JSON.stringify(items),
+          totalAmount: calculatedTotal,
+          customerId: txCustomer.id,
+          status: "Pending",
+        }
+      });
+
+      return txOrder;
+    });
+
+    return NextResponse.json({ success: true, orderId: orderResult.id });
+
+  } catch (error: unknown) {
+    const err = error as Error;
+    return NextResponse.json({ error: err.message || "Failed to process order" }, { status: 400 });
+  }
 }, "Failed to create order");
