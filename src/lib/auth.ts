@@ -28,18 +28,26 @@ function checkRateLimit(ip: string): boolean {
  * In a real-world scenario, you would integrate NextAuth or verify JWT tokens here.
  */
 export function checkAdminAuth(req: NextRequest): boolean {
-  // Mock check: verify against a specific admin token
+  // Check Authorization header
   const authHeader = req.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return false;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    if (verifyToken(token)) return true;
   }
 
-  const token = authHeader.split(" ")[1];
-  if (token !== env.ADMIN_TOKEN) {
-    return false;
-  }
+  // Check for admin_token cookie
+  const cookieToken = req.cookies.get("admin_token")?.value;
+  if (verifyToken(cookieToken)) return true;
 
-  return true;
+  return false;
+}
+
+/**
+ * Verifies if the provided token matches the admin token.
+ */
+export function verifyToken(token: string | undefined): boolean {
+  if (!token || !env.ADMIN_TOKEN) return false;
+  return token === env.ADMIN_TOKEN;
 }
 
 /**
