@@ -48,13 +48,24 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
            throw new Error(`Invalid item structure for ${item.name || 'unknown item'}`);
         }
 
-        const dbProduct = await tx.product.findUnique({
+        let dbProduct = await tx.product.findUnique({
           where: { id: item.id }
         });
+
+        if (!dbProduct && item.name) {
+          // Fallback to name-based lookup if ID changed across DB resets
+          dbProduct = await tx.product.findFirst({
+            where: { name: item.name }
+          });
+        }
 
         if (!dbProduct) {
           throw new Error(`Product not found: ${item.name}`);
         }
+
+        // Ensure we're using the correct current ID from the DB
+        item.id = dbProduct.id;
+        item.price = dbProduct.price; // Update price from DB to avoid mismatched data
 
         if (dbProduct.stock < item.quantity) {
           throw new Error(`Insufficient stock for ${dbProduct.name}. Only ${dbProduct.stock} left.`);
@@ -65,7 +76,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
 
         // Deduct stock
         await tx.product.update({
-          where: { id: item.id },
+          where: { id: dbProduct.id },
           data: { stock: { decrement: item.quantity } }
         });
       }
