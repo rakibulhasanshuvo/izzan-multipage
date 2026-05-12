@@ -92,6 +92,7 @@ describe('Orders API POST handler', () => {
     const response = await POST(req);
     const data = await response.json();
 
+    expect(data.error).toBeUndefined();
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.orderId).toBe('order1');
@@ -135,6 +136,7 @@ describe('Orders API POST handler', () => {
     const response = await POST(req);
     const data = await response.json();
 
+    expect(data.error).toBeUndefined();
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.orderId).toBe('order2');
@@ -149,7 +151,6 @@ describe('Orders API POST handler', () => {
       const txMock = {
         product: {
           findMany: vi.fn().mockResolvedValue([]),
-          // Mock product not found
           findUnique: vi.fn().mockResolvedValue(null),
           findFirst: vi.fn().mockResolvedValue(null),
         },
@@ -181,7 +182,6 @@ describe('Orders API POST handler', () => {
       const txMock = {
         product: {
           findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
-          // Mock stock 10 (less than 20 requested)
           findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
         },
       };

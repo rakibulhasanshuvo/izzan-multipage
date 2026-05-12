@@ -91,7 +91,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         }
 
         // Update in-memory tracker
-        stockTracker.set(item.id, dbProduct.stock - item.quantity);
+        stockTracker.set(item.id, (stockTracker.get(item.id) || dbProduct.stock) - item.quantity);
 
         // Accumulate stock updates
         stockUpdates.set(item.id, (stockUpdates.get(item.id) || 0) + item.quantity);
