@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { env } from "./env";
 
 // Rate limiting state
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-const MAX_REQUESTS = 100;
+export const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+export const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+export const MAX_REQUESTS = 100;
 
-function checkRateLimit(ip: string): boolean {
+export function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const record = rateLimitMap.get(ip);
 
