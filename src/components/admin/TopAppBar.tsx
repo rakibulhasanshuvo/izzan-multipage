@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAdminSidebar } from "./AdminSidebarContext";
 
@@ -40,12 +41,13 @@ export default function TopAppBar() {
         <button aria-label="Search" className="text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full hover:text-zinc-900 transition-colors duration-300 flex items-center group hidden sm:flex">
           <span aria-hidden="true" className="material-symbols-outlined group-hover:scale-110 transition-transform">search</span>
         </button>
-        <button aria-label="User Profile" className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-white shadow-sm ml-0 md:ml-2 cursor-pointer hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            alt="User Profile"
-            className="w-full h-full object-cover"
+        <button aria-label="User Profile" className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-white shadow-sm ml-0 md:ml-2 cursor-pointer hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative">
+          <Image
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5Z6EOvrTdFYj2jxBp2kgCLuxY-wuRAOwt4AUKYz3EwVFFwDrRwW5F6R7jKNh38rfSi146wxLCmlH3Neb5PI0o7QJr2zzHDTp87l-LmnZNyH7pbTUJ7EjfhnizZD32u2FoBOuO-Q5TqdK1XRMlQQgBYTMHlaws9KxSUv2ELxyyTZI41WYpEcfEGTIEv8Q_Q6pDylg10n1ub1nbjt5FuTBsuYUF29WQNI83X01ECb_U3TY3UIeg5uJZ1hRRapg_mJrdc0RXHZxotQw"
+            alt="User Profile"
+            fill
+            sizes="(max-width: 768px) 36px, 40px"
+            className="object-cover"
           />
         </button>
       </div>

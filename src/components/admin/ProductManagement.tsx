@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import ProductEditorModal from "./ProductEditorModal";
@@ -206,8 +207,13 @@ export default function ProductManagement({ initialProducts }: ProductManagement
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-5">
                       <div className="w-14 h-14 rounded-2xl overflow-hidden border border-zinc-200/50 flex-shrink-0 shadow-sm relative bg-zinc-100">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={product.img} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                        <Image
+                          src={product.img}
+                          alt={product.name}
+                          fill
+                          sizes="56px"
+                          className="object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
                         <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl pointer-events-none"></div>
                       </div>
                       <div>

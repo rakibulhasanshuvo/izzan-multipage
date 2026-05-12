@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { Product } from "@/generated/client";
 
 interface ProductEditorModalProps {
@@ -87,8 +88,13 @@ export default function ProductEditorModal({
                 <div className="space-y-5">
                   <div className="aspect-square rounded-2xl bg-zinc-50 border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center overflow-hidden relative group transition-colors hover:bg-zinc-100/50 hover:border-zinc-300">
                     {formData.img ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={formData.img} alt="Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <Image
+                        src={formData.img}
+                        alt="Preview"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 400px"
+                        className="object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
                     ) : (
                       <>
                         <div className="w-16 h-16 bg-white rounded-full shadow-sm border border-zinc-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-500">

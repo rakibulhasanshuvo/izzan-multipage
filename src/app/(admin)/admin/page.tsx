@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { cn } from "@/lib/utils";
 
@@ -112,11 +113,12 @@ export default async function AdminOverview() {
             {recentProducts.map((product) => (
               <div key={product.id} className="flex items-center gap-5 group cursor-pointer p-2 -m-2 rounded-2xl hover:bg-zinc-50/80 transition-colors">
                 <div className="w-16 h-16 rounded-2xl overflow-hidden bg-zinc-100 border border-zinc-200/50 flex-shrink-0 shadow-sm relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  <Image
                     src={product.img}
+                    alt={product.name}
+                    fill
+                    sizes="64px"
+                    className="object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                   <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl pointer-events-none"></div>
                 </div>
