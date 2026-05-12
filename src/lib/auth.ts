@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { env } from "./env";
 
 // Rate limiting state
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -30,6 +31,11 @@ export function checkAdminAuth(req: NextRequest): boolean {
   // Mock check: verify against a specific admin token
   const authHeader = req.headers.get("authorization");
   if (!authHeader || authHeader !== "Bearer admin_token_123") {
+    return false;
+  }
+
+  const token = authHeader.split(" ")[1];
+  if (token !== env.ADMIN_TOKEN) {
     return false;
   }
 
