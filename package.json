@@ -7,8 +7,10 @@
     "build": "prisma db push --accept-data-loss && prisma db seed && next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "node --experimental-strip-types --test src/app/api/admin/products/route.test.ts",
     "postinstall": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "test": "vitest run"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
@@ -39,10 +41,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.6",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.4",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.6"
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"
