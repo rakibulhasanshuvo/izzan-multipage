@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import ProductEditorModal from "./ProductEditorModal";
 import { toast } from "sonner";
+import { createProduct, updateProduct, deleteProduct } from "@/app/(admin)/admin/actions";
 
 import { Product } from "@/generated/client";
 
@@ -49,16 +50,11 @@ export default function ProductManagement({ initialProducts }: ProductManagement
 
   const handleSave = async (formData: Product) => {
     try {
-      const url = "/api/admin/products";
-      const method = formData.id ? "PATCH" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer admin_token_123" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) throw new Error("Failed to save product");
+      if (formData.id) {
+        await updateProduct(formData);
+      } else {
+        await createProduct(formData);
+      }
 
       toast.success(formData.id ? "Product updated" : "Product created");
       setIsModalOpen(false);
@@ -73,12 +69,7 @@ export default function ProductManagement({ initialProducts }: ProductManagement
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      const response = await fetch(`/api/admin/products?id=${id}`, {
-        method: "DELETE",
-        headers: { "Authorization": "Bearer admin_token_123" },
-      });
-
-      if (!response.ok) throw new Error("Failed to delete product");
+      await deleteProduct(id);
 
       toast.success("Product deleted");
       router.refresh();

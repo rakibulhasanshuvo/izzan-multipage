@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { updateOrderStatus } from "@/app/(admin)/admin/actions";
 
 import { Order } from "@/generated/client";
 
@@ -15,13 +16,7 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
   const handleStatusChange = async (id: string, newStatus: string) => {
     setUpdatingId(id);
     try {
-      const response = await fetch("/api/admin/orders", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer admin_token_123" },
-        body: JSON.stringify({ id, status: newStatus }),
-      });
-
-      if (!response.ok) throw new Error("Failed to update status");
+      await updateOrderStatus(id, newStatus);
 
       toast.success("Order status updated");
       setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o));

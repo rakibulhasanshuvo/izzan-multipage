@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { updateSettings } from "@/app/(admin)/admin/actions";
 
 import { AdminSettings } from "@/generated/client";
 
@@ -26,15 +27,9 @@ export default function SettingsFormClient({ initialSettings }: { initialSetting
     setSaving(true);
     
     try {
-      const response = await fetch("/api/admin/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer admin_token_123" },
-        body: JSON.stringify({
-          firstName, lastName, email, bio, emailAlerts, orderNotifs, marketingUpdates
-        }),
+      await updateSettings({
+        firstName, lastName, email, bio, emailAlerts, orderNotifs, marketingUpdates
       });
-
-      if (!response.ok) throw new Error("Failed to save settings");
 
       toast.success("Settings saved successfully.");
       router.refresh();
