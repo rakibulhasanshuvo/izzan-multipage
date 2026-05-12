@@ -23,7 +23,7 @@ export function ProductCard({ item }: { item: Product }) {
       {/* Image Container */}
       <div className="w-full aspect-[3/4] relative overflow-hidden mb-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] transition-all duration-500 group-hover:shadow-xl group-hover:shadow-primary/5">
         {item.badge && (
-          <div className={`absolute top-4 left-4 z-10 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em] rounded-full text-white shadow-sm backdrop-blur-md ${item.badge === 'Sale' ? 'bg-red-500/80' : item.badge === 'New' ? 'bg-primary/80' : 'bg-accent-gold/80'}`}>
+          <div className={`absolute top-4 left-4 z-10 px-3 py-1 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] rounded-full text-white shadow-sm backdrop-blur-md ${item.badge === 'Sale' ? 'bg-red-500/80' : item.badge === 'New' ? 'bg-primary/80' : 'bg-accent-gold/80'}`}>
             {item.badge}
           </div>
         )}
@@ -54,7 +54,7 @@ export function ProductCard({ item }: { item: Product }) {
         <h3 className="text-sm md:text-base font-display font-semibold mb-1 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">{item.name}</h3>
         <div className="flex items-center justify-center space-x-2 mb-4">
           {item.originalPrice && (
-            <span className="text-gray-500 line-through text-[10px] md:text-xs font-light">${item.originalPrice}</span>
+            <span className="text-gray-500 line-through text-xs md:text-sm font-light">${item.originalPrice}</span>
           )}
           <span className="text-xs md:text-sm text-gray-800 dark:text-gray-300 font-bold">${item.price}</span>
         </div>
@@ -62,7 +62,7 @@ export function ProductCard({ item }: { item: Product }) {
         {/* Mobile-only visible button */}
         <button
           onClick={handleAddToCart}
-          className={`md:hidden w-full py-3 rounded-xl text-[9px] tracking-[0.2em] uppercase font-bold transition-all duration-300 flex items-center justify-center space-x-2 ${added ? 'bg-green-600 text-white' : 'bg-primary text-white'}`}
+          className={`md:hidden w-full py-3 rounded-xl text-xs tracking-[0.2em] uppercase font-bold transition-all duration-300 flex items-center justify-center space-x-2 ${added ? 'bg-green-600 text-white' : 'bg-primary text-white'}`}
         >
           <span>{added ? 'Added' : 'Add to Cart'}</span>
         </button>
