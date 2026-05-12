@@ -5,14 +5,16 @@ import { apiHandler } from "@/lib/api";
 
 export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
   const data = await req.json();
-  if (!data.name || !data.email) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  if (!data.name || !data.phone) {
+    return NextResponse.json({ error: "Missing required fields (name, phone)" }, { status: 400 });
   }
   const customer = await prisma.customer.create({
     data: {
       name: data.name,
-      email: data.email,
-      phone: data.phone || null,
+      email: data.email || null,
+      phone: data.phone,
+      zila: data.zila || "",
+      upozila: data.upozila || "",
       location: data.location || null,
       tier: data.tier || "Bronze",
       totalSpend: data.totalSpend ? parseFloat(data.totalSpend) : 0,
@@ -46,6 +48,8 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
   }
 
   if (updateData.phone !== undefined) updateFields.phone = updateData.phone;
+  if (updateData.zila !== undefined) updateFields.zila = updateData.zila;
+  if (updateData.upozila !== undefined) updateFields.upozila = updateData.upozila;
   if (updateData.location !== undefined) updateFields.location = updateData.location;
   if (updateData.tier !== undefined) updateFields.tier = updateData.tier;
 

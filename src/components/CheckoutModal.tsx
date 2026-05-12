@@ -57,8 +57,8 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       onClose();
       // Also close the cart drawer if it's open
       toggleCart();
-    } catch (error: any) {
-      toast.error(error.message || "Something went wrong. Please try again.");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
