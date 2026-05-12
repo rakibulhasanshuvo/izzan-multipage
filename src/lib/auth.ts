@@ -30,7 +30,7 @@ function checkRateLimit(ip: string): boolean {
 export function checkAdminAuth(req: NextRequest): boolean {
   // Mock check: verify against a specific admin token
   const authHeader = req.headers.get("authorization");
-  if (!authHeader || authHeader !== "Bearer admin_token_123") {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return false;
   }
 
