@@ -42,6 +42,17 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
   try {
     const orderResult = await prisma.$transaction(async (tx) => {
       // 1. Price verification & Stock validation
+      const productIds = items.map((item: { id: string }) => item.id);
+      const dbProducts = await tx.product.findMany({
+        where: { id: { in: productIds } }
+      });
+
+      const productMap = new Map(dbProducts.map(p => [p.id, p]));
+      // Track in-memory stock to handle multiple entries of same product in one order
+      const stockTracker = new Map(dbProducts.map(p => [p.id, p.stock]));
+      // Consolidate stock updates to reduce DB calls
+      const stockUpdates = new Map<string, number>();
+
       let calculatedTotal = 0;
       for (const item of items) {
         if (!item.id || !item.quantity || item.quantity <= 0) {
@@ -60,7 +71,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         }
 
         if (!dbProduct) {
-          throw new Error(`Product not found: ${item.name}`);
+          throw new Error(`Product not found: ${item.name || item.id}`);
         }
 
         // Ensure we're using the correct current ID from the DB
@@ -71,10 +82,18 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
           throw new Error(`Insufficient stock for ${dbProduct.name}. Only ${dbProduct.stock} left.`);
         }
 
+        // Update in-memory tracker
+        stockTracker.set(item.id, currentStock - item.quantity);
+
+        // Accumulate stock updates
+        stockUpdates.set(item.id, (stockUpdates.get(item.id) || 0) + item.quantity);
+
         // Calculate total securely from DB prices
         calculatedTotal += dbProduct.price * item.quantity;
+      }
 
-        // Deduct stock
+      // Perform consolidated stock updates
+      for (const [productId, quantity] of stockUpdates.entries()) {
         await tx.product.update({
           where: { id: dbProduct.id },
           data: { stock: { decrement: item.quantity } }
