@@ -82,7 +82,7 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
                         order.status === "Shipped" || order.status === "Delivered" ? "bg-green-50 text-green-700 border-green-100/50" : 
                         order.status === "Processing" ? "bg-blue-50 text-blue-700 border-blue-100/50" :
                         order.status === "Cancelled" ? "bg-red-50 text-red-700 border-red-100/50" :
-                        "bg-zinc-100 text-zinc-600 border-zinc-200/50"
+                        order.status === "Pending" ? "bg-amber-50 text-amber-700 border-amber-100/50" : "bg-zinc-100 text-zinc-600 border-zinc-200/50"
                       )}
                     >
                       <option value="Pending">Pending</option>

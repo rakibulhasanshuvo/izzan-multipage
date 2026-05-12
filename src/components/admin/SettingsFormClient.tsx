@@ -105,7 +105,7 @@ export default function SettingsFormClient({ initialSettings }: { initialSetting
               onClick={() => setEmailAlerts(!emailAlerts)}
               className={cn(
                 "w-12 h-6 rounded-full transition-colors relative",
-                emailAlerts ? "bg-green-500" : "bg-zinc-200"
+                emailAlerts ? "bg-zinc-900" : "bg-zinc-200"
               )}
             >
               <div className={cn(
@@ -125,7 +125,7 @@ export default function SettingsFormClient({ initialSettings }: { initialSetting
               onClick={() => setOrderNotifs(!orderNotifs)}
               className={cn(
                 "w-12 h-6 rounded-full transition-colors relative",
-                orderNotifs ? "bg-green-500" : "bg-zinc-200"
+                orderNotifs ? "bg-zinc-900" : "bg-zinc-200"
               )}
             >
               <div className={cn(
@@ -145,7 +145,7 @@ export default function SettingsFormClient({ initialSettings }: { initialSetting
               onClick={() => setMarketingUpdates(!marketingUpdates)}
               className={cn(
                 "w-12 h-6 rounded-full transition-colors relative",
-                marketingUpdates ? "bg-green-500" : "bg-zinc-200"
+                marketingUpdates ? "bg-zinc-900" : "bg-zinc-200"
               )}
             >
               <div className={cn(
