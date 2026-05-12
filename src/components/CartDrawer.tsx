@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { CheckoutModal } from "./CheckoutModal";
 import FocusTrap from "focus-trap-react";
 
 export function CartDrawer() {
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { isCartOpen, toggleCart, cartItems, updateQuantity, removeFromCart, clearCart, cartTotal, cartCount } = useCart();
 
   useEffect(() => {
@@ -149,7 +151,7 @@ export function CartDrawer() {
                   <span className="text-gray-500 dark:text-gray-400 uppercase tracking-widest text-xs font-bold">Subtotal</span>
                   <span className="text-xl font-semibold dark:text-gray-100">${cartTotal.toFixed(2)}</span>
                 </div>
-                <button className="w-full bg-primary text-white py-4 rounded-sm text-sm font-bold uppercase tracking-[0.2em] hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl active:scale-[0.98]">
+                <button onClick={() => setIsCheckoutOpen(true)} className="w-full bg-primary text-white py-4 rounded-sm text-sm font-bold uppercase tracking-[0.2em] hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl active:scale-[0.98] ">
                   Checkout Now
                 </button>
                 <p className="text-[10px] text-gray-400 text-center mt-4 uppercase tracking-widest">Free Shipping on all orders</p>
@@ -157,6 +159,7 @@ export function CartDrawer() {
             )}
             </motion.div>
           </FocusTrap>
+          <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} />
         </>
       )}
     </AnimatePresence>

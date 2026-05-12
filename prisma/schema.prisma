@@ -30,10 +30,14 @@ model Product {
 model Order {
   id            String    @id @default(cuid())
   customerName  String
-  customerEmail String
+  customerEmail String?
+  customerPhone String?
   status        String    @default("Pending") // Pending, Shipped, Delivered, Cancelled
   totalAmount   Float
   items         String    // JSON string of items
+  zila          String?
+  upozila       String?
+  shippingAddress String?
   customerId    String?
   customer      Customer? @relation(fields: [customerId], references: [id])
   createdAt     DateTime  @default(now())
@@ -43,8 +47,10 @@ model Order {
 model Customer {
   id          String   @id @default(cuid())
   name        String
-  email       String   @unique
-  phone       String?
+  email       String?  @unique
+  phone       String?  @unique
+  zila        String?
+  upozila     String?
   location    String?
   tier        String   @default("Bronze") // Bronze, Silver, Gold
   totalSpend  Float    @default(0)

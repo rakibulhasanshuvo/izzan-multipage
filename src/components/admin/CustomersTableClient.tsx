@@ -88,7 +88,7 @@ export default function CustomersTableClient({ initialCustomers }: { initialCust
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <div className="text-zinc-800">{customer.email}</div>
+                      <div className="text-zinc-800">{customer.email || "-"}</div>
                       <div className="text-[13px] text-zinc-500">{customer.phone || "-"}</div>
                     </td>
                     <td className="py-4 px-6">
