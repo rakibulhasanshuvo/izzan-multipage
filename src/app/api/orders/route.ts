@@ -47,7 +47,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         where: { id: { in: productIds } }
       });
 
-      const productMap = new Map(dbProducts.map(p => [p.id, p]));
+
       // Track in-memory stock to handle multiple entries of same product in one order
       const stockTracker = new Map(dbProducts.map(p => [p.id, p.stock]));
       // Consolidate stock updates to reduce DB calls
@@ -83,7 +83,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         }
 
         // Update in-memory tracker
-        stockTracker.set(item.id, currentStock - item.quantity);
+        stockTracker.set(item.id, (stockTracker.get(item.id) || dbProduct.stock) - item.quantity);
 
         // Accumulate stock updates
         stockUpdates.set(item.id, (stockUpdates.get(item.id) || 0) + item.quantity);
@@ -95,8 +95,8 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
       // Perform consolidated stock updates
       for (const [productId, quantity] of stockUpdates.entries()) {
         await tx.product.update({
-          where: { id: dbProduct.id },
-          data: { stock: { decrement: item.quantity } }
+          where: { id: productId },
+          data: { stock: { decrement: quantity } }
         });
       }
 
