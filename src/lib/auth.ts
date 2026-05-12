@@ -38,8 +38,26 @@ export async function checkAdminAuth(): Promise<boolean> {
  */
 export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Promise<NextResponse> | NextResponse) {
   return async (req: NextRequest, ...args: unknown[]) => {
-    // Determine a generic IP representation since actual IP extraction from headers can vary behind proxies
-    const ip = req.headers.get("x-forwarded-for") || "unknown_ip";
+    // Next.js provides req.ip on supported platforms (like Vercel).
+    const reqIp = (req as unknown as { ip?: string }).ip;
+
+    // Fallback to x-forwarded-for if req.ip is not available.
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    let extractedIp = "unknown_ip";
+
+    if (reqIp) {
+      extractedIp = reqIp;
+    } else if (forwardedFor) {
+      // X-Forwarded-For contains a comma-separated list of IPs.
+      // The first IP is the original client, subsequent IPs are proxies.
+      // While the first IP can be spoofed by the client, extracting it correctly
+      // prevents the entire string (e.g. "spoofed, real, proxy") from being used as a unique key,
+      // which would allow infinite rate limit bypasses.
+      extractedIp = forwardedFor.split(",")[0].trim();
+    } else if (req.headers.get("x-real-ip")) {
+      extractedIp = req.headers.get("x-real-ip")!;
+    }
+    const ip = extractedIp;
 
     if (!checkRateLimit(ip)) {
       return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
@@ -51,4 +69,19 @@ export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Prom
     }
     return handler(req, ...args);
   };
+}
+
+
+
+/**
+ * Verifies a token against the expected admin token.
+ */
+export function verifyToken(token?: string): boolean {
+  if (!token) return false;
+  const expectedToken = process.env.ADMIN_TOKEN;
+  if (!expectedToken) {
+    console.error("ADMIN_TOKEN is not configured");
+    return false;
+  }
+  return token === expectedToken;
 }
