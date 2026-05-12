@@ -54,7 +54,7 @@ export default function ProductManagement({ initialProducts }: ProductManagement
 
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer admin_token_123" },
         body: JSON.stringify(formData),
       });
 
@@ -75,6 +75,7 @@ export default function ProductManagement({ initialProducts }: ProductManagement
     try {
       const response = await fetch(`/api/admin/products?id=${id}`, {
         method: "DELETE",
+        headers: { "Authorization": "Bearer admin_token_123" },
       });
 
       if (!response.ok) throw new Error("Failed to delete product");

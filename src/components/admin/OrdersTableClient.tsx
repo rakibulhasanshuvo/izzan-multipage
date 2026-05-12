@@ -17,7 +17,7 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
     try {
       const response = await fetch("/api/admin/orders", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer admin_token_123" },
         body: JSON.stringify({ id, status: newStatus }),
       });
 

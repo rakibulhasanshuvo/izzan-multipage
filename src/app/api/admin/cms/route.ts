@@ -6,7 +6,7 @@ import { apiHandler } from "@/lib/api";
 export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) {
   const { id, value } = await req.json();
 
-  if (!id || value === undefined) {
+  if (!id || value === undefined || (typeof value === "string" && value.trim() === "")) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
   const content = await prisma.cMSContent.update({

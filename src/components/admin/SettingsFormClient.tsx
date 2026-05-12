@@ -28,7 +28,7 @@ export default function SettingsFormClient({ initialSettings }: { initialSetting
     try {
       const response = await fetch("/api/admin/settings", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer admin_token_123" },
         body: JSON.stringify({
           firstName, lastName, email, bio, emailAlerts, orderNotifs, marketingUpdates
         }),
