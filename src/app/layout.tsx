@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Script from "next/script";
 import "material-symbols/outlined.css";
 import "./globals.css";
+import AuthProvider from "@/components/AuthProvider";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -74,12 +75,14 @@ export default function RootLayout({
         />
       </head>
       <body className={`${playfair.variable} ${lato.variable} ${inter.variable} ${notoSerif.variable} ${parisienne.variable} font-body antialiased min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark transition-colors duration-300 flex flex-col`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <CartProvider>
-            {children}
-            <Toaster position="bottom-right" richColors />
-          </CartProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <CartProvider>
+              {children}
+              <Toaster position="bottom-right" richColors />
+            </CartProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
