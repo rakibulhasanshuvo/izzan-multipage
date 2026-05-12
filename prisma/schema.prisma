@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/client"
@@ -20,7 +15,7 @@ model Product {
   originalPrice Float?
   img           String
   hoverImg      String?
-  categories    String   // Stored as comma-separated string for simplicity
+  categories    String
   badge         String?
   stock         Int      @default(100)
   createdAt     DateTime @default(now())
@@ -28,20 +23,20 @@ model Product {
 }
 
 model Order {
-  id            String    @id @default(cuid())
-  customerName  String
-  customerEmail String?
-  customerPhone String?
-  status        String    @default("Pending") // Pending, Shipped, Delivered, Cancelled
-  totalAmount   Float
-  items         String    // JSON string of items
-  zila          String?
-  upozila       String?
+  id              String    @id @default(cuid())
+  customerName    String
+  customerEmail   String?
+  customerPhone   String?
+  status          String    @default("Pending") // Pending, Shipped, Delivered, Cancelled
+  totalAmount     Float
+  items           String    // JSON string of items
+  zila            String?
+  upozila         String?
   shippingAddress String?
-  customerId    String?
-  customer      Customer? @relation(fields: [customerId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  customerId      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  customer        Customer? @relation(fields: [customerId], references: [id])
 }
 
 model Customer {
@@ -54,9 +49,9 @@ model Customer {
   location    String?
   tier        String   @default("Bronze") // Bronze, Silver, Gold
   totalSpend  Float    @default(0)
-  orders      Order[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  orders      Order[]
 }
 
 model AdminSettings {
