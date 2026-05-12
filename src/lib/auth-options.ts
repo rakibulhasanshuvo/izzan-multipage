@@ -1,17 +1,9 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient } from "@/generated/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import path from "path";
+
 import bcrypt from "bcrypt";
 
-// Initialize Prisma
-const dbPath = path.resolve(process.cwd(), "prisma", "dev.db");
-import Database from "better-sqlite3";
-const sqlite = new Database(dbPath);
-// @ts-expect-error - Prisma type issue
-const adapter = new PrismaBetterSqlite3(sqlite);
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "./db";
 
 export const authOptions: NextAuthOptions = {
   providers: [
