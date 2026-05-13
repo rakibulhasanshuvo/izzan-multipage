@@ -83,6 +83,7 @@ test("PATCH /api/admin/products - Invalid Price", async () => {
         },
         body: JSON.stringify({ id: "123", price: "invalid" })
     });
+  });
 
     const res = await PATCH(req);
     expect(res.status).toBe(400);

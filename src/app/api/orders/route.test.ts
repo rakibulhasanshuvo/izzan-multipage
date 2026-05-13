@@ -93,6 +93,7 @@ describe('Orders API POST handler', () => {
     const response = await POST(req);
     const data = await response.json();
 
+    expect(data.error).toBeUndefined();
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.orderId).toBe('order1');
@@ -136,6 +137,7 @@ describe('Orders API POST handler', () => {
     const response = await POST(req);
     const data = await response.json();
 
+    expect(data.error).toBeUndefined();
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.orderId).toBe('order2');
