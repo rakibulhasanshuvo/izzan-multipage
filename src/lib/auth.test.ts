@@ -187,3 +187,71 @@ describe("auth limits and checks", () => {
     });
   });
 });
+
+describe("checkRateLimit", () => {
+  beforeEach(() => {
+    // Clear the map before each test to ensure isolated tests
+    import("./auth").then(({ rateLimitMap }) => {
+      rateLimitMap.clear();
+    });
+  });
+
+  it("should allow requests under the limit", async () => {
+    const { checkRateLimit, rateLimitMap } = await import("./auth");
+    const ip = "50.0.0.1";
+
+    // Make 99 requests
+    for (let i = 0; i < 99; i++) {
+      expect(checkRateLimit(ip)).toBe(true);
+    }
+
+    // Check state
+    const record = rateLimitMap.get(ip);
+    expect(record).toBeDefined();
+    expect(record?.count).toBe(99);
+  });
+
+  it("should block requests over the limit", async () => {
+    const { checkRateLimit, rateLimitMap, MAX_REQUESTS } = await import("./auth");
+    const ip = "50.0.0.2";
+
+    // Fill up to the limit
+    for (let i = 0; i < MAX_REQUESTS; i++) {
+      expect(checkRateLimit(ip)).toBe(true);
+    }
+
+    // Next request should fail
+    expect(checkRateLimit(ip)).toBe(false);
+
+    const record = rateLimitMap.get(ip);
+    expect(record?.count).toBe(MAX_REQUESTS); // Count doesn't increment past limit
+  });
+
+  it("should reset count after the window expires", async () => {
+    const { checkRateLimit, rateLimitMap, MAX_REQUESTS, RATE_LIMIT_WINDOW } = await import("./auth");
+    const ip = "50.0.0.3";
+
+    // Fill up to the limit
+    for (let i = 0; i < MAX_REQUESTS; i++) {
+      checkRateLimit(ip);
+    }
+
+    // Verify it's blocked
+    expect(checkRateLimit(ip)).toBe(false);
+
+    // Mock Date.now() to simulate time passing
+    const originalDateNow = Date.now;
+    const futureTime = originalDateNow() + RATE_LIMIT_WINDOW + 1000;
+    vi.spyOn(Date, "now").mockReturnValue(futureTime);
+
+    // Should be allowed again
+    expect(checkRateLimit(ip)).toBe(true);
+
+    // Verify count was reset to 1
+    const record = rateLimitMap.get(ip);
+    expect(record?.count).toBe(1);
+
+    // Restore Date.now
+    vi.restoreAllMocks();
+  });
+});
