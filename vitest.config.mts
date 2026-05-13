@@ -4,6 +4,9 @@ import path from 'path';
 export default defineConfig({
   test: {
     environment: 'node',
+    env: {
+      ADMIN_TOKEN: 'test-token',
+    },
     globals: true,
     coverage: {
       provider: 'v8',

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Search as SearchIcon, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { products } from "@/lib/mockData";
@@ -15,21 +15,18 @@ interface SearchProps {
 export function Search({ onViewAll }: SearchProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Product[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const results = useMemo(() => {
     if (query.trim() === "") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setResults([]);
-      return;
+      return [];
     }
 
     const filtered = products.filter((p) =>
       p.name.toLowerCase().includes(query.toLowerCase()) ||
       p.categories.toLowerCase().includes(query.toLowerCase())
     );
-    setResults(filtered.slice(0, 5) as unknown as Product[]);
+    return filtered.slice(0, 5) as unknown as Product[];
   }, [query]);
 
   useEffect(() => {

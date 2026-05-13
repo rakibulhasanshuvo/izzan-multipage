@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { updateCMSContent } from "@/app/(admin)/admin/actions";
+import { logger } from "@/lib/logger";
 
 type CMSItem = {
   id: string;
@@ -49,7 +50,7 @@ export default function CMSManagement({ initialSections }: CMSManagementProps) {
       router.refresh();
     } catch (error) {
       toast.error("Error updating content");
-      console.error(error);
+      logger.error("Error updating CMS data:", error);
     } finally {
       setIsSaving(null);
     }
