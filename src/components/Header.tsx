@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ShoppingCart, Sun, Moon, Menu, X, ArrowRight, User } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { CartDrawer } from "./CartDrawer";
