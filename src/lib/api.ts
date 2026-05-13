@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import logger from "@/lib/logger";
 import { Prisma } from "@/generated/client";
-import { logger } from "@/lib/logger";
 
 type RouteHandler = (
   req: NextRequest,
