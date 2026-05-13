@@ -1,5 +1,4 @@
 import { PrismaClient } from "@/generated/client";
-import { logger } from "@/lib/logger";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import path from "path";
 import fs from "fs";
