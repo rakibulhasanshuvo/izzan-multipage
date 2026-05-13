@@ -42,13 +42,12 @@ test("PATCH /api/admin/products - Product Not Found", async () => {
     // Mock prisma.product.findUnique
     const findUniqueMock = vi.spyOn(prisma.product, "findUnique").mockResolvedValue(null as any);
 
-    const req = new NextRequest("http://localhost/api/admin/products", {
-        method: "PATCH",
-        headers: {
-            "Authorization": "Bearer test-token"
-        },
-        body: JSON.stringify({ id: "non-existent" })
-    });
+vi.mock('@/lib/db', async () => {
+  const { mockDeep } = await import('vitest-mock-extended');
+  return {
+    prisma: mockDeep(),
+  };
+});
 
     const res = await PATCH(req);
     expect(res.status).toBe(404);
@@ -62,14 +61,18 @@ test("PATCH /api/admin/products - Invalid Name", async () => {
     vi.spyOn(auth, "checkAdminAuth").mockResolvedValue(true);
     const { PATCH } = await import("./route");
 
-    const req = new NextRequest("http://localhost/api/admin/products", {
+  const createRequest = (body: Record<string, unknown>) => {
+    return new NextRequest("http://localhost/api/admin/products", {
         method: "PATCH",
         headers: {
             "Authorization": "Bearer test-token"
         },
-        body: JSON.stringify({ id: "123", name: "" })
+        body: JSON.stringify(body)
     });
+  };
 
+  it('should return 400 if ID is missing', async () => {
+    const req = createRequest({});
     const res = await PATCH(req);
     expect(res.status).toBe(400);
     const data = await res.json();
@@ -80,14 +83,10 @@ test("PATCH /api/admin/products - Invalid Price", async () => {
     vi.spyOn(auth, "checkAdminAuth").mockResolvedValue(true);
     const { PATCH } = await import("./route");
 
-    const req = new NextRequest("http://localhost/api/admin/products", {
-        method: "PATCH",
-        headers: {
-            "Authorization": "Bearer test-token"
-        },
-        body: JSON.stringify({ id: "123", price: "invalid" })
-    });
+  it('should return 404 if product is not found', async () => {
+    prismaMock.product.findUnique.mockResolvedValue(null);
 
+    const req = createRequest({ id: "non-existent" });
     const res = await PATCH(req);
     expect(res.status).toBe(400);
     const data = await res.json();
@@ -106,6 +105,8 @@ test("PATCH /api/admin/products - Invalid Stock", async () => {
         body: JSON.stringify({ id: "123", stock: "abc" })
     });
 
+  it('should return 400 for invalid price', async () => {
+    const req = createRequest({ id: "123", price: "invalid" });
     const res = await PATCH(req);
     expect(res.status).toBe(400);
     const data = await res.json();
@@ -120,14 +121,10 @@ test("PATCH /api/admin/products - Successful Update", async () => {
     const findUniqueMock = vi.spyOn(prisma.product, "findUnique").mockResolvedValue(mockProduct as any);
     const updateMock = vi.spyOn(prisma.product, "update").mockImplementation(async ({ data }: any) => ({ ...mockProduct, ...data }) as any);
 
-    const req = new NextRequest("http://localhost/api/admin/products", {
-        method: "PATCH",
-        headers: {
-            "Authorization": "Bearer test-token"
-        },
-        body: JSON.stringify({ id: "123", name: "New Name", price: 15, stock: 10 })
-    });
+    // Using vi.fn().mockImplementation to simulate the update
+    prismaMock.product.update.mockImplementation(((args: any) => Promise.resolve({ ...mockProduct, ...args.data })) as any);
 
+    const req = createRequest({ id: "123", name: "New Name", price: 15, stock: 10 });
     const res = await PATCH(req);
     expect(res.status).toBe(200);
     const data = await res.json();
