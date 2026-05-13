@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { Product } from "@/generated/client";
 
@@ -29,24 +29,28 @@ export default function ProductEditorModal({
     stock: 100,
   });
 
-  useEffect(() => {
+  const [prevProduct, setPrevProduct] = useState<Product | null>(product);
+  const [prevIsOpen, setPrevIsOpen] = useState<boolean>(isOpen);
+
+  if (product !== prevProduct || isOpen !== prevIsOpen) {
+    setPrevProduct(product);
+    setPrevIsOpen(isOpen);
     if (product) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData(product);
     } else {
       setFormData({
-        name: "",
-        description: "",
-        price: 0,
-        originalPrice: null,
-        img: "",
-        hoverImg: "",
-        categories: "",
-        badge: "",
-        stock: 100,
-      });
+    name: "",
+    description: "",
+    price: 0,
+    originalPrice: null,
+    img: "",
+    hoverImg: "",
+    categories: "",
+    badge: "",
+    stock: 100,
+  });
     }
-  }, [product, isOpen]);
+  }
 
   if (!isOpen) return null;
 
