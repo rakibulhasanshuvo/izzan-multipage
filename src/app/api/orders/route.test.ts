@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
@@ -64,7 +65,7 @@ describe('Orders API POST handler', () => {
     const req = createRequest(validPayload);
 
     // Mock findUnique to return null for customer and email (new customer)
-    prismaMock.customer.findUnique.mockResolvedValue(null);
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
 
     // Mock transaction
     prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
@@ -93,6 +94,7 @@ describe('Orders API POST handler', () => {
     const response = await POST(req);
     const data = await response.json();
 
+    expect(data.error).toBeUndefined();
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.orderId).toBe('order1');
@@ -136,6 +138,7 @@ describe('Orders API POST handler', () => {
     const response = await POST(req);
     const data = await response.json();
 
+    expect(data.error).toBeUndefined();
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.orderId).toBe('order2');
@@ -144,7 +147,7 @@ describe('Orders API POST handler', () => {
   it('should return 400 if a product is not found', async () => {
     const req = createRequest(validPayload);
 
-    prismaMock.customer.findUnique.mockResolvedValue(null);
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
 
     prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
       const txMock = {
@@ -176,7 +179,7 @@ describe('Orders API POST handler', () => {
       ],
     });
 
-    prismaMock.customer.findUnique.mockResolvedValue(null);
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
 
     prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
       const txMock = {

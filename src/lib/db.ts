@@ -1,4 +1,5 @@
 import { PrismaClient } from "@/generated/client";
+import { logger } from "@/lib/logger";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import path from "path";
 import fs from "fs";
@@ -19,7 +20,7 @@ if (isSqlite && process.env.NODE_ENV === "production" && !databaseUrl) {
     try {
       fs.copyFileSync(dbPath, tmpPath);
     } catch (e) {
-      console.error("Failed to copy database to /tmp", e);
+      logger.error("Failed to copy database to /tmp", e);
     }
   }
   dbPath = tmpPath;
