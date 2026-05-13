@@ -47,7 +47,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         where: { id: { in: productIds } }
       });
 
-      const productMap = new Map(dbProducts.map(p => [p.id, p]));
+
       // Track in-memory stock to handle multiple entries of same product in one order
       const stockTracker = new Map(dbProducts.map(p => [p.id, p.stock]));
       // Consolidate stock updates to reduce DB calls
@@ -59,15 +59,23 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
            throw new Error(`Invalid item structure for ${item.name || 'unknown item'}`);
         }
 
-        let dbProduct = await tx.product.findUnique({
-          where: { id: item.id }
-        });
+        let dbProduct = productMap.get(item.id);
 
         if (!dbProduct && item.name) {
           // Fallback to name-based lookup if ID changed across DB resets
-          dbProduct = await tx.product.findFirst({
-            where: { name: item.name }
-          });
+          // Look up in our pre-fetched map
+          dbProduct = Array.from(productMap.values()).find(p => p.name === item.name);
+
+          if (!dbProduct) {
+             // Fallback to DB query only if not pre-fetched
+             dbProduct = await tx.product.findFirst({
+               where: { name: item.name }
+             });
+             if (dbProduct) {
+                productMap.set(dbProduct.id, dbProduct);
+                stockTracker.set(dbProduct.id, dbProduct.stock);
+             }
+          }
         }
 
         if (!dbProduct) {
@@ -83,7 +91,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         }
 
         // Update in-memory tracker
-        stockTracker.set(item.id, currentStock - item.quantity);
+        stockTracker.set(item.id, (stockTracker.get(item.id) || dbProduct.stock) - item.quantity);
 
         // Accumulate stock updates
         stockUpdates.set(item.id, (stockUpdates.get(item.id) || 0) + item.quantity);
@@ -95,8 +103,8 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
       // Perform consolidated stock updates
       for (const [productId, quantity] of stockUpdates.entries()) {
         await tx.product.update({
-          where: { id: dbProduct.id },
-          data: { stock: { decrement: item.quantity } }
+          where: { id: productId },
+          data: { stock: { decrement: quantity } }
         });
       }
 
