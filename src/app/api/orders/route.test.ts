@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
@@ -72,6 +74,8 @@ describe('Orders API POST handler', () => {
       const txMock = {
         product: {
           findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
+          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
           update: vi.fn().mockResolvedValue({}),
         },
         customer: {
@@ -103,7 +107,7 @@ describe('Orders API POST handler', () => {
     prismaMock.customer.findUnique.mockImplementation(async (args: unknown) => {
       const typedArgs = args as { where?: { phone?: string, email?: string } };
       if (typedArgs?.where?.phone) {
-        return { id: 'cust1', name: 'John Doe', phone: '01712345678', email: 'john@example.com', zila: 'Dhaka', upozila: 'Savar', location: 'Dhaka', totalSpend: 0, createdAt: new Date(), updatedAt: new Date() };
+        return { id: 'cust1', name: 'John Doe', phone: '01712345678', email: 'john@example.com', zila: 'Dhaka', upozila: 'Savar', location: 'Dhaka', totalSpend: 0, createdAt: new Date(), updatedAt: new Date(), tier: "bronze" };
       }
       return null;
     });
@@ -114,6 +118,8 @@ describe('Orders API POST handler', () => {
       const txMock = {
         product: {
           findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
+          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
           update: vi.fn().mockResolvedValue({}),
         },
         customer: {
@@ -148,6 +154,8 @@ describe('Orders API POST handler', () => {
         product: {
           // Mock product not found
           findUnique: vi.fn().mockResolvedValue(null),
+          findMany: vi.fn().mockResolvedValue([]),
+          findFirst: vi.fn().mockResolvedValue(null),
         },
       };
 
@@ -178,6 +186,8 @@ describe('Orders API POST handler', () => {
         product: {
           // Mock stock 10 (less than 20 requested)
           findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
+          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
         },
       };
 
