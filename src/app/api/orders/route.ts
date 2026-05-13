@@ -47,7 +47,8 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         where: { id: { in: productIds } }
       });
 
-
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const productMap = new Map(dbProducts.map(p => [p.id, p]));
       // Track in-memory stock to handle multiple entries of same product in one order
       const stockTracker = new Map(dbProducts.map(p => [p.id, p.stock]));
       // Consolidate stock updates to reduce DB calls
@@ -91,7 +92,8 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         }
 
         // Update in-memory tracker
-        stockTracker.set(item.id, (stockTracker.get(item.id) || dbProduct.stock) - item.quantity);
+        const currentStock = stockTracker.get(item.id) ?? dbProduct.stock;
+        stockTracker.set(item.id, currentStock - item.quantity);
 
         // Accumulate stock updates
         stockUpdates.set(item.id, (stockUpdates.get(item.id) || 0) + item.quantity);
