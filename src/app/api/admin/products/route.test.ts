@@ -15,20 +15,34 @@ vi.mock("next-auth/next", () => ({ getServerSession: vi.fn().mockResolvedValue(t
  * node --experimental-strip-types --test src/app/api/admin/products/route.test.ts
  */
 
-process.env.ADMIN_TOKEN = "test-token";
+import { PATCH } from './route';
+import { prisma } from '@/lib/db';
+import { PrismaClient } from '@/generated/client';
 
 test("PATCH /api/admin/products - Missing ID", async () => {
     vi.spyOn(auth, "checkAdminAuth").mockResolvedValue(true);
     const { PATCH } = await import("./route");
 
-    const req = new NextRequest("http://localhost/api/admin/products", {
-        method: "PATCH",
-        headers: {
-            "Authorization": "Bearer test-token"
-        },
-        body: JSON.stringify({})
-    });
+process.env.ADMIN_TOKEN = "test-token";
 
+describe('Products API PATCH handler', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const createRequest = (body: Record<string, unknown>) => {
+    return new NextRequest('http://localhost/api/admin/products', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer test-token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  };
+
+  it('should return 400 if ID is missing', async () => {
+    const req = createRequest({});
     const res = await PATCH(req);
     expect(res.status).toBe(400);
     const data = await res.json();
@@ -148,6 +162,8 @@ test("PATCH /api/admin/products - Invalid Original Price", async () => {
         body: JSON.stringify({ id: "123", originalPrice: "invalid" })
     });
 
+  it('should return 400 if price is invalid', async () => {
+    const req = createRequest({ id: '123', price: 'invalid' });
     const res = await PATCH(req);
     expect(res.status).toBe(400);
     const data = await res.json();
@@ -170,6 +186,8 @@ test("PATCH /api/admin/products - Clearing Original Price", async () => {
         body: JSON.stringify({ id: "123", originalPrice: null })
     });
 
+  it('should return 400 if stock is invalid', async () => {
+    const req = createRequest({ id: '123', stock: 'abc' });
     const res = await PATCH(req);
     expect(res.status).toBe(200);
     const data = await res.json();
@@ -206,6 +224,7 @@ test("PATCH /api/admin/products - Updating All Fields", async () => {
         })
     });
 
+    const req = createRequest({ id: '123', name: 'New Name', price: 15, stock: 10 });
     const res = await PATCH(req);
     expect(res.status).toBe(200);
     const data = await res.json();
