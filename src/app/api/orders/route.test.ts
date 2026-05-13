@@ -1,3 +1,9 @@
+<<<<<<< fix-patch-test-suite-5250918837225607534
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
+=======
+/* eslint-disable @typescript-eslint/no-explicit-any */
+>>>>>>> main
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
@@ -64,14 +70,20 @@ describe('Orders API POST handler', () => {
     const req = createRequest(validPayload);
 
     // Mock findUnique to return null for customer and email (new customer)
-    prismaMock.customer.findUnique.mockResolvedValue(null);
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
 
     // Mock transaction
     prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
       // Mock the transaction client
       const txMock = {
         product: {
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
           findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+<<<<<<< fix-patch-test-suite-5250918837225607534
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
+=======
+>>>>>>> main
+          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
           update: vi.fn().mockResolvedValue({}),
         },
         customer: {
@@ -91,6 +103,7 @@ describe('Orders API POST handler', () => {
     const response = await POST(req);
     const data = await response.json();
 
+    expect(data.error).toBeUndefined();
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.orderId).toBe('order1');
@@ -100,20 +113,32 @@ describe('Orders API POST handler', () => {
     const req = createRequest(validPayload);
 
     // Mock findUnique to return existing customer
+<<<<<<< fix-patch-test-suite-5250918837225607534
     prismaMock.customer.findUnique.mockImplementation(async (args: unknown) => {
       const typedArgs = args as { where?: { phone?: string, email?: string } };
       if (typedArgs?.where?.phone) {
-        return { id: 'cust1', name: 'John Doe', phone: '01712345678', email: 'john@example.com', zila: 'Dhaka', upozila: 'Savar', location: 'Dhaka', totalSpend: 0, createdAt: new Date(), updatedAt: new Date() };
+        return { id: 'cust1', name: 'John Doe', phone: '01712345678', email: 'john@example.com', zila: 'Dhaka', upozila: 'Savar', location: 'Dhaka', totalSpend: 0, createdAt: new Date(), updatedAt: new Date(), tier: "bronze" };
+=======
+    prismaMock.customer.findUnique.mockImplementation(((args: any) => {
+      if (args?.where?.phone) {
+        return Promise.resolve({ id: 'cust1', name: 'John Doe', phone: '01712345678', email: 'john@example.com', zila: 'Dhaka', upozila: 'Savar', location: 'Dhaka', tier: 'BRONZE', totalSpend: 0, createdAt: new Date(), updatedAt: new Date() });
+>>>>>>> main
       }
-      return null;
-    });
+      return Promise.resolve(null);
+    }) as any);
 
     // Mock transaction
     prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
       // Mock the transaction client
       const txMock = {
         product: {
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
           findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+<<<<<<< fix-patch-test-suite-5250918837225607534
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
+=======
+>>>>>>> main
+          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
           update: vi.fn().mockResolvedValue({}),
         },
         customer: {
@@ -133,6 +158,7 @@ describe('Orders API POST handler', () => {
     const response = await POST(req);
     const data = await response.json();
 
+    expect(data.error).toBeUndefined();
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.orderId).toBe('order2');
@@ -141,13 +167,19 @@ describe('Orders API POST handler', () => {
   it('should return 400 if a product is not found', async () => {
     const req = createRequest(validPayload);
 
-    prismaMock.customer.findUnique.mockResolvedValue(null);
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
 
     prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
       const txMock = {
         product: {
           // Mock product not found
+          findMany: vi.fn().mockResolvedValue([]),
           findUnique: vi.fn().mockResolvedValue(null),
+<<<<<<< fix-patch-test-suite-5250918837225607534
+          findMany: vi.fn().mockResolvedValue([]),
+=======
+>>>>>>> main
+          findFirst: vi.fn().mockResolvedValue(null),
         },
       };
 
@@ -171,13 +203,19 @@ describe('Orders API POST handler', () => {
       ],
     });
 
-    prismaMock.customer.findUnique.mockResolvedValue(null);
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
 
     prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
       const txMock = {
         product: {
           // Mock stock 10 (less than 20 requested)
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
           findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+<<<<<<< fix-patch-test-suite-5250918837225607534
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
+=======
+>>>>>>> main
+          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
         },
       };
 
