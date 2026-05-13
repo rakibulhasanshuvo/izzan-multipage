@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, vi, beforeEach, afterAll, expect } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth, checkRateLimit, rateLimitMap, RATE_LIMIT_WINDOW, MAX_REQUESTS } from "./auth";
 
@@ -253,5 +253,44 @@ describe("checkRateLimit", () => {
 
     // Restore Date.now
     vi.restoreAllMocks();
+  });
+});
+
+describe("verifyToken", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+  it("should return false if token is missing", async () => {
+    const { verifyToken } = await import("./auth");
+    expect(verifyToken()).toBe(false);
+    expect(verifyToken("")).toBe(false);
+  });
+
+  it("should return false and log error if ADMIN_TOKEN is not configured", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    delete process.env.ADMIN_TOKEN;
+    const { verifyToken } = await import("./auth");
+    expect(verifyToken("some-token")).toBe(false);
+    expect(consoleErrorSpy).toHaveBeenCalledWith("ADMIN_TOKEN is not configured");
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("should return false if token does not match ADMIN_TOKEN", async () => {
+    process.env.ADMIN_TOKEN = "secret-admin-token";
+    const { verifyToken } = await import("./auth");
+    expect(verifyToken("wrong-token")).toBe(false);
+  });
+
+  it("should return true if token matches ADMIN_TOKEN", async () => {
+    process.env.ADMIN_TOKEN = "secret-admin-token";
+    const { verifyToken } = await import("./auth");
+    expect(verifyToken("secret-admin-token")).toBe(true);
   });
 });
