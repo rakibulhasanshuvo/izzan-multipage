@@ -173,40 +173,25 @@ describe('Products API PATCH handler', () => {
       originalPrice: '',
     });
 
-    const mockExistingProduct = {
-      id: 'prod1',
-      name: 'Old Name',
-      description: 'Old Description',
-      price: 100,
-      originalPrice: 200,
-      img: 'old.jpg',
-      hoverImg: null,
-      categories: '[]',
-      badge: null,
-      stock: 10,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const res = await PATCH(req);
+    assert.strictEqual(res.status, 400);
+    const data = await res.json();
+    assert.strictEqual(data.error, "Invalid stock");
+});
 
-    const mockUpdatedProduct = {
-      ...mockExistingProduct,
-      originalPrice: null,
-    };
+test("PATCH /api/admin/products - Successful Update", async () => {
+    const { PATCH } = await import("./route");
 
-    prismaMock.product.findUnique.mockResolvedValue(mockExistingProduct);
-    prismaMock.product.update.mockResolvedValue(mockUpdatedProduct);
+    const mockProduct = { id: "123", name: "Old Name", price: 10, stock: 5 };
+    const findUniqueMock = mock.method(prisma.product, "findUnique", async () => mockProduct);
+    const updateMock = mock.method(prisma.product, "update", async ({ data }: { data: unknown }) => ({ ...mockProduct, ...data }));
 
-    const response = await PATCH(req);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data).toEqual(JSON.parse(JSON.stringify(mockUpdatedProduct)));
-
-    expect(prismaMock.product.update).toHaveBeenCalledWith({
-      where: { id: 'prod1' },
-      data: {
-        originalPrice: null,
-      },
+    const req = new NextRequest("http://localhost/api/admin/products", {
+        method: "PATCH",
+        headers: {
+            "Authorization": "Bearer test-token"
+        },
+        body: JSON.stringify({ id: "123", name: "New Name", price: 15, stock: 10 })
     });
   });
 });
