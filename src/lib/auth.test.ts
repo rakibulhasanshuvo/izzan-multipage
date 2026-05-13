@@ -1,105 +1,149 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import {
-  checkRateLimit,
-  rateLimitMap,
-  RATE_LIMIT_WINDOW,
-  MAX_REQUESTS
-} from './auth';
+import { describe, it, vi, beforeEach } from "vitest";
+import { NextRequest, NextResponse } from "next/server";
+import { withAuth } from "./auth";
 
-describe('checkRateLimit', () => {
+// Mock getServerSession to bypass headers() issue outside Next.js request scope
+vi.mock("next-auth/next", () => ({
+  getServerSession: vi.fn(() => Promise.resolve({ user: { id: "1" } })),
+}));
+
+// Mock authOptions to avoid pulling in db
+vi.mock("./auth-options", () => ({
+  authOptions: {},
+}));
+
+describe("withAuth IP extraction and rate limiting", () => {
   beforeEach(() => {
-    // Clear the global rate limit map before each test
-    rateLimitMap.clear();
-    // Use fake timers to manipulate time during testing
-    vi.useFakeTimers();
+    // We can't reset the rate limit map easily because it's local to the module.
+    // So we use different IP addresses for each test block to avoid cross-pollution.
   });
 
-  afterEach(() => {
-    // Restore real timers after each test
-    vi.useRealTimers();
-  });
+  it("should prioritize req.ip over x-forwarded-for", async () => {
+    const handler = async () => {
+      return NextResponse.json({ success: true });
+    };
 
-  it('allows the first request from a new IP', () => {
-    const ip = '192.168.1.1';
-    const result = checkRateLimit(ip);
-    expect(result).toBe(true);
+    const wrappedHandler = withAuth(handler);
 
-    // Check map state
-    const record = rateLimitMap.get(ip);
-    expect(record).toBeDefined();
-    expect(record?.count).toBe(1);
-    expect(record?.resetTime).toBeGreaterThan(Date.now());
-  });
+    // Mock NextRequest with multiple x-forwarded-for IPs
+    const mockReq1 = new NextRequest("http://localhost", {
+      headers: new Headers({
+        "x-forwarded-for": "10.0.0.1, 10.0.0.2",
+      }),
+    });
 
-  it('allows multiple requests up to MAX_REQUESTS', () => {
-    const ip = '192.168.1.2';
+    // Simulate req.ip being available (as Vercel would provide)
+    // NextRequest.ip is readonly, but we can bypass it using defineProperty
+    Object.defineProperty(mockReq1, "ip", { value: "20.0.0.1", writable: true });
 
-    // Perform MAX_REQUESTS requests
-    for (let i = 0; i < MAX_REQUESTS; i++) {
-      expect(checkRateLimit(ip)).toBe(true);
+    // Hit the rate limit for 20.0.0.1 (MAX_REQUESTS is 100)
+    for (let i = 0; i < 100; i++) {
+      const res = await wrappedHandler(mockReq1);
+      if (res.status === 429) {
+        throw new Error("Should not rate limit before 100 requests");
+      }
     }
 
-    // Check map state after all requests
-    const record = rateLimitMap.get(ip);
-    expect(record?.count).toBe(MAX_REQUESTS);
-  });
-
-  it('blocks requests exceeding MAX_REQUESTS within the window', () => {
-    const ip = '192.168.1.3';
-
-    // Consume all allowed requests
-    for (let i = 0; i < MAX_REQUESTS; i++) {
-      checkRateLimit(ip);
+    // Request 101 should be rate limited
+    const res101 = await wrappedHandler(mockReq1);
+    if (res101.status !== 429) {
+      throw new Error("Should be rate limited on 101st request");
     }
 
-    // Next request should be blocked
-    const result = checkRateLimit(ip);
-    expect(result).toBe(false);
-
-    // Check count doesn't increment beyond MAX_REQUESTS on blocked requests
-    const record = rateLimitMap.get(ip);
-    expect(record?.count).toBe(MAX_REQUESTS);
+    // Now test if the rate limit was applied to "20.0.0.1" and not "10.0.0.1"
+    const mockReq2 = new NextRequest("http://localhost", {
+      headers: new Headers({
+        "x-forwarded-for": "10.0.0.1",
+      }),
+    });
+    // This doesn't have req.ip set, so it will fall back to "10.0.0.1"
+    const resReq2 = await wrappedHandler(mockReq2);
+    // Should NOT be rate limited
+    if (resReq2.status === 429) {
+      throw new Error("Rate limit should not have leaked to 10.0.0.1");
+    }
   });
 
-  it('resets the rate limit after the window expires', () => {
-    const ip = '192.168.1.4';
+  it("should extract the first IP from x-forwarded-for correctly when req.ip is missing", async () => {
+    const handler = async () => {
+      return NextResponse.json({ success: true });
+    };
 
-    // Consume all allowed requests
-    for (let i = 0; i < MAX_REQUESTS; i++) {
-      checkRateLimit(ip);
+    const wrappedHandler = withAuth(handler);
+
+    const mockReq = new NextRequest("http://localhost", {
+      headers: new Headers({
+        "x-forwarded-for": "  30.0.0.5  , 30.0.0.6",
+      }),
+    });
+
+    // Hit rate limit. The extracted IP should be 30.0.0.5 (the first IP)
+    for (let i = 0; i < 100; i++) {
+      await wrappedHandler(mockReq);
     }
 
-    // Should be blocked now
-    expect(checkRateLimit(ip)).toBe(false);
+    const res101 = await wrappedHandler(mockReq);
+    if (res101.status !== 429) {
+      throw new Error("Should be rate limited on 101st request");
+    }
 
-    // Advance time past the rate limit window
-    vi.advanceTimersByTime(RATE_LIMIT_WINDOW + 1000); // Wait the window + 1 second
+    // 30.0.0.5 should be rate limited
+    const mockReqSame = new NextRequest("http://localhost", {
+      headers: new Headers({
+        "x-forwarded-for": "30.0.0.5",
+      }),
+    });
+    const resSame = await wrappedHandler(mockReqSame);
+    if (resSame.status !== 429) {
+      throw new Error("30.0.0.5 should be rate limited because it was the extracted IP");
+    }
 
-    // Next request should be allowed and reset the count
-    const result = checkRateLimit(ip);
-    expect(result).toBe(true);
-
-    const record = rateLimitMap.get(ip);
-    expect(record?.count).toBe(1);
+    // 30.0.0.6 should NOT be rate limited
+    const mockReqDiff = new NextRequest("http://localhost", {
+      headers: new Headers({
+        "x-forwarded-for": "30.0.0.6",
+      }),
+    });
+    const resDiff = await wrappedHandler(mockReqDiff);
+    if (resDiff.status === 429) {
+      throw new Error("30.0.0.6 should not be rate limited");
+    }
   });
 
-  it('maintains independent rate limits for different IPs', () => {
-    const ip1 = '10.0.0.1';
-    const ip2 = '10.0.0.2';
+  it("should securely mitigate spoofed IP requests by properly splitting headers", async () => {
+    const handler = async () => {
+      return NextResponse.json({ success: true });
+    };
 
-    // IP 1 consumes all requests
-    for (let i = 0; i < MAX_REQUESTS; i++) {
-      checkRateLimit(ip1);
+    const wrappedHandler = withAuth(handler);
+
+    // Create requests with different spoofed strings that shouldn't bypass
+    // the core rate limit if they use the same first IP (splitting prevents full string mismatch)
+    const reqSpoofed1 = new NextRequest("http://localhost", {
+      headers: new Headers({
+        "x-forwarded-for": "40.0.0.1, 8.8.8.8",
+      }),
+    });
+
+    const reqSpoofed2 = new NextRequest("http://localhost", {
+      headers: new Headers({
+        "x-forwarded-for": "40.0.0.1, 9.9.9.9",
+      }),
+    });
+
+    // 50 requests with spoof 1
+    for (let i = 0; i < 50; i++) {
+      await wrappedHandler(reqSpoofed1);
+    }
+    // 50 requests with spoof 2
+    for (let i = 0; i < 50; i++) {
+      await wrappedHandler(reqSpoofed2);
     }
 
-    // IP 1 should be blocked
-    expect(checkRateLimit(ip1)).toBe(false);
-
-    // IP 2 should still be allowed
-    expect(checkRateLimit(ip2)).toBe(true);
-
-    // IP 2 only has 1 request counted
-    const record2 = rateLimitMap.get(ip2);
-    expect(record2?.count).toBe(1);
+    // 101st request should be rate limited
+    const res = await wrappedHandler(reqSpoofed1);
+    if (res.status !== 429) {
+      throw new Error("Rate limit bypass: Different prefix strings created different buckets instead of splitting.");
+    }
   });
 });

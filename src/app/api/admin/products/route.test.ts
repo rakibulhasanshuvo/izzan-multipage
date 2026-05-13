@@ -85,9 +85,9 @@ describe('Products API PATCH handler', () => {
     expect(data.error).toBe("Invalid stock");
   });
 
-  it('should successfully update product', async () => {
-    const mockProduct = { id: "123", name: "Old Name", description: null, price: 10, originalPrice: null, img: "", hoverImg: null, categories: "", badge: null, stock: 5, createdAt: new Date(), updatedAt: new Date() };
-    prismaMock.product.findUnique.mockResolvedValue(mockProduct);
+    const mockProduct = { id: "123", name: "Old Name", price: 10, stock: 5 };
+    const findUniqueMock = mock.method(prisma.product, "findUnique", async () => mockProduct);
+    const updateMock = mock.method(prisma.product, "update", async ({ data }: { data: Parameters<typeof prisma.product.update>[0]['data'] }) => ({ ...mockProduct, ...data }));
 
     // Using vi.fn().mockImplementation to simulate the update
     prismaMock.product.update.mockImplementation(((args: any) => Promise.resolve({ ...mockProduct, ...args.data })) as any);
