@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { updateCMSContent } from "@/app/(admin)/admin/actions";
-import { logger } from "@/lib/logger";
+import logger from "@/lib/logger";
 
 type CMSItem = {
   id: string;

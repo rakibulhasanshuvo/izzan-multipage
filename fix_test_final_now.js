@@ -1,4 +1,8 @@
-import { describe, it, vi, beforeEach, expect } from "vitest";
+const fs = require('fs');
+let content = fs.readFileSync('src/lib/auth.test.ts', 'utf8');
+
+// replace the failing test
+const finalTestFile = `import { describe, it, vi, beforeEach, expect } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth, rateLimitMap } from "./auth";
 
@@ -101,3 +105,6 @@ describe("withAuth IP extraction and rate limiting", () => {
     expect(res.status).toBe(429);
   });
 });
+`;
+
+fs.writeFileSync('src/lib/auth.test.ts', finalTestFile);

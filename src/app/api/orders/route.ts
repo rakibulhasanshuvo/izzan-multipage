@@ -49,6 +49,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
 
       // Track in-memory stock to handle multiple entries of same product in one order
       const stockTracker = new Map(dbProducts.map(p => [p.id, p.stock]));
+      const productMap = new Map(dbProducts.map(p => [p.id, p]));
       // Consolidate stock updates to reduce DB calls
       const stockUpdates = new Map<string, number>();
 
@@ -67,9 +68,9 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
 
           if (!dbProduct) {
              // Fallback to DB query only if not pre-fetched
-             dbProduct = await tx.product.findFirst({
+             dbProduct = (await tx.product.findFirst({
                where: { name: item.name }
-             });
+             })) || undefined;
              if (dbProduct) {
                 productMap.set(dbProduct.id, dbProduct);
                 stockTracker.set(dbProduct.id, dbProduct.stock);
