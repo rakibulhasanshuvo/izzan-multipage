@@ -1,4 +1,4 @@
-import { describe, it, vi, beforeEach } from "vitest";
+import { describe, it, vi, beforeEach, afterAll, expect } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "./auth";
 
@@ -145,5 +145,44 @@ describe("withAuth IP extraction and rate limiting", () => {
     if (res.status !== 429) {
       throw new Error("Rate limit bypass: Different prefix strings created different buckets instead of splitting.");
     }
+  });
+});
+
+describe("verifyToken", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+  it("should return false if token is missing", async () => {
+    const { verifyToken } = await import("./auth");
+    expect(verifyToken()).toBe(false);
+    expect(verifyToken("")).toBe(false);
+  });
+
+  it("should return false and log error if ADMIN_TOKEN is not configured", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    delete process.env.ADMIN_TOKEN;
+    const { verifyToken } = await import("./auth");
+    expect(verifyToken("some-token")).toBe(false);
+    expect(consoleErrorSpy).toHaveBeenCalledWith("ADMIN_TOKEN is not configured");
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("should return false if token does not match ADMIN_TOKEN", async () => {
+    process.env.ADMIN_TOKEN = "secret-admin-token";
+    const { verifyToken } = await import("./auth");
+    expect(verifyToken("wrong-token")).toBe(false);
+  });
+
+  it("should return true if token matches ADMIN_TOKEN", async () => {
+    process.env.ADMIN_TOKEN = "secret-admin-token";
+    const { verifyToken } = await import("./auth");
+    expect(verifyToken("secret-admin-token")).toBe(true);
   });
 });
