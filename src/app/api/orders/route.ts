@@ -42,6 +42,16 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
   try {
     const orderResult = await prisma.$transaction(async (tx) => {
       // 1. Price verification & Stock validation
+      const productIds = items.map((item: { id: string }) => item.id);
+      const dbProducts = await tx.product.findMany({
+        where: { id: { in: productIds } }
+      });
+
+      // Track in-memory stock to handle multiple entries of same product in one order
+      const stockTracker = new Map(dbProducts.map(p => [p.id, p.stock]));
+      const productMap = new Map(dbProducts.map(p => [p.id, p]));
+      // Consolidate stock updates to reduce DB calls
+      const stockUpdates = new Map<string, number>();
 
       // Consolidate duplicate items in the request
       const consolidatedItemsMap = new Map<string, { id: string, name: string, quantity: number, price?: number }>();
@@ -49,12 +59,24 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         if (!item.id || !item.quantity || item.quantity <= 0) {
            throw new Error(`Invalid item structure for ${item.name || 'unknown item'}`);
         }
-        if (consolidatedItemsMap.has(item.id)) {
-            const existing = consolidatedItemsMap.get(item.id);
-            existing.quantity += item.quantity;
-        } else {
-            // Keep a reference to the item so we can update its price later
-            consolidatedItemsMap.set(item.id, item);
+
+        let dbProduct = productMap.get(item.id);
+
+        if (!dbProduct && item.name) {
+          // Fallback to name-based lookup if ID changed across DB resets
+          // Look up in our pre-fetched map
+          dbProduct = Array.from(productMap.values()).find(p => p.name === item.name);
+
+          if (!dbProduct) {
+             // Fallback to DB query only if not pre-fetched
+             dbProduct = (await tx.product.findFirst({
+               where: { name: item.name }
+             })) || undefined;
+             if (dbProduct) {
+                productMap.set(dbProduct.id, dbProduct);
+                stockTracker.set(dbProduct.id, dbProduct.stock);
+             }
+          }
         }
       }
 
