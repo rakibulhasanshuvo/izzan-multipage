@@ -58,6 +58,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
            throw new Error(`Invalid item structure for ${item.name || 'unknown item'}`);
         }
 
+        const productMap = new Map(dbProducts.map(p => [p.id, p]));
         let dbProduct = productMap.get(item.id);
 
         if (!dbProduct && item.name) {
