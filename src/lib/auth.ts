@@ -71,6 +71,7 @@ export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Prom
   };
 }
 
+
 /**
  * Verifies a token against the expected admin token.
  */
