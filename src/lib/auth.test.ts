@@ -12,7 +12,7 @@ vi.mock("./auth-options", () => ({
   authOptions: {},
 }));
 
-describe("withAuth IP extraction and rate limiting", () => {
+describe("auth limits and checks", () => {
   beforeEach(() => {
     rateLimitMap.clear();
   });
@@ -22,13 +22,17 @@ describe("withAuth IP extraction and rate limiting", () => {
       return NextResponse.json({ success: true });
     };
 
-    const wrappedHandler = withAuth(handler);
+  describe("checkRateLimit", () => {
+    it("should allow first request", () => {
+      expect(checkRateLimit("1.1.1.1")).toBe(true);
+      expect(rateLimitMap.has("1.1.1.1")).toBe(true);
+      expect(rateLimitMap.get("1.1.1.1")?.count).toBe(1);
+    });
 
-    // Mock NextRequest with multiple x-forwarded-for IPs
-    const mockReq1 = new NextRequest("http://localhost", {
-      headers: new Headers({
-        "x-forwarded-for": "10.0.0.1, 10.0.0.2",
-      }),
+    it("should increment count for existing request", () => {
+      checkRateLimit("2.2.2.2");
+      expect(checkRateLimit("2.2.2.2")).toBe(true);
+      expect(rateLimitMap.get("2.2.2.2")?.count).toBe(2);
     });
 
     Object.defineProperty(mockReq1, "ip", { value: "20.0.0.1", writable: true });
@@ -47,7 +51,7 @@ describe("withAuth IP extraction and rate limiting", () => {
       return NextResponse.json({ success: true });
     };
 
-    const wrappedHandler = withAuth(handler);
+      const wrappedHandler = withAuth(handler);
 
     const mockReq = new NextRequest("http://localhost", {
       headers: new Headers({
@@ -68,13 +72,19 @@ describe("withAuth IP extraction and rate limiting", () => {
       return NextResponse.json({ success: true });
     };
 
-    const wrappedHandler = withAuth(handler);
+      const reqSpoofed2 = new NextRequest("http://localhost", {
+        headers: new Headers({
+          "x-forwarded-for": "40.0.0.1, 9.9.9.9",
+        }),
+      });
 
     const reqSpoofed1 = new NextRequest("http://localhost", {
       headers: new Headers({
         "x-forwarded-for": "40.0.0.1",
       }),
     });
+  });
+});
 
     for (let i = 0; i < 50; i++) {
       await wrappedHandler(reqSpoofed1);
@@ -85,6 +95,7 @@ describe("withAuth IP extraction and rate limiting", () => {
         "x-forwarded-for": "40.0.0.2",
       }),
     });
+  });
 
     for (let i = 0; i < 50; i++) {
       await wrappedHandler(reqSpoofed2);

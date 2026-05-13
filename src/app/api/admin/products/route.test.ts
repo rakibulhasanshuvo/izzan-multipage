@@ -5,8 +5,6 @@ import { test, expect, vi, describe, beforeEach, it } from "vitest";
 import { NextRequest } from "next/server";
 import * as auth from "../../../../lib/auth";
 import { PATCH } from './route';
-import { prisma } from '@/lib/db';
-import { PrismaClient } from '@/generated/client';
 
 vi.mock("next-auth/next", () => ({ getServerSession: vi.fn().mockResolvedValue(true) }));
 

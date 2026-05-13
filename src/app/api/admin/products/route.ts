@@ -3,9 +3,7 @@ import { withAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { apiHandler } from "@/lib/api";
 
-export const GET = withAuth(apiHandler(async function GET(req: NextRequest) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _url = req.url;
+export const GET = withAuth(apiHandler(async function GET(_req: NextRequest) {
   const products = await prisma.product.findMany({
     orderBy: { updatedAt: "desc" },
   });
