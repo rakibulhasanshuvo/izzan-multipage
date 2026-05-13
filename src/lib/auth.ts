@@ -71,11 +71,6 @@ export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Prom
   };
 }
 
-<<<<<<< fix-patch-test-suite-5250918837225607534
-export function verifyToken(token?: string): boolean {
-  if (!token) return false;
-  return token === process.env.ADMIN_TOKEN;
-=======
 
 
 /**
@@ -89,5 +84,4 @@ export function verifyToken(token?: string): boolean {
     return false;
   }
   return token === expectedToken;
->>>>>>> main
 }
