@@ -147,7 +147,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                           value={formData.phone}
                           onChange={handleChange}
                           className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
-                          placeholder="01X-XXXX-XXXX"
+                          placeholder="017-0000-0000"
                           maxLength={13}
                         />
                       </div>

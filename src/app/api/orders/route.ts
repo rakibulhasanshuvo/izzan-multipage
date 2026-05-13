@@ -58,13 +58,12 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
            throw new Error(`Invalid item structure for ${item.name || 'unknown item'}`);
         }
 
-        const productMap = new Map(dbProducts.map(p => [p.id, p]));
-        let dbProduct = productMap.get(item.id);
+        let dbProduct = dbProducts.find((p) => p.id === item.id);
 
         if (!dbProduct && item.name) {
           // Fallback to name-based lookup if ID changed across DB resets
           // Look up in our pre-fetched map
-          dbProduct = Array.from(productMap.values()).find(p => p.name === item.name);
+          dbProduct = dbProducts.find((p) => p.name === item.name);
 
           if (!dbProduct) {
              // Fallback to DB query only if not pre-fetched
@@ -72,7 +71,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
                where: { name: item.name }
              });
              if (dbProduct) {
-                productMap.set(dbProduct.id, dbProduct);
+                dbProducts.push(dbProduct);
                 stockTracker.set(dbProduct.id, dbProduct.stock);
              }
           }
