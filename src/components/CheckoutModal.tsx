@@ -26,6 +26,19 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+
+    if (name === "phone") {
+      const digits = value.replace(/\D/g, "");
+      let masked = digits;
+      if (digits.length > 3 && digits.length <= 7) {
+        masked = `${digits.slice(0, 3)}-${digits.slice(3)}`;
+      } else if (digits.length > 7) {
+        masked = `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
+      }
+      setFormData((prev) => ({ ...prev, [name]: masked }));
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -134,7 +147,8 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                           value={formData.phone}
                           onChange={handleChange}
                           className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
-                          placeholder="01XXXXXXXXX"
+                          placeholder="01X-XXXX-XXXX"
+                          maxLength={13}
                         />
                       </div>
                     </div>

@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { useAdminSidebar } from "./AdminSidebarContext";
 
@@ -12,7 +13,7 @@ const NAV_ITEMS = [
   { name: "Orders", href: "/admin/orders", icon: "shopping_cart" },
   { name: "Content CMS", href: "/admin/cms", icon: "article" },
   { name: "Customers", href: "/admin/customers", icon: "group" },
-  { name: "Settings", href: "/admin/settings", icon: "settings", mt: "auto" },
+  { name: "Settings", href: "/admin/settings", icon: "settings" },
 ];
 
 export default function SideNavBar() {
@@ -57,11 +58,12 @@ export default function SideNavBar() {
         </div>
 
         <ul className="flex flex-col flex-1 w-full mt-6 px-6 space-y-2">
-          {NAV_ITEMS.map((item) => {
+
+{NAV_ITEMS.map((item) => {
             // Exact match for overview, or starts with for others
             const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href);
             return (
-              <li key={item.name} className={item.mt === "auto" ? "mt-auto pt-6 border-t border-zinc-100" : ""}>
+              <li key={item.name} className="">
                 <Link
                   aria-current={isActive ? "page" : undefined}
                   href={item.href}
@@ -85,6 +87,18 @@ export default function SideNavBar() {
               </li>
             );
           })}
+
+            <li className="mt-auto pt-6 border-t border-zinc-100">
+                <button
+                  onClick={() => signOut({ callbackUrl: "/admin/login" })}
+                  className="w-full flex items-center px-4 py-3 rounded-2xl font-serif font-medium tracking-wide transition-all duration-300 group text-zinc-500 hover:bg-red-50 hover:text-red-600 border border-transparent"
+                >
+                  <span aria-hidden="true" className="material-symbols-outlined mr-4 transition-transform duration-300 group-hover:scale-110">
+                    logout
+                  </span>
+                  Sign Out
+                </button>
+            </li>
         </ul>
       </nav>
     </>

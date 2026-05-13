@@ -23,20 +23,20 @@ model Product {
 }
 
 model Order {
-  id            String    @id @default(cuid())
-  customerName  String
-  customerEmail String?
-  customerPhone String
-  zila          String
-  upozila       String
+  id              String    @id @default(cuid())
+  customerName    String
+  customerEmail   String?
+  customerPhone   String
+  zila            String
+  upozila         String
   shippingAddress String
-  status        String    @default("Pending")
-  totalAmount   Float
-  items         String
-  customerId    String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  customer      Customer? @relation(fields: [customerId], references: [id])
+  status          String    @default("Pending")
+  totalAmount     Float
+  items           String
+  customerId      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  customer        Customer? @relation(fields: [customerId], references: [id])
 }
 
 model Customer {
@@ -72,5 +72,13 @@ model CMSContent {
   key       String   @unique
   value     String
   section   String   @default("general")
+  updatedAt DateTime @updatedAt
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

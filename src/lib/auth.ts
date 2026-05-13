@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { env } from "./env";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "./auth-options";
 
 // Rate limiting state
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-const MAX_REQUESTS = 100;
+export const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+export const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+export const MAX_REQUESTS = 100;
 
-function checkRateLimit(ip: string): boolean {
+export function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const record = rateLimitMap.get(ip);
 
@@ -25,21 +26,11 @@ function checkRateLimit(ip: string): boolean {
 
 /**
  * Basic authentication check for admin routes.
- * In a real-world scenario, you would integrate NextAuth or verify JWT tokens here.
+ * Uses NextAuth getServerSession.
  */
-export function checkAdminAuth(req: NextRequest): boolean {
-  // Mock check: verify against a specific admin token
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return false;
-  }
-
-  const token = authHeader.split(" ")[1];
-  if (token !== env.ADMIN_TOKEN) {
-    return false;
-  }
-
-  return true;
+export async function checkAdminAuth(): Promise<boolean> {
+  const session = await getServerSession(authOptions);
+  return !!session;
 }
 
 /**
@@ -54,9 +45,15 @@ export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Prom
       return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
     }
 
-    if (!checkAdminAuth(req)) {
+    const isAuthenticated = await checkAdminAuth();
+    if (!isAuthenticated) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return handler(req, ...args);
   };
+}
+
+export function verifyToken(token?: string | null): boolean {
+  if (!token) return false;
+  return token === process.env.ADMIN_TOKEN;
 }
