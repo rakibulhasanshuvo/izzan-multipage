@@ -17,9 +17,9 @@ interface HeaderProps {
 
 export function Header({ onViewAllProducts }: HeaderProps) {
   const { setTheme, resolvedTheme } = useTheme();
+  const mounted = useMounted();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cartCount, toggleCart } = useCart();
-  const mounted = useMounted();
 
   const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMenu = () => setIsMobileMenuOpen(false);
