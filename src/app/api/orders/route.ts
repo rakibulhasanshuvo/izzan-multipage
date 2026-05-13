@@ -47,8 +47,29 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         where: { id: { in: productIds } }
       });
 
+      const productMap = new Map(dbProducts.map(p => [p.id, p]));
+
+      // Find missing products by name (bulk fallback query to prevent N+1)
+      const missingNames = [];
+      for (const item of items) {
+        if (!productMap.has(item.id) && item.name) {
+           // Check if it's already in the map by some chance
+           const alreadyFound = Array.from(productMap.values()).some(p => p.name === item.name);
+           if (!alreadyFound) {
+             missingNames.push(item.name);
+           }
+        }
+      }
+
+      if (missingNames.length > 0) {
+        const fallbackProducts = await tx.product.findMany({
+          where: { name: { in: missingNames } }
+        });
+        fallbackProducts.forEach(p => productMap.set(p.id, p));
+      }
+
       // Track in-memory stock to handle multiple entries of same product in one order
-      const stockTracker = new Map(dbProducts.map(p => [p.id, p.stock]));
+      const stockTracker = new Map(Array.from(productMap.values()).map((p) => [(p as {id: string, stock: number}).id, (p as {id: string, stock: number}).stock]));
       // Consolidate stock updates to reduce DB calls
       const stockUpdates = new Map<string, number>();
 
@@ -63,18 +84,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         if (!dbProduct && item.name) {
           // Fallback to name-based lookup if ID changed across DB resets
           // Look up in our pre-fetched map
-          dbProduct = Array.from(productMap.values()).find(p => p.name === item.name);
-
-          if (!dbProduct) {
-             // Fallback to DB query only if not pre-fetched
-             dbProduct = await tx.product.findFirst({
-               where: { name: item.name }
-             });
-             if (dbProduct) {
-                productMap.set(dbProduct.id, dbProduct);
-                stockTracker.set(dbProduct.id, dbProduct.stock);
-             }
-          }
+          dbProduct = Array.from(productMap.values()).find(p => p.name === item.name) || undefined;
         }
 
         if (!dbProduct) {
