@@ -1,10 +1,14 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+const fs = require('fs');
+
+const content = `/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { test, expect, vi, describe, beforeEach, it } from "vitest";
 import { NextRequest } from "next/server";
 import * as auth from "../../../../lib/auth";
 import { PATCH } from './route';
+import { prisma } from '@/lib/db';
+import { PrismaClient } from '@/generated/client';
 
 vi.mock("next-auth/next", () => ({ getServerSession: vi.fn().mockResolvedValue(true) }));
 
@@ -84,3 +88,6 @@ describe('Products API PATCH handler', () => {
     expect(data.stock).toBe(10);
   });
 });
+`;
+
+fs.writeFileSync('src/app/api/admin/products/route.test.ts', content);

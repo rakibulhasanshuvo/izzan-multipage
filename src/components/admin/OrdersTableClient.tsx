@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { updateOrderStatus } from "@/app/(admin)/admin/actions";
-import { logger } from "@/lib/logger";
+import logger from "@/lib/logger";
 
 import { Order } from "@/generated/client";
 

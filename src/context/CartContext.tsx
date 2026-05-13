@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { Product } from "@/generated/client";
-import { logger } from "@/lib/logger";
+import logger from "@/lib/logger";
 
 export type CartItem = Product & { quantity: number };
 
