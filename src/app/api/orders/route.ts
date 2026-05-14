@@ -47,27 +47,6 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         where: { id: { in: productIds } }
       });
 
-      const productMap = new Map(dbProducts.map(p => [p.id, p]));
-
-      // Find missing products by name (bulk fallback query to prevent N+1)
-      const missingNames = [];
-      for (const item of items) {
-        if (!productMap.has(item.id) && item.name) {
-           // Check if it's already in the map by some chance
-           const alreadyFound = Array.from(productMap.values()).some(p => p.name === item.name);
-           if (!alreadyFound) {
-             missingNames.push(item.name);
-           }
-        }
-      }
-
-      if (missingNames.length > 0) {
-        const fallbackProducts = await tx.product.findMany({
-          where: { name: { in: missingNames } }
-        });
-        fallbackProducts.forEach(p => productMap.set(p.id, p));
-      }
-
       // Track in-memory stock to handle multiple entries of same product in one order
       const stockTracker = new Map(Array.from(productMap.values()).map((p) => [(p as {id: string, stock: number}).id, (p as {id: string, stock: number}).stock]));
       // Consolidate stock updates to reduce DB calls
@@ -115,6 +94,12 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
           throw new Error(`Insufficient stock for ${dbProduct.name}. Only ${dbProduct.stock} left.`);
         }
 
+        // Update in-memory tracker
+        stockTracker.set(item.id, dbProduct.stock - item.quantity);
+
+        // Accumulate stock updates
+        stockUpdates.set(item.id, (stockUpdates.get(item.id) || 0) + item.quantity);
+
         // Calculate total securely from DB prices
         calculatedTotal += dbProduct.price * item.quantity;
       }
@@ -123,7 +108,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
       for (const [productId, item] of consolidatedItemsMap.entries()) {
         await tx.product.update({
           where: { id: productId },
-          data: { stock: { decrement: item.quantity } }
+          data: { stock: { decrement: quantity } }
         });
       }
 

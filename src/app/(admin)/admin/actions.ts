@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
 async function ensureAdmin() {
   const cookieStore = await cookies();
   const token = cookieStore.get("admin_token")?.value;
-  if (!token || token !== process.env.ADMIN_TOKEN) {
+  if (token !== process.env.ADMIN_TOKEN) {
     throw new Error("Unauthorized");
   }
 }
