@@ -41,9 +41,23 @@ export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Prom
     // Next.js provides req.ip on supported platforms (like Vercel).
     const reqIp = (req as unknown as { ip?: string }).ip;
 
-    // Strictly rely on req.ip to prevent IP spoofing vulnerabilities.
-    // Headers like x-forwarded-for or x-real-ip can be manipulated by clients.
-    const ip = reqIp || "unknown_ip";
+    // Fallback to x-forwarded-for if req.ip is not available.
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    let extractedIp = "unknown_ip";
+
+    if (reqIp) {
+      extractedIp = reqIp;
+    } else if (forwardedFor) {
+      // X-Forwarded-For contains a comma-separated list of IPs.
+      // The first IP is the original client, subsequent IPs are proxies.
+      // While the first IP can be spoofed by the client, extracting it correctly
+      // prevents the entire string (e.g. "spoofed, real, proxy") from being used as a unique key,
+      // which would allow infinite rate limit bypasses.
+      extractedIp = forwardedFor.split(",")[0].trim();
+    } else if (req.headers.get("x-real-ip")) {
+      extractedIp = req.headers.get("x-real-ip")!;
+    }
+    const ip = extractedIp;
 
     if (!checkRateLimit(ip)) {
       return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
