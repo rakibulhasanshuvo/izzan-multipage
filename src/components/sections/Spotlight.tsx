@@ -55,7 +55,9 @@ export function Spotlight({ videoUrl }: { videoUrl?: string }) {
             muted
             playsInline
             className="w-full h-full object-cover hover:scale-105 transition-transform duration-1000"
-          />
+          >
+            <track kind="captions" srcLang="en" label="English" />
+          </video>
         </motion.div>
 
         <motion.div

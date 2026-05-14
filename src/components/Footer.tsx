@@ -22,7 +22,7 @@ export function Footer() {
     <footer className="bg-background-light dark:bg-background-dark pt-12 border-t border-gray-200 dark:border-gray-800 transition-colors duration-300">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-3 gap-12 items-center">
         <div className="text-left">
-          <h4 className="font-display text-xl mb-2">Stay in Touch</h4>
+          <h2 className="font-display text-xl mb-2">Stay in Touch</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Email signup for 15% OFF</p>
           <form onSubmit={handleSubmit} className="flex w-full max-w-sm">
             <input
@@ -78,7 +78,7 @@ export function Footer() {
       <div className="w-full bg-primary mt-12 py-3 text-center text-white text-xs flex justify-center items-center gap-4">
         <span>www.izzan.com</span>
         <span className="opacity-30">|</span>
-        <Link href="/admin" className="hover:underline opacity-80">Admin Dashboard</Link>
+        <Link href="/admin" className="hover:underline">Admin Dashboard</Link>
       </div>
     </footer>
   );
