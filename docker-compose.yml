@@ -17,8 +17,24 @@ services:
       - ADMIN_TOKEN=replace_me_with_a_secure_token_in_production
       # Use local storage provider for VPS persistent disk storage
       - STORAGE_PROVIDER=local
+      # Connect to local Redis for rate-limiting
+      - REDIS_URL=redis://redis:6379
     volumes:
       # Mount the SQLite database to persist across container restarts
       - ./prisma/dev.db:/app/prisma/dev.db
       # Mount the uploads directory to persist CMS media
       - ./public/uploads:/app/public/uploads
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: izzan-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

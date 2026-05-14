@@ -4,6 +4,7 @@ import { apiHandler } from "@/lib/api";
 import { promises as fs } from "fs";
 import path from "path";
 import { put } from "@vercel/blob";
+import sharp from "sharp";
 
 // Magic number check for basic images/videos
 function isValidFileType(buffer: Buffer): boolean {
@@ -37,14 +38,26 @@ export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
   }
 
   const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  let buffer: Buffer = Buffer.from(arrayBuffer);
 
   if (!isValidFileType(buffer)) {
     return NextResponse.json({ error: "Invalid file content. Spoofing detected." }, { status: 400 });
   }
 
+  // If it is an image (not a video), compress using sharp
+  if (file.type.startsWith("image/") && file.type !== "image/gif") {
+    const compressedBuffer = await sharp(buffer)
+      .resize({ width: 1920, withoutEnlargement: true }) // Prevent extremely large images
+      .webp({ quality: 80 }) // Convert/compress to WebP
+      .toBuffer();
+    buffer = compressedBuffer as unknown as Buffer;
+  }
+
   const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-  const ext = path.extname(file.name);
+  let ext = path.extname(file.name);
+  if (file.type.startsWith("image/") && file.type !== "image/gif") {
+    ext = ".webp";
+  }
   const cleanName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9]/g, "_");
   const filename = `${cleanName}_${uniqueSuffix}${ext}`;
 

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { updateCMSContent } from "@/app/(admin)/admin/actions";
+import RichTextEditor from "./RichTextEditor";
 
 type CMSItem = {
   id: string;
@@ -118,12 +119,9 @@ export default function CMSManagement({ initialSections }: CMSManagementProps) {
                   </button>
                 </div>
                 {item.isLongText ? (
-                  <textarea
-                    id={item.key}
+                  <RichTextEditor
                     value={item.value}
-                    onChange={(e) => handleValueChange(sectionName, item.key, e.target.value)}
-                    rows={4}
-                    className="w-full bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl px-4 py-3.5 text-[15px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all resize-none"
+                    onChange={(newValue) => handleValueChange(sectionName, item.key, newValue)}
                   />
                 ) : (
                   <div className="relative group/upload">

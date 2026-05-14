@@ -4,10 +4,20 @@ import { apiHandler } from "@/lib/api";
 
 export const POST = apiHandler(async function POST(req: NextRequest) {
   const data = await req.json();
-  const { name, phone, email, zila, upozila, shippingAddress, items } = data;
+  const { name, phone, email, zila, upozila, shippingAddress, items, idempotencyKey } = data;
 
   if (!name || !phone || !zila || !upozila || !shippingAddress || !items || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "Missing required fields or empty cart" }, { status: 400 });
+  }
+
+  // Idempotency check to prevent duplicate orders
+  if (idempotencyKey) {
+    const existingOrder = await prisma.order.findUnique({
+      where: { idempotencyKey }
+    });
+    if (existingOrder) {
+      return NextResponse.json({ success: true, orderId: existingOrder.id, message: "Order already processed" });
+    }
   }
 
   // Find or create customer by phone
@@ -151,6 +161,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
           totalAmount: calculatedTotal,
           customerId: txCustomer.id,
           status: "Pending",
+          idempotencyKey: idempotencyKey || null,
         }
       });
 
