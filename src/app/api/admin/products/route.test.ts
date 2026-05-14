@@ -1,130 +1,132 @@
-import test from "node:test";
-import assert from "node:assert";
-import { mock } from "node:test";
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("@/lib/auth", () => ({
+  checkAdminAuth: vi.fn().mockReturnValue(true),
+  withAuth: vi.fn((handler) => handler),
+}));
+
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 
-/**
- * 🧪 Products API PATCH handler tests
- *
- * To run these tests:
- * node --experimental-strip-types --test src/app/api/admin/products/route.test.ts
- */
-
 process.env.ADMIN_TOKEN = "test-token";
 
-test("PATCH /api/admin/products - Missing ID", async () => {
-    const { PATCH } = await import("./route");
+describe("Admin Products API", () => {
+    it("PATCH /api/admin/products - Missing ID", async () => {
+        const { PATCH } = await import("./route");
 
-    const req = new NextRequest("http://localhost/api/admin/products", {
-        method: "PATCH",
-        headers: {
-            "Authorization": "Bearer test-token"
-        },
-        body: JSON.stringify({})
+        const req = new NextRequest("http://localhost/api/admin/products", {
+            method: "PATCH",
+            headers: {
+                "Authorization": "Bearer test-token"
+            },
+            body: JSON.stringify({})
+        });
+
+        const res = await PATCH(req);
+        expect(res.status).toBe(400);
+        const data = await res.json();
+        expect(data.error).toBe("Missing product ID");
     });
 
-    const res = await PATCH(req);
-    assert.strictEqual(res.status, 400);
-    const data = await res.json();
-    assert.strictEqual(data.error, "Missing product ID");
-});
+    it("PATCH /api/admin/products - Product Not Found", async () => {
+        const { PATCH } = await import("./route");
 
-test("PATCH /api/admin/products - Product Not Found", async () => {
-    const { PATCH } = await import("./route");
+        vi.spyOn(prisma.product, "findUnique").mockResolvedValue(null);
 
-    // Mock prisma.product.findUnique
-    const findUniqueMock = mock.method(prisma.product, "findUnique", async () => null);
+        const req = new NextRequest("http://localhost/api/admin/products", {
+            method: "PATCH",
+            headers: {
+                "Authorization": "Bearer test-token"
+            },
+            body: JSON.stringify({ id: "non-existent" })
+        });
 
-    const req = new NextRequest("http://localhost/api/admin/products", {
-        method: "PATCH",
-        headers: {
-            "Authorization": "Bearer test-token"
-        },
-        body: JSON.stringify({ id: "non-existent" })
+        const res = await PATCH(req);
+        expect(res.status).toBe(404);
+        const data = await res.json();
+        expect(data.error).toBe("Product not found");
+
+        vi.restoreAllMocks();
     });
 
-    const res = await PATCH(req);
-    assert.strictEqual(res.status, 404);
-    const data = await res.json();
-    assert.strictEqual(data.error, "Product not found");
+    it("PATCH /api/admin/products - Invalid Name", async () => {
+        const { PATCH } = await import("./route");
 
-    findUniqueMock.mock.restore();
-});
+        const req = new NextRequest("http://localhost/api/admin/products", {
+            method: "PATCH",
+            headers: {
+                "Authorization": "Bearer test-token"
+            },
+            body: JSON.stringify({ id: "123", name: "" })
+        });
 
-test("PATCH /api/admin/products - Invalid Name", async () => {
-    const { PATCH } = await import("./route");
-
-    const req = new NextRequest("http://localhost/api/admin/products", {
-        method: "PATCH",
-        headers: {
-            "Authorization": "Bearer test-token"
-        },
-        body: JSON.stringify({ id: "123", name: "" })
+        const res = await PATCH(req);
+        expect(res.status).toBe(400);
+        const data = await res.json();
+        expect(data.error).toBe("Name must be a non-empty string");
     });
 
-    const res = await PATCH(req);
-    assert.strictEqual(res.status, 400);
-    const data = await res.json();
-    assert.strictEqual(data.error, "Name must be a non-empty string");
-});
+    it("PATCH /api/admin/products - Invalid Price", async () => {
+        const { PATCH } = await import("./route");
 
-test("PATCH /api/admin/products - Invalid Price", async () => {
-    const { PATCH } = await import("./route");
+        const req = new NextRequest("http://localhost/api/admin/products", {
+            method: "PATCH",
+            headers: {
+                "Authorization": "Bearer test-token"
+            },
+            body: JSON.stringify({ id: "123", price: "invalid" })
+        });
 
-    const req = new NextRequest("http://localhost/api/admin/products", {
-        method: "PATCH",
-        headers: {
-            "Authorization": "Bearer test-token"
-        },
-        body: JSON.stringify({ id: "123", price: "invalid" })
+        const res = await PATCH(req);
+        expect(res.status).toBe(400);
+        const data = await res.json();
+        expect(data.error).toBe("Invalid price");
     });
 
-    const res = await PATCH(req);
-    assert.strictEqual(res.status, 400);
-    const data = await res.json();
-    assert.strictEqual(data.error, "Invalid price");
-});
+    it("PATCH /api/admin/products - Invalid Stock", async () => {
+        const { PATCH } = await import("./route");
 
-test("PATCH /api/admin/products - Invalid Stock", async () => {
-    const { PATCH } = await import("./route");
+        const req = new NextRequest("http://localhost/api/admin/products", {
+            method: "PATCH",
+            headers: {
+                "Authorization": "Bearer test-token"
+            },
+            body: JSON.stringify({ id: "123", stock: "abc" })
+        });
 
-    const req = new NextRequest("http://localhost/api/admin/products", {
-        method: "PATCH",
-        headers: {
-            "Authorization": "Bearer test-token"
-        },
-        body: JSON.stringify({ id: "123", stock: "abc" })
+        const res = await PATCH(req);
+        expect(res.status).toBe(400);
+        const data = await res.json();
+        expect(data.error).toBe("Invalid stock");
     });
 
-    const res = await PATCH(req);
-    assert.strictEqual(res.status, 400);
-    const data = await res.json();
-    assert.strictEqual(data.error, "Invalid stock");
-});
+    it("PATCH /api/admin/products - Successful Update", async () => {
+        const { PATCH } = await import("./route");
 
-test("PATCH /api/admin/products - Successful Update", async () => {
-    const { PATCH } = await import("./route");
+        const mockProduct = {
+            id: "123", name: "Old Name", price: 10, stock: 5,
+            description: null, img: "", hoverImg: null, categories: "",
+            badge: null, originalPrice: null,
+            createdAt: new Date(), updatedAt: new Date()
+        };
+        vi.spyOn(prisma.product, "findUnique").mockResolvedValue(mockProduct);
+        vi.spyOn(prisma.product, "update").mockResolvedValue({ ...mockProduct, name: "New Name", price: 15, stock: 10 });
 
-    const mockProduct = { id: "123", name: "Old Name", price: 10, stock: 5 };
-    const findUniqueMock = mock.method(prisma.product, "findUnique", async () => mockProduct);
-    const updateMock = mock.method(prisma.product, "update", async ({ data }: any) => ({ ...mockProduct, ...data }));
+        const req = new NextRequest("http://localhost/api/admin/products", {
+            method: "PATCH",
+            headers: {
+                "Authorization": "Bearer test-token"
+            },
+            body: JSON.stringify({ id: "123", name: "New Name", price: 15, stock: 10 })
+        });
 
-    const req = new NextRequest("http://localhost/api/admin/products", {
-        method: "PATCH",
-        headers: {
-            "Authorization": "Bearer test-token"
-        },
-        body: JSON.stringify({ id: "123", name: "New Name", price: 15, stock: 10 })
+        const res = await PATCH(req);
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.name).toBe("New Name");
+        expect(data.price).toBe(15);
+        expect(data.stock).toBe(10);
+
+        vi.restoreAllMocks();
     });
-
-    const res = await PATCH(req);
-    assert.strictEqual(res.status, 200);
-    const data = await res.json();
-    assert.strictEqual(data.name, "New Name");
-    assert.strictEqual(data.price, 15);
-    assert.strictEqual(data.stock, 10);
-
-    findUniqueMock.mock.restore();
-    updateMock.mock.restore();
 });
