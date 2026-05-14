@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import ProductEditorModal from "./ProductEditorModal";
 import { toast } from "sonner";
 import { createProduct, updateProduct, deleteProduct } from "@/app/(admin)/admin/actions";
-import { logger } from "@/lib/logger";
+import logger from "@/lib/logger";
 
 import { Product } from "@/generated/client";
 

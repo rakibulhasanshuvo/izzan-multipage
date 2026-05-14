@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { updateSettings } from "@/app/(admin)/admin/actions";
-import { logger } from "@/lib/logger";
+import logger from "@/lib/logger";
 
 import { AdminSettings } from "@/generated/client";
 

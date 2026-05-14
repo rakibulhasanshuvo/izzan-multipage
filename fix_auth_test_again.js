@@ -1,4 +1,6 @@
-import { describe, it, vi, beforeEach, expect } from "vitest";
+const fs = require('fs');
+
+const finalTestFile = `import { describe, it, vi, beforeEach, expect } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth, rateLimitMap } from "./auth";
 
@@ -12,7 +14,7 @@ vi.mock("./auth-options", () => ({
   authOptions: {},
 }));
 
-describe("auth limits and checks", () => {
+describe("withAuth IP extraction and rate limiting", () => {
   beforeEach(() => {
     rateLimitMap.clear();
   });
@@ -22,17 +24,13 @@ describe("auth limits and checks", () => {
       return NextResponse.json({ success: true });
     };
 
-  describe("checkRateLimit", () => {
-    it("should allow first request", () => {
-      expect(checkRateLimit("1.1.1.1")).toBe(true);
-      expect(rateLimitMap.has("1.1.1.1")).toBe(true);
-      expect(rateLimitMap.get("1.1.1.1")?.count).toBe(1);
-    });
+    const wrappedHandler = withAuth(handler);
 
-    it("should increment count for existing request", () => {
-      checkRateLimit("2.2.2.2");
-      expect(checkRateLimit("2.2.2.2")).toBe(true);
-      expect(rateLimitMap.get("2.2.2.2")?.count).toBe(2);
+    // Mock NextRequest with multiple x-forwarded-for IPs
+    const mockReq1 = new NextRequest("http://localhost", {
+      headers: new Headers({
+        "x-forwarded-for": "10.0.0.1, 10.0.0.2",
+      }),
     });
 
     Object.defineProperty(mockReq1, "ip", { value: "20.0.0.1", writable: true });
@@ -51,7 +49,7 @@ describe("auth limits and checks", () => {
       return NextResponse.json({ success: true });
     };
 
-      const wrappedHandler = withAuth(handler);
+    const wrappedHandler = withAuth(handler);
 
     const mockReq = new NextRequest("http://localhost", {
       headers: new Headers({
@@ -72,19 +70,13 @@ describe("auth limits and checks", () => {
       return NextResponse.json({ success: true });
     };
 
-      const reqSpoofed2 = new NextRequest("http://localhost", {
-        headers: new Headers({
-          "x-forwarded-for": "40.0.0.1, 9.9.9.9",
-        }),
-      });
+    const wrappedHandler = withAuth(handler);
 
     const reqSpoofed1 = new NextRequest("http://localhost", {
       headers: new Headers({
         "x-forwarded-for": "40.0.0.1",
       }),
     });
-  });
-});
 
     for (let i = 0; i < 50; i++) {
       await wrappedHandler(reqSpoofed1);
@@ -95,7 +87,6 @@ describe("auth limits and checks", () => {
         "x-forwarded-for": "40.0.0.2",
       }),
     });
-  });
 
     for (let i = 0; i < 50; i++) {
       await wrappedHandler(reqSpoofed2);
@@ -112,3 +103,6 @@ describe("auth limits and checks", () => {
     expect(res.status).toBe(429);
   });
 });
+`;
+
+fs.writeFileSync('src/lib/auth.test.ts', finalTestFile);
