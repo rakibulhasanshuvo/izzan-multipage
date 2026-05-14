@@ -27,10 +27,10 @@ export default async function AdminOverview() {
     <div className="space-y-10 animate-in fade-in duration-700">
       {/* Page Header */}
       <div className="mb-10">
-        <h1 className="font-serif text-[36px] text-zinc-900 leading-tight mb-2">
+        <h1 className="font-serif text-[36px] text-zinc-900 dark:text-zinc-100 leading-tight mb-2">
           Performance Overview
         </h1>
-        <p className="text-[16px] text-zinc-500">
+        <p className="text-[16px] text-zinc-500 dark:text-zinc-400">
           A summary of your boutique&apos;s metrics for the current period.
         </p>
       </div>
@@ -70,19 +70,19 @@ export default async function AdminOverview() {
       {/* Lower Section Layout */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Recent Orders Table (Spans 2 columns) */}
-        <div className="xl:col-span-2 bg-white/80 backdrop-blur-3xl rounded-3xl p-6 md:p-8 border border-white shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+        <div className="xl:col-span-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-3xl rounded-3xl p-6 md:p-8 border border-white dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
           <div className="flex justify-between items-end mb-8">
             <div>
-              <h3 className="font-serif text-[28px] text-zinc-900 leading-tight">
+              <h3 className="font-serif text-[28px] text-zinc-900 dark:text-zinc-100 leading-tight">
                 Recent Orders
               </h3>
-              <p className="text-[15px] text-zinc-500 mt-1">
+              <p className="text-[15px] text-zinc-500 dark:text-zinc-400 mt-1">
                 Latest transactions across all channels.
               </p>
             </div>
             <a
               href="/admin/orders"
-              className="text-[13px] font-medium text-zinc-500 hover:text-zinc-900 transition-colors uppercase tracking-widest group flex items-center gap-1"
+              className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors uppercase tracking-widest group flex items-center gap-1"
             >
               View All
               <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">
@@ -94,24 +94,24 @@ export default async function AdminOverview() {
             <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
                 <tr>
-                  <th className="text-[12px] text-zinc-400 pb-4 font-semibold px-4 pl-0 uppercase tracking-widest">
+                  <th className="text-[12px] text-zinc-400 dark:text-zinc-500 pb-4 font-semibold px-4 pl-0 uppercase tracking-widest">
                     Order ID
                   </th>
-                  <th className="text-[12px] text-zinc-400 pb-4 font-semibold px-4 uppercase tracking-widest">
+                  <th className="text-[12px] text-zinc-400 dark:text-zinc-500 pb-4 font-semibold px-4 uppercase tracking-widest">
                     Customer
                   </th>
-                  <th className="text-[12px] text-zinc-400 pb-4 font-semibold px-4 uppercase tracking-widest">
+                  <th className="text-[12px] text-zinc-400 dark:text-zinc-500 pb-4 font-semibold px-4 uppercase tracking-widest">
                     Date
                   </th>
-                  <th className="text-[12px] text-zinc-400 pb-4 font-semibold px-4 text-right uppercase tracking-widest">
+                  <th className="text-[12px] text-zinc-400 dark:text-zinc-500 pb-4 font-semibold px-4 text-right uppercase tracking-widest">
                     Amount
                   </th>
-                  <th className="text-[12px] text-zinc-400 pb-4 font-semibold px-4 pr-0 text-right uppercase tracking-widest">
+                  <th className="text-[12px] text-zinc-400 dark:text-zinc-500 pb-4 font-semibold px-4 pr-0 text-right uppercase tracking-widest">
                     Status
                   </th>
                 </tr>
               </thead>
-              <tbody className="text-[15px] text-zinc-800">
+              <tbody className="text-[15px] text-zinc-800 dark:text-zinc-200">
                 {recentOrders.map((order, i) => {
                   const dateStr = new Date(order.createdAt).toLocaleDateString(
                     "en-US",
@@ -122,14 +122,14 @@ export default async function AdminOverview() {
                       key={order.id}
                       className={cn(
                         "group transition-colors",
-                        i % 2 === 0 ? "bg-zinc-50/50" : "bg-transparent",
+                        i % 2 === 0 ? "bg-zinc-50/50 dark:bg-zinc-800/50" : "bg-transparent",
                       )}
                     >
-                      <td className="py-5 px-4 pl-0 font-medium text-zinc-900 rounded-l-2xl group-hover:text-primary transition-colors">
+                      <td className="py-5 px-4 pl-0 font-medium text-zinc-900 dark:text-zinc-100 rounded-l-2xl group-hover:text-primary transition-colors">
                         #{order.id.slice(-6).toUpperCase()}
                       </td>
                       <td className="py-5 px-4">{order.customerName}</td>
-                      <td className="py-5 px-4 text-zinc-500">{dateStr}</td>
+                      <td className="py-5 px-4 text-zinc-500 dark:text-zinc-400">{dateStr}</td>
                       <td className="py-5 px-4 text-right font-medium">
                         ${order.totalAmount.toFixed(2)}
                       </td>
@@ -139,14 +139,14 @@ export default async function AdminOverview() {
                             "inline-flex px-3.5 py-1.5 rounded-full text-[11px] font-medium uppercase tracking-wider border",
                             order.status === "Shipped" ||
                               order.status === "Delivered"
-                              ? "bg-green-50 text-green-700 border-green-100/50"
+                              ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-100/50 dark:border-green-500/20"
                               : order.status === "Processing"
-                                ? "bg-blue-50 text-blue-700 border-blue-100/50"
+                                ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-100/50 dark:border-blue-500/20"
                                 : order.status === "Cancelled"
-                                  ? "bg-red-50 text-red-700 border-red-100/50"
+                                  ? "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-100/50 dark:border-red-500/20"
                                   : order.status === "Pending"
-                                    ? "bg-amber-50 text-amber-700 border-amber-100/50"
-                                    : "bg-zinc-100 text-zinc-600 border-zinc-200/50",
+                                    ? "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-100/50 dark:border-amber-500/20"
+                                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200/50 dark:border-zinc-700/50",
                           )}
                         >
                           {order.status}
@@ -157,7 +157,7 @@ export default async function AdminOverview() {
                 })}
                 {recentOrders.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-zinc-500">
+                    <td colSpan={5} className="py-8 text-center text-zinc-500 dark:text-zinc-400">
                       No recent orders.
                     </td>
                   </tr>
@@ -168,12 +168,12 @@ export default async function AdminOverview() {
         </div>
 
         {/* Top Products */}
-        <div className="bg-white/80 backdrop-blur-3xl rounded-3xl p-6 md:p-8 border border-white shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+        <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-3xl rounded-3xl p-6 md:p-8 border border-white dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
           <div className="mb-8">
-            <h3 className="font-serif text-[28px] text-zinc-900 leading-tight">
+            <h3 className="font-serif text-[28px] text-zinc-900 dark:text-zinc-100 leading-tight">
               Latest Inventory
             </h3>
-            <p className="text-[15px] text-zinc-500 mt-1">
+            <p className="text-[15px] text-zinc-500 dark:text-zinc-400 mt-1">
               Recently added products.
             </p>
           </div>
@@ -181,9 +181,9 @@ export default async function AdminOverview() {
             {recentProducts.map((product) => (
               <div
                 key={product.id}
-                className="flex items-center gap-5 group cursor-pointer p-2 -m-2 rounded-2xl hover:bg-zinc-50/80 transition-colors"
+                className="flex items-center gap-5 group cursor-pointer p-2 -m-2 rounded-2xl hover:bg-zinc-50/80 dark:hover:bg-zinc-800/80 transition-colors"
               >
-                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-zinc-100 border border-zinc-200/50 flex-shrink-0 shadow-sm relative">
+                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700/50 flex-shrink-0 shadow-sm relative">
                   <Image
                     src={product.img}
                     alt={product.name}
@@ -191,21 +191,21 @@ export default async function AdminOverview() {
                     sizes="64px"
                     className="object-cover group-hover:scale-110 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 ring-1 ring-inset ring-black/5 rounded-2xl pointer-events-none"></div>
+                  <div className="absolute inset-0 ring-1 ring-inset ring-black/5 dark:ring-white/5 rounded-2xl pointer-events-none"></div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-[16px] font-medium text-zinc-900 truncate group-hover:text-primary transition-colors">
+                  <h4 className="text-[16px] font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-primary transition-colors">
                     {product.name}
                   </h4>
-                  <p className="text-[14px] text-zinc-500 truncate mt-0.5">
+                  <p className="text-[14px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
                     {product.categories.split(",")[0]}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[16px] font-medium text-zinc-900">
+                  <p className="text-[16px] font-medium text-zinc-900 dark:text-zinc-100">
                     ${product.price}
                   </p>
-                  <p className="text-[12px] font-medium text-zinc-400 mt-1">
+                  <p className="text-[12px] font-medium text-zinc-400 dark:text-zinc-500 mt-1">
                     {product.badge || "Active"}
                   </p>
                 </div>
@@ -231,30 +231,30 @@ function StatCard({
 }) {
   const isPositive = trend !== "Live" && !trend.startsWith("-");
   return (
-    <div className="bg-white/80 backdrop-blur-3xl rounded-3xl p-6 border border-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col justify-between group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all duration-500 relative overflow-hidden">
+    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-3xl rounded-3xl p-6 border border-white dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col justify-between group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all duration-500 relative overflow-hidden">
       {/* Subtle background glow */}
       <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors duration-500"></div>
 
       <div className="flex justify-between items-start mb-8 relative z-10">
-        <h3 className="text-[13px] font-semibold text-zinc-500 uppercase tracking-[0.15em]">
+        <h3 className="text-[13px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.15em]">
           {title}
         </h3>
-        <div className="w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-sm">
-          <span className="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors text-[20px]">
+        <div className="w-10 h-10 rounded-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-800 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-sm">
+          <span className="material-symbols-outlined text-zinc-400 dark:text-zinc-500 group-hover:text-primary transition-colors text-[20px]">
             {icon}
           </span>
         </div>
       </div>
       <div className="relative z-10">
         <div className="flex items-baseline gap-3 mb-3">
-          <span className="text-[44px] font-serif text-zinc-900 leading-none tracking-tight">
+          <span className="text-[44px] font-serif text-zinc-900 dark:text-zinc-100 leading-none tracking-tight">
             {value}
           </span>
         </div>
         <div className="flex items-center gap-2">
           {trend === "Live" ? (
-            <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 border border-green-100/50">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>{" "}
+            <span className="bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 border border-green-100/50 dark:border-green-500/20">
+              <span className="w-1.5 h-1.5 bg-green-500 dark:bg-green-400 rounded-full animate-pulse"></span>{" "}
               Live
             </span>
           ) : (
@@ -262,8 +262,8 @@ function StatCard({
               className={cn(
                 "px-3 py-1 rounded-full text-[11px] font-medium flex items-center gap-1 border",
                 isPositive
-                  ? "bg-green-50 text-green-700 border-green-100/50"
-                  : "bg-red-50 text-red-700 border-red-100/50",
+                  ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-100/50 dark:border-green-500/20"
+                  : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-100/50 dark:border-red-500/20",
               )}
             >
               <span className="material-symbols-outlined text-[14px]">
@@ -272,7 +272,7 @@ function StatCard({
               {trend}
             </span>
           )}
-          <span className="text-[12px] text-zinc-400 font-medium">
+          <span className="text-[12px] text-zinc-400 dark:text-zinc-500 font-medium">
             vs last month
           </span>
         </div>

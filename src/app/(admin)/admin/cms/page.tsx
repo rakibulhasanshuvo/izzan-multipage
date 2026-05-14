@@ -20,8 +20,8 @@ export default async function AdminCMS() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="mb-10">
-        <h1 className="font-serif text-[36px] text-zinc-900 leading-tight mb-2">Content CMS</h1>
-        <p className="text-[16px] text-zinc-500">
+        <h1 className="font-serif text-[36px] text-zinc-900 dark:text-zinc-100 leading-tight mb-2">Content CMS</h1>
+        <p className="text-[16px] text-zinc-500 dark:text-zinc-400">
           Edit the copy and media across your boutique&apos;s storefront.
         </p>
       </div>

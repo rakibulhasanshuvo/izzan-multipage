@@ -35,12 +35,12 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
         <table className="w-full text-left border-collapse whitespace-nowrap">
           <thead>
             <tr className="bg-zinc-50/50 dark:bg-zinc-900/80 border-b border-zinc-100 dark:border-zinc-800">
-              <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest">Order ID</th>
-              <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest">Customer</th>
-              <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest">Date</th>
-              <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest text-right">Amount</th>
-              <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest text-center">Status</th>
-              <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest text-right">Action</th>
+              <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest">Order ID</th>
+              <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest">Customer</th>
+              <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest">Date</th>
+              <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest text-right">Amount</th>
+              <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest text-center">Status</th>
+              <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest text-right">Action</th>
             </tr>
           </thead>
           <tbody className="text-[15px] text-zinc-800 dark:text-zinc-200">
@@ -97,7 +97,7 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
             })}
             {orders.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-zinc-500">No orders found.</td>
+                <td colSpan={6} className="py-12 text-center text-zinc-500 dark:text-zinc-400">No orders found.</td>
               </tr>
             )}
           </tbody>

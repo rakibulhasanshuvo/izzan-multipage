@@ -25,7 +25,7 @@ export default function SideNavBar() {
       {/* Mobile Backdrop overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-zinc-900/50 backdrop-blur-sm md:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-zinc-900/50 dark:bg-black/50 backdrop-blur-sm md:hidden transition-opacity"
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -46,10 +46,10 @@ export default function SideNavBar() {
               </div>
               <h1 className="font-serif italic text-2xl text-zinc-900 dark:text-zinc-100 tracking-tight">Izzan Admin</h1>
             </div>
-            <p className="font-body-sm text-[12px] text-zinc-500 uppercase tracking-widest pl-[52px]">Luxe Studio</p>
+            <p className="font-body-sm text-[12px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-[52px]">Luxe Studio</p>
           </div>
           <button
-            className="md:hidden text-zinc-400 hover:text-zinc-900 focus:outline-none"
+            className="md:hidden text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 focus:outline-none"
             onClick={() => setIsOpen(false)}
             aria-label="Close Sidebar"
           >
