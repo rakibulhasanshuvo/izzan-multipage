@@ -1,0 +1,6 @@
+🧹 [code health] Replace img with Next.js Image component
+
+🎯 **What:** The code health issue addressed replacing `<img>` tags with Next.js `Image` component.
+💡 **Why:** Using `<Image>` improves maintainability and performance (lazy loading, optimized sizes, etc.).
+✅ **Verification:** Ran test suite and linter, checked `git diff`, and verified the codebase is stable. No new changes were required because the repository had already been patched.
+✨ **Result:** The improvement is active in the codebase without any further necessary action.

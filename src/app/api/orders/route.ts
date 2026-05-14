@@ -48,26 +48,39 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
       });
 
       // Track in-memory stock to handle multiple entries of same product in one order
-      const stockTracker = new Map(dbProducts.map(p => [p.id, p.stock]));
+      const stockTracker = new Map(Array.from(productMap.values()).map((p) => [(p as {id: string, stock: number}).id, (p as {id: string, stock: number}).stock]));
       // Consolidate stock updates to reduce DB calls
       const stockUpdates = new Map<string, number>();
 
-      let calculatedTotal = 0;
+      // Consolidate duplicate items in the request
+      const consolidatedItemsMap = new Map<string, { id: string, name: string, quantity: number, price?: number }>();
       for (const item of items) {
         if (!item.id || !item.quantity || item.quantity <= 0) {
            throw new Error(`Invalid item structure for ${item.name || 'unknown item'}`);
         }
 
-        let dbProduct = await tx.product.findUnique({
-          where: { id: item.id }
-        });
+        let dbProduct = productMap.get(item.id);
 
         if (!dbProduct && item.name) {
           // Fallback to name-based lookup if ID changed across DB resets
-          dbProduct = await tx.product.findFirst({
-            where: { name: item.name }
-          });
+          // Look up in our pre-fetched map
+          dbProduct = Array.from(productMap.values()).find(p => p.name === item.name) || undefined;
         }
+      }
+
+      const uniqueProductIds = Array.from(consolidatedItemsMap.keys());
+
+      const dbProducts = await tx.product.findMany({
+        where: { id: { in: uniqueProductIds } }
+      });
+
+      const productMap = new Map(dbProducts.map(p => [p.id, p]));
+
+      let calculatedTotal = 0;
+
+      // We iterate over the consolidated items to validate stock and calculate total
+      for (const [productId, item] of consolidatedItemsMap.entries()) {
+        const dbProduct = productMap.get(productId);
 
         if (!dbProduct) {
           throw new Error(`Product not found: ${item.name || item.id}`);
@@ -91,8 +104,8 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         calculatedTotal += dbProduct.price * item.quantity;
       }
 
-      // Perform consolidated stock updates
-      for (const [productId, quantity] of stockUpdates.entries()) {
+      // Perform consolidated stock updates using the unique IDs
+      for (const [productId, item] of consolidatedItemsMap.entries()) {
         await tx.product.update({
           where: { id: productId },
           data: { stock: { decrement: quantity } }

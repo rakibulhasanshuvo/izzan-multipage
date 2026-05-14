@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import logger from "@/lib/logger";
 import { Prisma } from "@/generated/client";
 
 type RouteHandler = (
@@ -11,7 +12,7 @@ export function apiHandler(handler: RouteHandler, defaultErrorMessage: string = 
     try {
       return await handler(req, ...args);
     } catch (error) {
-      console.error("API Error:", error);
+      logger.error("API Error:", { error });
 
       const err = error as Error & { code?: string };
       if (error instanceof Prisma.PrismaClientKnownRequestError || (err && typeof err === 'object' && 'code' in err)) {

@@ -6,7 +6,8 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import * as auth from "../../../../lib/auth";
+import { PATCH } from './route';
 
 process.env.ADMIN_TOKEN = "test-token";
 

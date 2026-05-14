@@ -3,11 +3,11 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth-options";
 
 // Rate limiting state
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-const MAX_REQUESTS = 100;
+export const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+export const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+export const MAX_REQUESTS = 100;
 
-function checkRateLimit(ip: string): boolean {
+export function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const record = rateLimitMap.get(ip);
 
@@ -38,8 +38,12 @@ export async function checkAdminAuth(): Promise<boolean> {
  */
 export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Promise<NextResponse> | NextResponse) {
   return async (req: NextRequest, ...args: unknown[]) => {
-    // Determine a generic IP representation since actual IP extraction from headers can vary behind proxies
-    const ip = req.headers.get("x-forwarded-for") || "unknown_ip";
+    // Next.js provides req.ip on supported platforms (like Vercel).
+    const reqIp = (req as unknown as { ip?: string }).ip;
+
+    // Strictly rely on req.ip to prevent IP spoofing vulnerabilities.
+    // Headers like x-forwarded-for or x-real-ip can be manipulated by clients.
+    const ip = reqIp || "unknown_ip";
 
     if (!checkRateLimit(ip)) {
       return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
@@ -51,4 +55,17 @@ export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Prom
     }
     return handler(req, ...args);
   };
+}
+
+/**
+ * Verifies a token against the expected admin token.
+ */
+export function verifyToken(token?: string): boolean {
+  if (!token) return false;
+  const expectedToken = process.env.ADMIN_TOKEN;
+  if (!expectedToken) {
+    console.error("ADMIN_TOKEN is not configured");
+    return false;
+  }
+  return token === expectedToken;
 }

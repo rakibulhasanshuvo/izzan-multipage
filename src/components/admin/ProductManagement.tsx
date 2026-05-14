@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import ProductEditorModal from "./ProductEditorModal";
 import { toast } from "sonner";
 import { createProduct, updateProduct, deleteProduct } from "@/app/(admin)/admin/actions";
+import logger from "@/lib/logger";
 
 import { Product } from "@/generated/client";
 
@@ -62,7 +63,7 @@ export default function ProductManagement({ initialProducts }: ProductManagement
       router.refresh();
     } catch (error) {
       toast.error("Error saving product");
-      console.error(error);
+      logger.error("Error handling product:", error);
     }
   };
 
@@ -76,7 +77,7 @@ export default function ProductManagement({ initialProducts }: ProductManagement
       router.refresh();
     } catch (error) {
       toast.error("Error deleting product");
-      console.error(error);
+      logger.error("Error handling product:", error);
     }
   };
 
