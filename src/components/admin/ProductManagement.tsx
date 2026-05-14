@@ -103,7 +103,7 @@ export default function ProductManagement({ initialProducts }: ProductManagement
       <div className="relative z-20 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-3xl rounded-2xl p-4 border border-white dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-wrap gap-4 items-center justify-between mb-8 transition-colors duration-300">
         <div className="flex gap-4 items-center flex-1 min-w-[300px]">
           <div className="relative flex-1 max-w-md">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">search</span>
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500">search</span>
             <input
               aria-label="Search products"
               type="text"
@@ -164,7 +164,7 @@ export default function ProductManagement({ initialProducts }: ProductManagement
                 {(categoryFilter !== "All" || statusFilter !== "All") && (
                   <button 
                     onClick={() => { setCategoryFilter("All"); setStatusFilter("All"); }}
-                    className="w-full mt-4 text-[12px] font-medium text-zinc-500 hover:text-zinc-900 py-1 transition-colors"
+                    className="w-full mt-4 text-[12px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 py-1 transition-colors"
                   >
                     Clear Filters
                   </button>
@@ -184,12 +184,12 @@ export default function ProductManagement({ initialProducts }: ProductManagement
           <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-zinc-50/50 dark:bg-zinc-900/80 border-b border-zinc-100 dark:border-zinc-800">
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest">Product</th>
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest">Category</th>
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest text-right">Price</th>
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest text-center">Stock</th>
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest text-center">Status</th>
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest text-right">Actions</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest">Product</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest">Category</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest text-right">Price</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest text-center">Stock</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest text-center">Status</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="text-[15px] text-zinc-800 dark:text-zinc-200">

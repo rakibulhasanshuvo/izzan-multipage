@@ -35,8 +35,8 @@ export default function TopAppBar() {
         >
           <span aria-hidden="true" className="material-symbols-outlined text-[24px]">menu</span>
         </button>
-        <div className="text-zinc-400 font-medium tracking-widest uppercase text-[11px] hidden sm:block">Admin</div>
-        <span aria-hidden="true" className="material-symbols-outlined text-[16px] text-zinc-400 hidden sm:block">chevron_right</span>
+        <div className="text-zinc-400 dark:text-zinc-500 font-medium tracking-widest uppercase text-[11px] hidden sm:block">Admin</div>
+        <span aria-hidden="true" className="material-symbols-outlined text-[16px] text-zinc-400 dark:text-zinc-500 hidden sm:block">chevron_right</span>
         <div className="font-serif text-zinc-800 dark:text-zinc-100 text-lg capitalize tracking-wide">{formattedName}</div>
       </div>
       
@@ -53,7 +53,7 @@ export default function TopAppBar() {
           </button>
         )}
 
-        <button aria-label="User Profile" className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-white shadow-sm ml-0 md:ml-2 cursor-pointer hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative">
+        <button aria-label="User Profile" className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-white dark:border-zinc-800 shadow-sm ml-0 md:ml-2 cursor-pointer hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative">
           <Image
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5Z6EOvrTdFYj2jxBp2kgCLuxY-wuRAOwt4AUKYz3EwVFFwDrRwW5F6R7jKNh38rfSi146wxLCmlH3Neb5PI0o7QJr2zzHDTp87l-LmnZNyH7pbTUJ7EjfhnizZD32u2FoBOuO-Q5TqdK1XRMlQQgBYTMHlaws9KxSUv2ELxyyTZI41WYpEcfEGTIEv8Q_Q6pDylg10n1ub1nbjt5FuTBsuYUF29WQNI83X01ECb_U3TY3UIeg5uJZ1hRRapg_mJrdc0RXHZxotQw"
             alt="User Profile"

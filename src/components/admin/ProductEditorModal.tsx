@@ -143,14 +143,14 @@ export default function ProductEditorModal({
                     ) : (
                       <>
                         <div className="w-16 h-16 bg-white dark:bg-zinc-800 rounded-full shadow-sm border border-zinc-100 dark:border-zinc-700 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-500">
-                          <span className="material-symbols-outlined text-[28px] text-zinc-400 group-hover:text-primary transition-colors">add_photo_alternate</span>
+                          <span className="material-symbols-outlined text-[28px] text-zinc-400 dark:text-zinc-500 group-hover:text-primary transition-colors">add_photo_alternate</span>
                         </div>
                         <p className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">Primary Image URL</p>
                       </>
                     )}
                   </div>
                   <div className="relative group/upload">
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 text-[18px]">image</span>
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 text-[18px]">image</span>
                     <input
                       type="text"
                       name="img"
@@ -172,7 +172,7 @@ export default function ProductEditorModal({
                     </div>
                   </div>
                   <div className="relative group/upload">
-                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 text-[18px]">layers</span>
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 text-[18px]">layers</span>
                     <input
                       type="text"
                       name="hoverImg"

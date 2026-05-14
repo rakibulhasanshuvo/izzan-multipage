@@ -23,7 +23,7 @@ export default function CustomersTableClient({ initialCustomers }: { initialCust
             <span className="material-symbols-outlined text-zinc-400 dark:text-zinc-500">group</span>
           </div>
           <h3 className="font-serif text-[44px] text-zinc-900 dark:text-zinc-100 leading-none mb-3">{customers.length}</h3>
-          <p className="text-[13px] font-medium text-green-600 flex items-center gap-1.5">
+          <p className="text-[13px] font-medium text-green-600 dark:text-green-400 flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[16px]">trending_up</span>
             Live
           </p>
@@ -34,7 +34,7 @@ export default function CustomersTableClient({ initialCustomers }: { initialCust
             <span className="material-symbols-outlined text-primary">workspace_premium</span>
           </div>
           <h3 className="font-serif text-[44px] text-zinc-900 dark:text-zinc-100 leading-none mb-3">{activeGoldCount}</h3>
-          <p className="text-[13px] font-medium text-green-600 flex items-center gap-1.5">
+          <p className="text-[13px] font-medium text-green-600 dark:text-green-400 flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[16px]">trending_up</span>
             Live
           </p>
@@ -46,7 +46,7 @@ export default function CustomersTableClient({ initialCustomers }: { initialCust
               <span className="material-symbols-outlined text-zinc-400 dark:text-zinc-500">account_balance_wallet</span>
             </div>
             <h3 className="font-serif text-[44px] text-zinc-900 dark:text-zinc-100 leading-none mb-3">${avgLTV.toFixed(2)}</h3>
-            <p className="text-[13px] font-medium text-green-600 flex items-center gap-1.5">
+            <p className="text-[13px] font-medium text-green-600 dark:text-green-400 flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[16px]">trending_up</span>
               Live
             </p>
@@ -61,12 +61,12 @@ export default function CustomersTableClient({ initialCustomers }: { initialCust
           <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-zinc-50/50 dark:bg-zinc-900/80 border-b border-zinc-100 dark:border-zinc-800">
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest">Client</th>
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest">Contact</th>
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest">Tier</th>
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest text-right">Total Spend</th>
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest">Join Date</th>
-                <th className="text-[12px] text-zinc-500 py-4 px-6 font-semibold uppercase tracking-widest text-right">Actions</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest">Client</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest">Contact</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest">Tier</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest text-right">Total Spend</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest">Join Date</th>
+                <th className="text-[12px] text-zinc-500 dark:text-zinc-400 py-4 px-6 font-semibold uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="text-[15px] text-zinc-800 dark:text-zinc-200">
@@ -113,7 +113,7 @@ export default function CustomersTableClient({ initialCustomers }: { initialCust
               })}
               {customers.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-zinc-500">No customers found.</td>
+                  <td colSpan={6} className="py-12 text-center text-zinc-500 dark:text-zinc-400">No customers found.</td>
                 </tr>
               )}
             </tbody>

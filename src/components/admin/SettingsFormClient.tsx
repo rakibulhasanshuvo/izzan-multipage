@@ -147,7 +147,7 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
               )}
             >
               <div className={cn(
-                "w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm",
+                "w-5 h-5 bg-white dark:bg-zinc-900 rounded-full absolute top-0.5 transition-transform shadow-sm",
                 emailAlerts ? "translate-x-6.5" : "translate-x-0.5"
               )} />
             </button>
@@ -167,7 +167,7 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
               )}
             >
               <div className={cn(
-                "w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm",
+                "w-5 h-5 bg-white dark:bg-zinc-900 rounded-full absolute top-0.5 transition-transform shadow-sm",
                 orderNotifs ? "translate-x-6.5" : "translate-x-0.5"
               )} />
             </button>
@@ -187,7 +187,7 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
               )}
             >
               <div className={cn(
-                "w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm",
+                "w-5 h-5 bg-white dark:bg-zinc-900 rounded-full absolute top-0.5 transition-transform shadow-sm",
                 marketingUpdates ? "translate-x-6.5" : "translate-x-0.5"
               )} />
             </button>
@@ -237,7 +237,7 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
 
         {/* Save Action for Security */}
         <div className="flex justify-end pt-4">
-          <button type="submit" disabled={savingSecurity} className="bg-red-600 hover:bg-red-700 text-white px-8 py-3.5 rounded-full font-medium transition-colors shadow-lg shadow-red-600/20 active:scale-95 disabled:opacity-50">
+          <button type="submit" disabled={savingSecurity} className="bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600 text-white px-8 py-3.5 rounded-full font-medium transition-colors shadow-lg shadow-red-600/20 active:scale-95 disabled:opacity-50">
             {savingSecurity ? "Updating Security..." : "Update Security Settings"}
           </button>
         </div>
