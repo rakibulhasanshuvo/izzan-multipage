@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { ShoppingCart, Sun, Moon, Menu, X, ArrowRight, User } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { CartDrawer } from "./CartDrawer";
 import { Search } from "./Search";
 import FocusTrap from "focus-trap-react";
+import { useMounted } from "@/hooks/useMounted";
 
 interface HeaderProps {
   onViewAllProducts?: () => void;
@@ -16,15 +17,9 @@ interface HeaderProps {
 
 export function Header({ onViewAllProducts }: HeaderProps) {
   const { setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cartCount, toggleCart } = useCart();
-
-  // Avoid hydration mismatch
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
 
   const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMenu = () => setIsMobileMenuOpen(false);

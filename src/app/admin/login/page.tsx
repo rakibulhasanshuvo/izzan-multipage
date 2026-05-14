@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { logger } from "@/lib/logger";
+import logger from "@/lib/logger";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
