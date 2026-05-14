@@ -1,36 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth-options";
+import { Redis } from "@upstash/redis";
 
-// Rate limiting state
+// Redis client (only initialized if REDIS_URL is present)
+const redis = process.env.REDIS_URL 
+  ? new Redis({ url: process.env.REDIS_URL, token: process.env.REDIS_TOKEN || "" })
+  : null;
+
+// Local fallback Rate limiting state
 export const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 export const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
 export const MAX_REQUESTS = 100;
 
-export function checkRateLimit(ip: string): boolean {
+export async function checkRateLimit(ip: string): Promise<boolean> {
   const now = Date.now();
-  const record = rateLimitMap.get(ip);
 
-  if (!record || record.resetTime < now) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+  if (redis) {
+    // Distributed rate limit (Vercel)
+    const key = `rate_limit:${ip}`;
+    const requests = await redis.incr(key);
+    if (requests === 1) {
+      await redis.pexpire(key, RATE_LIMIT_WINDOW);
+    }
+    return requests <= MAX_REQUESTS;
+  } else {
+    // Local fallback (VPS)
+    const record = rateLimitMap.get(ip);
+    if (!record || record.resetTime < now) {
+      rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+      return true;
+    }
+    if (record.count >= MAX_REQUESTS) {
+      return false;
+    }
+    record.count += 1;
     return true;
   }
-
-  if (record.count >= MAX_REQUESTS) {
-    return false; // Rate limit exceeded
-  }
-
-  record.count += 1;
-  return true;
 }
 
 /**
  * Basic authentication check for admin routes.
- * Uses NextAuth getServerSession.
+ * Supports both NextAuth session and ADMIN_TOKEN.
  */
-export async function checkAdminAuth(): Promise<boolean> {
+export async function checkAdminAuth(req?: NextRequest): Promise<boolean> {
+  // 1. Check for valid NextAuth session
   const session = await getServerSession(authOptions);
-  return !!session;
+  if (session) return true;
+
+  // 2. Check for ADMIN_TOKEN via Authorization header or cookies
+  if (req) {
+    const authHeader = req.headers.get("authorization");
+    const tokenCookie = req.cookies.get("admin_token")?.value;
+    const token = (authHeader && authHeader.startsWith("Bearer ")) 
+      ? authHeader.split(" ")[1] 
+      : tokenCookie;
+    
+    if (token && process.env.ADMIN_TOKEN && token === process.env.ADMIN_TOKEN) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -38,18 +69,15 @@ export async function checkAdminAuth(): Promise<boolean> {
  */
 export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Promise<NextResponse> | NextResponse) {
   return async (req: NextRequest, ...args: unknown[]) => {
-    // Next.js provides req.ip on supported platforms (like Vercel).
     const reqIp = (req as unknown as { ip?: string }).ip;
-
-    // Strictly rely on req.ip to prevent IP spoofing vulnerabilities.
-    // Headers like x-forwarded-for or x-real-ip can be manipulated by clients.
     const ip = reqIp || "unknown_ip";
 
-    if (!checkRateLimit(ip)) {
+    const allowed = await checkRateLimit(ip);
+    if (!allowed) {
       return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
     }
 
-    const isAuthenticated = await checkAdminAuth();
+    const isAuthenticated = await checkAdminAuth(req);
     if (!isAuthenticated) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

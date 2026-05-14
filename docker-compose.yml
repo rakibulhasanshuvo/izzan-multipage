@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  izzan-app:
+    build: .
+    container_name: izzan-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Update NEXTAUTH_URL to your actual domain in production (e.g. https://yourdomain.com)
+      - NEXTAUTH_URL=http://localhost:3000
+      # Provide a strong 32+ character random secret
+      - NEXTAUTH_SECRET=replace_me_with_a_secure_random_string_in_production
+      # Provide a strong secure token for scripts/APIs
+      - ADMIN_TOKEN=replace_me_with_a_secure_token_in_production
+      # Use local storage provider for VPS persistent disk storage
+      - STORAGE_PROVIDER=local
+    volumes:
+      # Mount the SQLite database to persist across container restarts
+      - ./prisma/dev.db:/app/prisma/dev.db
+      # Mount the uploads directory to persist CMS media
+      - ./public/uploads:/app/public/uploads

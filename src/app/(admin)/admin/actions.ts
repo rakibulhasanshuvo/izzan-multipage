@@ -166,7 +166,7 @@ export async function updateSettings(data: unknown) {
 
 export async function updateCMSContent(id: string, value: string) {
   await ensureAdmin();
-  if (!id || value === undefined || (typeof value === "string" && value.trim() === "")) {
+  if (!id || value === undefined) {
     throw new Error("Missing required fields");
   }
   const content = await prisma.cMSContent.update({
@@ -187,7 +187,7 @@ const CredentialsSchema = z.object({
 
 export async function updateAdminCredentials(data: unknown) {
   await ensureAdmin();
-  
+
   const parsed = CredentialsSchema.safeParse(data);
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message || "Invalid credentials data");
@@ -196,10 +196,10 @@ export async function updateAdminCredentials(data: unknown) {
   const { currentPassword, newUsername, newPassword } = parsed.data;
 
   const session = await getServerSession(authOptions);
-  if (!session || !session.user || !(session.user as any).id) {
+  if (!session || !session.user || !session.user.id) {
     throw new Error("Unauthorized");
   }
-  const adminId = (session.user as any).id;
+  const adminId = session.user.id;
 
   const admin = await prisma.admin.findUnique({ where: { id: adminId } });
 

@@ -41,16 +41,18 @@ export default function TopAppBar() {
       </div>
       
       <div className="flex items-center gap-4 md:gap-6">
-        {mounted && (
+        {mounted ? (
           <button 
             aria-label="Toggle Theme" 
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="text-zinc-400 dark:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors duration-300 flex items-center group"
+            className="text-zinc-400 dark:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors duration-300 flex items-center justify-center group w-6 h-6"
           >
             <span aria-hidden="true" className="material-symbols-outlined group-hover:scale-110 transition-transform">
               {theme === 'dark' ? 'light_mode' : 'dark_mode'}
             </span>
           </button>
+        ) : (
+          <div className="w-6 h-6" aria-hidden="true" />
         )}
 
         <button aria-label="User Profile" className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-white dark:border-zinc-800 shadow-sm ml-0 md:ml-2 cursor-pointer hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative">

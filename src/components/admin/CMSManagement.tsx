@@ -80,7 +80,9 @@ export default function CMSManagement({ initialSections }: CMSManagementProps) {
       }
 
       handleValueChange(section, key, data.url);
-      toast.success("File uploaded successfully! Click 'Save Changes' to update.");
+      await updateCMSContent(itemId, data.url);
+      toast.success("File uploaded and saved successfully!");
+      router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error uploading file");
     } finally {

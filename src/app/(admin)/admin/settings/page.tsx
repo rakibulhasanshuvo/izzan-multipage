@@ -8,11 +8,11 @@ import { authOptions } from "@/lib/auth-options";
 
 export default async function SettingsPage() {
   const settings = await prisma.adminSettings.findFirst();
-  
+
   const session = await getServerSession(authOptions);
-  const adminId = session?.user ? (session.user as any).id : null;
-  const admin = adminId 
-    ? await prisma.admin.findUnique({ where: { id: adminId } }) 
+  const adminId = session?.user ? session.user.id : null;
+  const admin = adminId
+    ? await prisma.admin.findUnique({ where: { id: adminId } })
     : await prisma.admin.findFirst();
 
   return (
@@ -39,8 +39,8 @@ export default async function SettingsPage() {
 
         {/* Settings Content Area */}
         <div className="lg:col-span-9 space-y-8">
-          <SettingsFormClient 
-            initialSettings={settings || {} as AdminSettings} 
+          <SettingsFormClient
+            initialSettings={settings || {} as AdminSettings}
             adminUsername={admin?.username || ""}
           />
         </div>

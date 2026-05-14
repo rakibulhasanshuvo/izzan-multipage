@@ -15,6 +15,8 @@
     "@prisma/adapter-better-sqlite3": "^7.8.0",
     "@prisma/client": "^6.19.3",
     "@types/bcrypt": "^6.0.0",
+    "@upstash/redis": "^1.38.0",
+    "@vercel/blob": "^2.3.3",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.9.0",
     "clsx": "^2.1.1",
@@ -50,9 +52,6 @@
     "typescript": "^5.9.3",
     "vitest": "^4.1.6",
     "vitest-mock-extended": "^4.0.0"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.mjs"
   },
   "browserslist": [
     ">0.3%",
