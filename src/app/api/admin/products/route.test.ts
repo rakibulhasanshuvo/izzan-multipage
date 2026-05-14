@@ -130,4 +130,54 @@ describe("Admin Products API", () => {
 
         vi.restoreAllMocks();
     });
+  };
+
+  it('should return 400 if ID is missing', async () => {
+    const req = createRequest({});
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toBe("Missing product ID");
+  });
+
+  it('should return 404 if product is not found', async () => {
+    prismaMock.product.findUnique.mockResolvedValue(null);
+
+    const req = createRequest({ id: "non-existent" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(404);
+    const data = await res.json();
+    expect(data.error).toBe("Product not found");
+  });
+
+  it('should return 400 for invalid price', async () => {
+    const req = createRequest({ id: "123", price: "invalid" });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toBe("Invalid price");
+  });
+
+  it('should return 400 if stock is invalid', async () => {
+    const req = createRequest({ id: '123', stock: 'abc' });
+    const res = await PATCH(req);
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toBe("Invalid stock");
+  });
+
+  it('should successfully update product', async () => {
+    const mockProduct = { id: "123", name: "Old Name", price: 10, stock: 5 };
+    prismaMock.product.findUnique.mockResolvedValue(mockProduct as any);
+
+    prismaMock.product.update.mockImplementation(((args: any) => Promise.resolve({ ...mockProduct, ...args.data })) as any);
+
+    const req = createRequest({ id: "123", name: "New Name", price: 15, stock: 10 });
+    const res = await PATCH(req);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.name).toBe("New Name");
+    expect(data.price).toBe(15);
+    expect(data.stock).toBe(10);
+  });
 });
