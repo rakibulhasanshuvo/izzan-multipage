@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth-options";
+import logger from "@/lib/logger";
 
 // Rate limiting state
 export const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -78,7 +79,7 @@ export function verifyToken(token?: string): boolean {
   if (!token) return false;
   const expectedToken = process.env.ADMIN_TOKEN;
   if (!expectedToken) {
-    console.error("ADMIN_TOKEN is not configured");
+    logger.error("ADMIN_TOKEN is not configured");
     return false;
   }
   return token === expectedToken;
