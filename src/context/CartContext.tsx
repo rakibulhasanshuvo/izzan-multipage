@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { Product } from "@/generated/client";
-import logger from "@/lib/logger";
 
 export type CartItem = Product & { quantity: number };
 
@@ -26,28 +25,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Persistence (optional but nice)
   useEffect(() => {
-    const handleStorageChange = () => {
-      const savedCart = localStorage.getItem("izzan_cart");
-      if (savedCart) {
-        try {
-          const parsedCart = JSON.parse(savedCart);
-          setCartItems(parsedCart);
-        } catch (e) {
-          logger.error("Failed to parse cart", e);
-        }
+    const savedCart = localStorage.getItem("izzan_cart");
+    if (savedCart) {
+      try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setCartItems(JSON.parse(savedCart));
+      } catch (e) {
+        console.error("Failed to parse cart", e);
       }
-    };
-
-    // Initial load
-    // To fix the react-hooks/set-state-in-effect warning, we can put the initial load inside a timeout
-    // or use a callback mechanism, but the warning occurs for ANY synchronous setState inside useEffect.
-    // However, if we do it inside a Promise or setTimeout, it is asynchronous!
-    setTimeout(() => {
-      handleStorageChange();
-    }, 0);
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    }
   }, []);
 
   useEffect(() => {

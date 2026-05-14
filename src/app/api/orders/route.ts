@@ -43,44 +43,40 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
     const orderResult = await prisma.$transaction(async (tx) => {
       // 1. Price verification & Stock validation
       const productIds = items.map((item: { id: string }) => item.id);
-      const dbProducts = await tx.product.findMany({
+      const dbProductsList = await tx.product.findMany({
         where: { id: { in: productIds } }
       });
+      const dbProducts = new Map(dbProductsList.map(p => [p.id, p]));
 
       // Track in-memory stock to handle multiple entries of same product in one order
-      const stockTracker = new Map(Array.from(productMap.values()).map((p) => [(p as {id: string, stock: number}).id, (p as {id: string, stock: number}).stock]));
+      const stockTracker = new Map(dbProductsList.map(p => [p.id, p.stock]));
       // Consolidate stock updates to reduce DB calls
       const stockUpdates = new Map<string, number>();
 
-      // Consolidate duplicate items in the request
-      const consolidatedItemsMap = new Map<string, { id: string, name: string, quantity: number, price?: number }>();
+      let calculatedTotal = 0;
       for (const item of items) {
         if (!item.id || !item.quantity || item.quantity <= 0) {
            throw new Error(`Invalid item structure for ${item.name || 'unknown item'}`);
         }
 
-        let dbProduct = productMap.get(item.id);
+        let dbProduct = dbProducts.get(item.id);
 
         if (!dbProduct && item.name) {
           // Fallback to name-based lookup if ID changed across DB resets
           // Look up in our pre-fetched map
-          dbProduct = Array.from(productMap.values()).find(p => p.name === item.name) || undefined;
+          dbProduct = Array.from(dbProducts.values()).find(p => p.name === item.name);
+
+          if (!dbProduct) {
+             // Fallback to DB query only if not pre-fetched
+             dbProduct = (await tx.product.findFirst({
+               where: { name: item.name }
+             })) || undefined;
+             if (dbProduct) {
+                dbProducts.set(dbProduct.id, dbProduct);
+                stockTracker.set(dbProduct.id, dbProduct.stock);
+             }
+          }
         }
-      }
-
-      const uniqueProductIds = Array.from(consolidatedItemsMap.keys());
-
-      const dbProducts = await tx.product.findMany({
-        where: { id: { in: uniqueProductIds } }
-      });
-
-      const productMap = new Map(dbProducts.map(p => [p.id, p]));
-
-      let calculatedTotal = 0;
-
-      // We iterate over the consolidated items to validate stock and calculate total
-      for (const [productId, item] of consolidatedItemsMap.entries()) {
-        const dbProduct = productMap.get(productId);
 
         if (!dbProduct) {
           throw new Error(`Product not found: ${item.name || item.id}`);
@@ -90,12 +86,14 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         item.id = dbProduct.id;
         item.price = dbProduct.price; // Update price from DB to avoid mismatched data
 
-        if (dbProduct.stock < item.quantity) {
-          throw new Error(`Insufficient stock for ${dbProduct.name}. Only ${dbProduct.stock} left.`);
+        const currentStock = stockTracker.get(dbProduct.id) ?? dbProduct.stock;
+        
+        if (currentStock < item.quantity) {
+          throw new Error(`Insufficient stock for ${dbProduct.name}. Only ${currentStock} left.`);
         }
 
         // Update in-memory tracker
-        stockTracker.set(item.id, dbProduct.stock - item.quantity);
+        stockTracker.set(item.id, currentStock - item.quantity);
 
         // Accumulate stock updates
         stockUpdates.set(item.id, (stockUpdates.get(item.id) || 0) + item.quantity);
@@ -104,8 +102,8 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         calculatedTotal += dbProduct.price * item.quantity;
       }
 
-      // Perform consolidated stock updates using the unique IDs
-      for (const [productId, item] of consolidatedItemsMap.entries()) {
+      // Perform consolidated stock updates
+      for (const [productId, quantity] of stockUpdates.entries()) {
         await tx.product.update({
           where: { id: productId },
           data: { stock: { decrement: quantity } }

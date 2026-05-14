@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import CMSManagement from "@/components/admin/CMSManagement";
 import { CMSContent } from "@/generated/client";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminCMS() {
   const cmsContent = await prisma.cMSContent.findMany({
     orderBy: { section: "asc" },

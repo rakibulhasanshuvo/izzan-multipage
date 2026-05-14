@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import logger from "@/lib/logger";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -32,7 +31,7 @@ export default function LoginPage() {
         router.refresh();
       }
     } catch (error: unknown) {
-      logger.error("Login error:", error);
+      console.error("Login error:", error);
       setError("An unexpected error occurred");
     } finally {
       setIsLoading(false);

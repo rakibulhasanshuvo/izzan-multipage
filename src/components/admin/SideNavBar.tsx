@@ -34,7 +34,7 @@ export default function SideNavBar() {
       <nav
         aria-label="Sidebar Navigation"
         className={cn(
-          "fixed left-0 top-0 h-full flex flex-col py-8 w-[260px] border-r border-zinc-800/10 shadow-[4px_0_24px_rgba(0,0,0,0.02)] bg-white/95 md:bg-white/80 backdrop-blur-2xl z-50 transition-transform duration-300 ease-in-out",
+          "fixed left-0 top-0 h-full flex flex-col py-8 w-[260px] border-r border-zinc-800/10 dark:border-zinc-800 shadow-[4px_0_24px_rgba(0,0,0,0.02)] bg-white/95 md:bg-white/80 dark:bg-zinc-950/95 dark:md:bg-zinc-950/80 backdrop-blur-2xl z-50 transition-transform duration-300 ease-in-out",
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
@@ -44,7 +44,7 @@ export default function SideNavBar() {
               <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary font-serif italic font-bold shadow-lg shadow-primary/20">
                 A
               </div>
-              <h1 className="font-serif italic text-2xl text-zinc-900 tracking-tight">Izzan Admin</h1>
+              <h1 className="font-serif italic text-2xl text-zinc-900 dark:text-zinc-100 tracking-tight">Izzan Admin</h1>
             </div>
             <p className="font-body-sm text-[12px] text-zinc-500 uppercase tracking-widest pl-[52px]">Luxe Studio</p>
           </div>
@@ -71,8 +71,8 @@ export default function SideNavBar() {
                   className={cn(
                     "flex items-center px-4 py-3 rounded-2xl font-serif font-medium tracking-wide transition-all duration-300 group",
                     isActive
-                      ? "bg-zinc-50 text-zinc-900 shadow-sm border border-zinc-200/50"
-                      : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900 border border-transparent"
+                      ? "bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200/50 dark:border-zinc-800/50"
+                      : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 hover:text-zinc-900 dark:hover:text-zinc-100 border border-transparent"
                   )}
                 >
                   <span aria-hidden="true" className={cn(
@@ -88,10 +88,10 @@ export default function SideNavBar() {
             );
           })}
 
-            <li className="mt-auto pt-6 border-t border-zinc-100">
+            <li className="mt-auto pt-6 border-t border-zinc-100 dark:border-zinc-800">
                 <button
                   onClick={() => signOut({ callbackUrl: "/admin/login" })}
-                  className="w-full flex items-center px-4 py-3 rounded-2xl font-serif font-medium tracking-wide transition-all duration-300 group text-zinc-500 hover:bg-red-50 hover:text-red-600 border border-transparent"
+                  className="w-full flex items-center px-4 py-3 rounded-2xl font-serif font-medium tracking-wide transition-all duration-300 group text-zinc-500 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 border border-transparent"
                 >
                   <span aria-hidden="true" className="material-symbols-outlined mr-4 transition-transform duration-300 group-hover:scale-110">
                     logout

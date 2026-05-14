@@ -47,7 +47,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
           saleItems={saleItems}
           onExplore={handleExplore}
         />
-        <Spotlight imgUrl={cms.spotlight_img} />
+        <Spotlight videoUrl={cms.spotlight_video} />
         <Story title={cms.story_title} content={cms.story_content} imgUrl={cms.story_img} />
         <Features />
         <CareGuide />

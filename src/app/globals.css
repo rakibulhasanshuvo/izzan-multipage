@@ -1,4 +1,6 @@
 /* stylelint-disable */
+/* stylelint-disable at-rule-no-unknown */
+/* noinspection CssUnknownAtRule */
 /* css-disable-next-line */
 @import "tailwindcss";
 

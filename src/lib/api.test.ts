@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { apiHandler } from './api';
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@/generated/client';
+import { logger } from '@/lib/logger';
 
 // Mock NextRequest and NextResponse
 vi.mock('next/server', () => {
@@ -10,6 +11,15 @@ vi.mock('next/server', () => {
       json: vi.fn((body, init) => ({ body, init })),
     },
     NextRequest: vi.fn(),
+  };
+});
+
+// Mock logger
+vi.mock('@/lib/logger', () => {
+  return {
+    logger: {
+      error: vi.fn(),
+    },
   };
 });
 
@@ -28,6 +38,18 @@ describe('apiHandler', () => {
     const result = await wrappedHandler(mockReq);
 
     expect(handler).toHaveBeenCalledWith(mockReq);
+    expect(result).toEqual(successResponse);
+  });
+
+  it('should pass down additional arguments correctly', async () => {
+    const successResponse = { body: { ok: true }, init: { status: 200 } };
+    const handler = vi.fn().mockResolvedValue(successResponse);
+    const wrappedHandler = apiHandler(handler);
+    
+    const params = { params: { id: "123" } };
+    const result = await wrappedHandler(mockReq, params);
+
+    expect(handler).toHaveBeenCalledWith(mockReq, params);
     expect(result).toEqual(successResponse);
   });
 
@@ -113,6 +135,19 @@ describe('apiHandler', () => {
     expect(NextResponse.json).toHaveBeenCalledWith(
       { error: 'Service Unavailable: Database connection error' },
       { status: 503 }
+    );
+  });
+
+  it('should handle string errors thrown gracefully', async () => {
+    const handler = vi.fn().mockRejectedValue("Just a string error");
+    const wrappedHandler = apiHandler(handler);
+
+    await wrappedHandler(mockReq);
+
+    expect(logger.error).toHaveBeenCalledWith("API Error:", { error: "Just a string error" });
+    expect(NextResponse.json).toHaveBeenCalledWith(
+      { error: 'Internal Server Error' },
+      { status: 500 }
     );
   });
 

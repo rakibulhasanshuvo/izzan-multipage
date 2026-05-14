@@ -22,7 +22,7 @@ const staggerContainer: Variants = {
   }
 };
 
-export function Spotlight({ imgUrl }: { imgUrl?: string }) {
+export function Spotlight({ videoUrl }: { videoUrl?: string }) {
   const { addToCart } = useCart();
   
   const handleAddToCart = () => {
@@ -48,11 +48,13 @@ export function Spotlight({ imgUrl }: { imgUrl?: string }) {
           transition={{ duration: 1, ease: "easeOut" }}
           className="relative aspect-[4/5] w-full rounded-3xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.15)] dark:shadow-[0_40px_80px_rgba(0,0,0,0.4)]"
         >
-          <Image
-            src={imgUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuD8oz6-Sg586xPq5mJx1g1FLgZ5HcTKJliYsmN46wDI_VUNFS6cC-ocsffImJho4F8OKRpexTgbDv8mLcCDnnNh9BlUZawueRnl9SYPcKMT-bml6_BE5sIoOYyfc7wmmBkxCjDh7gE0id9zfDRErApzvuBNuP4AntNOOgbuvCQGmeEIkK3ZmT7ujCYFxXCupsPBj1V_BCkDMOxI2_rl41q-amM7V7DgXe5p1b5m2iKpn_VUxE94gQyHUb8PBTsd9mzHRZixaQgnlyGn"}
-            alt="Lavender Drift Candle Detail"
-            fill
-            className="object-cover hover:scale-105 transition-transform duration-1000"
+          <video
+            src={videoUrl || "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-1000"
           />
         </motion.div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Sun, Moon, Menu, X, ArrowRight, User } from "lucide-react";
+import { ShoppingCart, Sun, Moon, Menu, X, ArrowRight } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,9 +43,7 @@ export function Header({ onViewAllProducts }: HeaderProps) {
           <div className="flex items-center space-x-4 md:space-x-6">
             <Search onViewAll={onViewAllProducts} />
 
-            <button className="hidden sm:block text-text-light dark:text-text-dark hover:text-primary transition-colors" aria-label="User Account">
-              <User size={20} />
-            </button>
+
 
             {mounted && (
               <button

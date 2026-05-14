@@ -3,7 +3,7 @@ import { withAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { apiHandler } from "@/lib/api";
 
-export const GET = withAuth(apiHandler(async function GET() {
+export const GET = withAuth(apiHandler(async function GET(_req: NextRequest) {
   const products = await prisma.product.findMany({
     orderBy: { updatedAt: "desc" },
   });

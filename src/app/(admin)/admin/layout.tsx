@@ -9,7 +9,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-background text-on-background font-body-md">
+    <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark font-body-md transition-colors duration-300">
       <AdminSidebarProvider>
         <SideNavBar />
         <div className="flex flex-col flex-1">

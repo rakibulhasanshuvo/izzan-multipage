@@ -1,261 +1,208 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
-import { POST } from "./route";
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NextRequest } from 'next/server';
 
-describe("Orders API", () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
+// Need to hoist the mock implementation completely
+vi.mock('@/lib/db', async () => {
+  const { mockDeep } = await import('vitest-mock-extended');
+  return {
+    prisma: mockDeep(),
+  };
+});
+
+import { POST } from './route';
+import { prisma } from '@/lib/db';
+import { PrismaClient } from '@/generated/client';
+
+const prismaMock = prisma as unknown as ReturnType<typeof import('vitest-mock-extended').mockDeep<PrismaClient>>;
+
+describe('Orders API POST handler', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const createRequest = (body: Record<string, unknown>) => {
+    return new NextRequest('http://localhost:3000/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+  };
+
+  const validPayload = {
+    name: 'John Doe',
+    phone: '01712345678',
+    email: 'john@example.com',
+    zila: 'Dhaka',
+    upozila: 'Savar',
+    shippingAddress: '123 Main St',
+    items: [
+      { id: 'prod1', name: 'Product 1', quantity: 2, price: 100 },
+    ],
+  };
+
+  it('should return 400 if required fields are missing', async () => {
+    const req = createRequest({ name: 'Incomplete' });
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Missing required fields or empty cart');
+  });
+
+  it('should return 400 if items array is empty', async () => {
+    const req = createRequest({ ...validPayload, items: [] });
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Missing required fields or empty cart');
+  });
+
+  it('should successfully process a valid order for a new customer', async () => {
+    const req = createRequest(validPayload);
+
+    // Mock findUnique to return null for customer and email (new customer)
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
+
+    // Mock transaction
+    prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
+      // Mock the transaction client
+      const txMock = {
+        product: {
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
+          findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        customer: {
+          create: vi.fn().mockResolvedValue({ id: 'cust1', name: 'John Doe', email: 'john@example.com' }),
+          update: vi.fn(),
+        },
+        order: {
+          create: vi.fn().mockResolvedValue({ id: 'order1' }),
+        },
+      };
+
+      if (typeof callback === 'function') {
+         return callback(txMock);
+      }
     });
 
-    it("POST /api/orders - Missing required fields", async () => {
-        const req = new NextRequest("http://localhost/api/orders", {
-            method: "POST",
-            body: JSON.stringify({})
-        });
+    const response = await POST(req);
+    const data = await response.json();
 
-        const res = await POST(req);
-        expect(res.status).toBe(400);
-        const data = await res.json();
-        expect(data.error).toBe("Missing required fields or empty cart");
+    expect(data.error).toBeUndefined();
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.orderId).toBe('order1');
+  });
+
+  it('should successfully process a valid order for an existing customer', async () => {
+    const req = createRequest(validPayload);
+
+    // Mock findUnique to return existing customer
+    prismaMock.customer.findUnique.mockImplementation(async (args: unknown) => {
+      const typedArgs = args as { where?: { phone?: string, email?: string } };
+      if (typedArgs?.where?.phone) {
+        return { id: 'cust1', name: 'John Doe', phone: '01712345678', email: 'john@example.com', zila: 'Dhaka', upozila: 'Savar', location: 'Dhaka', tier: 'BRONZE', totalSpend: 0, createdAt: new Date(), updatedAt: new Date() };
+      }
+      return null;
     });
 
-    it("POST /api/orders - Empty cart", async () => {
-        const req = new NextRequest("http://localhost/api/orders", {
-            method: "POST",
-            body: JSON.stringify({
-                name: "Test User",
-                phone: "1234567890",
-                zila: "Dhaka",
-                upozila: "Savar",
-                shippingAddress: "123 Test St",
-                items: []
-            })
-        });
+    // Mock transaction
+    prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
+      // Mock the transaction client
+      const txMock = {
+        product: {
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
+          findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+          update: vi.fn().mockResolvedValue({}),
+        },
+        customer: {
+          create: vi.fn(),
+          update: vi.fn().mockResolvedValue({ id: 'cust1', name: 'John Doe', email: 'john@example.com' }),
+        },
+        order: {
+          create: vi.fn().mockResolvedValue({ id: 'order2' }),
+        },
+      };
 
-        const res = await POST(req);
-        expect(res.status).toBe(400);
-        const data = await res.json();
-        expect(data.error).toBe("Missing required fields or empty cart");
+      if (typeof callback === 'function') {
+         return callback(txMock);
+      }
     });
 
-    it("POST /api/orders - Invalid item structure", async () => {
-        const req = new NextRequest("http://localhost/api/orders", {
-            method: "POST",
-            body: JSON.stringify({
-                name: "Test User",
-                phone: "1234567890",
-                zila: "Dhaka",
-                upozila: "Savar",
-                shippingAddress: "123 Test St",
-                items: [{ id: "1" }] // Missing quantity
-            })
-        });
+    const response = await POST(req);
+    const data = await response.json();
 
-        vi.spyOn(prisma.customer, "findUnique").mockResolvedValue(null);
-        vi.spyOn(prisma, "$transaction").mockImplementation(async (callback) => {
-            return callback(prisma);
-        });
+    expect(data.error).toBeUndefined();
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.orderId).toBe('order2');
+  });
 
-        const res = await POST(req);
-        expect(res.status).toBe(400);
-        const data = await res.json();
-        expect(data.error).toMatch(/Invalid item structure/);
+  it('should return 400 if a product is not found', async () => {
+    const req = createRequest(validPayload);
+
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
+
+    prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
+      const txMock = {
+        product: {
+          // Mock product not found
+          findMany: vi.fn().mockResolvedValue([]),
+          findUnique: vi.fn().mockResolvedValue(null),
+          findFirst: vi.fn().mockResolvedValue(null),
+        },
+      };
+
+      if (typeof callback === 'function') {
+         return callback(txMock);
+      }
     });
 
-    it("POST /api/orders - Successful order for new customer", async () => {
-        const req = new NextRequest("http://localhost/api/orders", {
-            method: "POST",
-            body: JSON.stringify({
-                name: "New User",
-                phone: "1234567890",
-                email: "new@example.com",
-                zila: "Dhaka",
-                upozila: "Savar",
-                shippingAddress: "123 Test St",
-                items: [{ id: "1", quantity: 2 }]
-            })
-        });
+    const response = await POST(req);
+    const data = await response.json();
 
-        vi.spyOn(prisma.customer, "findUnique").mockResolvedValue(null);
-        vi.spyOn(prisma.customer, "create").mockResolvedValue({
-            id: "customer-1",
-            name: "New User",
-            phone: "1234567890",
-            email: "new@example.com",
-            location: "123 Test St",
-            zila: "Dhaka",
-            upozila: "Savar",
-            tier: "Bronze",
-            totalSpend: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Product not found: Product 1');
+  });
 
-        const mockProduct = {
-            id: "1", name: "Product 1", price: 100, stock: 10,
-            description: null, img: "", hoverImg: null, categories: "",
-            badge: null, originalPrice: null,
-            createdAt: new Date(), updatedAt: new Date()
-        };
-        vi.spyOn(prisma.product, "findUnique").mockResolvedValue(mockProduct);
-        vi.spyOn(prisma.product, "update").mockResolvedValue(mockProduct);
-        vi.spyOn(prisma.order, "create").mockResolvedValue({
-            id: "order-1",
-            customerId: "customer-1",
-            totalAmount: 200,
-            status: "pending",
-            items: "cod",
-            zila: "Dhaka",
-            upozila: "Savar",
-            shippingAddress: "123 Test St",
-            customerName: "New User",
-            customerEmail: "new@example.com",
-            customerPhone: "1234567890",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-
-        vi.spyOn(prisma, "$transaction").mockImplementation(async (callback) => {
-            return callback(prisma);
-        });
-
-        const res = await POST(req);
-        expect(res.status).toBe(200);
-        const data = await res.json();
-        expect(data.orderId).toBe("order-1");
+  it('should return 400 if there is insufficient stock', async () => {
+    const req = createRequest({
+      ...validPayload,
+      items: [
+        { id: 'prod1', name: 'Product 1', quantity: 20, price: 100 },
+      ],
     });
 
-    it("POST /api/orders - Successful order for existing customer", async () => {
-        const req = new NextRequest("http://localhost/api/orders", {
-            method: "POST",
-            body: JSON.stringify({
-                name: "Existing User",
-                phone: "0987654321",
-                zila: "Dhaka",
-                upozila: "Savar",
-                shippingAddress: "123 Test St",
-                items: [{ id: "2", quantity: 1 }]
-            })
-        });
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
 
-        vi.spyOn(prisma.customer, "findUnique").mockResolvedValue({
-            id: "customer-2",
-            name: "Existing User",
-            phone: "0987654321",
-            email: null,
-            location: "Old Address",
-            zila: "Dhaka",
-            upozila: "Savar",
-            tier: "Bronze",
-            totalSpend: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        vi.spyOn(prisma.customer, "update").mockResolvedValue({
-            id: "customer-2",
-            name: "Existing User",
-            phone: "0987654321",
-            email: null,
-            location: "123 Test St",
-            zila: "Dhaka",
-            upozila: "Savar",
-            tier: "Bronze",
-            totalSpend: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
+    prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
+      const txMock = {
+        product: {
+          // Mock stock 10 (less than 20 requested)
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
+          findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+        },
+      };
 
-        const mockProduct = {
-            id: "2", name: "Product 2", price: 50, stock: 5,
-            description: null, img: "", hoverImg: null, categories: "",
-            badge: null, originalPrice: null,
-            createdAt: new Date(), updatedAt: new Date()
-        };
-        vi.spyOn(prisma.product, "findUnique").mockResolvedValue(mockProduct);
-        vi.spyOn(prisma.product, "update").mockResolvedValue(mockProduct);
-        vi.spyOn(prisma.order, "create").mockResolvedValue({
-            id: "order-2",
-            customerId: "customer-2",
-            totalAmount: 50,
-            status: "pending",
-            items: "cod",
-            zila: "Dhaka",
-            upozila: "Savar",
-            shippingAddress: "123 Test St",
-            customerName: "New User",
-            customerEmail: "new@example.com",
-            customerPhone: "1234567890",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-
-        vi.spyOn(prisma, "$transaction").mockImplementation(async (callback) => {
-            return callback(prisma);
-        });
-
-        const res = await POST(req);
-        expect(res.status).toBe(200);
-        const data = await res.json();
-        expect(data.orderId).toBe("order-2");
+      if (typeof callback === 'function') {
+         return callback(txMock);
+      }
     });
 
-    it("POST /api/orders - Insufficient stock", async () => {
-        const req = new NextRequest("http://localhost/api/orders", {
-            method: "POST",
-            body: JSON.stringify({
-                name: "Test User",
-                phone: "1234567890",
-                zila: "Dhaka",
-                upozila: "Savar",
-                shippingAddress: "123 Test St",
-                items: [{ id: "3", quantity: 10 }]
-            })
-        });
+    const response = await POST(req);
+    const data = await response.json();
 
-        vi.spyOn(prisma.customer, "findUnique").mockResolvedValue(null);
-
-        const mockProduct = {
-            id: "3", name: "Product 3", price: 100, stock: 5, // Only 5 in stock, ordered 10
-            description: null, img: "", hoverImg: null, categories: "",
-            badge: null, originalPrice: null,
-            createdAt: new Date(), updatedAt: new Date()
-        };
-        vi.spyOn(prisma.product, "findUnique").mockResolvedValue(mockProduct);
-
-        vi.spyOn(prisma, "$transaction").mockImplementation(async (callback) => {
-            return callback(prisma);
-        });
-
-        const res = await POST(req);
-        expect(res.status).toBe(400);
-        const data = await res.json();
-        expect(data.error).toMatch(/Insufficient stock for Product 3/);
-    });
-
-    it("POST /api/orders - Product not found", async () => {
-        const req = new NextRequest("http://localhost/api/orders", {
-            method: "POST",
-            body: JSON.stringify({
-                name: "Test User",
-                phone: "1234567890",
-                zila: "Dhaka",
-                upozila: "Savar",
-                shippingAddress: "123 Test St",
-                items: [{ id: "non-existent", quantity: 1 }]
-            })
-        });
-
-        vi.spyOn(prisma.customer, "findUnique").mockResolvedValue(null);
-        vi.spyOn(prisma.product, "findUnique").mockResolvedValue(null);
-
-        vi.spyOn(prisma, "$transaction").mockImplementation(async (callback) => {
-            return callback(prisma);
-        });
-
-        const res = await POST(req);
-        expect(res.status).toBe(400);
-        const data = await res.json();
-        expect(data.error).toMatch(/Product not found/);
-    });
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Insufficient stock for Product 1. Only 10 left.');
+  });
 });

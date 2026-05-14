@@ -3,13 +3,14 @@
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { cookies } from "next/headers";
-
+import { checkAdminAuth } from "@/lib/auth";
+import bcrypt from "bcrypt";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth-options";
 
 async function ensureAdmin() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("admin_token")?.value;
-  if (token !== process.env.ADMIN_TOKEN) {
+  const isAuthenticated = await checkAdminAuth();
+  if (!isAuthenticated) {
     throw new Error("Unauthorized");
   }
 }
@@ -176,4 +177,68 @@ export async function updateCMSContent(id: string, value: string) {
   revalidatePath("/admin/cms");
   revalidatePath("/");
   return content;
+}
+
+const CredentialsSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newUsername: z.string().min(1, "New username is required").optional(),
+  newPassword: z.string().optional(),
+});
+
+export async function updateAdminCredentials(data: unknown) {
+  await ensureAdmin();
+  
+  const parsed = CredentialsSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || "Invalid credentials data");
+  }
+
+  const { currentPassword, newUsername, newPassword } = parsed.data;
+
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || !(session.user as any).id) {
+    throw new Error("Unauthorized");
+  }
+  const adminId = (session.user as any).id;
+
+  const admin = await prisma.admin.findUnique({ where: { id: adminId } });
+
+  if (!admin) {
+    throw new Error("Admin not found");
+  }
+
+  // Verify current password
+  const isPasswordValid = await bcrypt.compare(currentPassword, admin.password);
+  if (!isPasswordValid) {
+    throw new Error("Incorrect current password");
+  }
+
+  const updateData: { username?: string; password?: string } = {};
+
+  if (newUsername && newUsername.trim() !== "") {
+    // Check if new username is already taken by another admin
+    const existingAdmin = await prisma.admin.findUnique({
+      where: { username: newUsername }
+    });
+    if (existingAdmin && existingAdmin.id !== admin.id) {
+      throw new Error("Username already taken");
+    }
+    updateData.username = newUsername.trim();
+  }
+
+  if (newPassword && newPassword.trim() !== "") {
+    if (newPassword.length < 6) {
+      throw new Error("New password must be at least 6 characters long");
+    }
+    updateData.password = await bcrypt.hash(newPassword, 10);
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: updateData,
+    });
+  }
+
+  return { success: true };
 }
