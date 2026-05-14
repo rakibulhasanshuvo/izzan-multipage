@@ -89,17 +89,17 @@ export function ContactSection() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-widest font-bold text-gray-500 dark:text-gray-400">Full Name</label>
-                  <input type="text" placeholder="Your Name" required className="w-full px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all dark:text-white" />
+                  <label htmlFor="fullName" className="text-xs uppercase tracking-widest font-bold text-gray-500 dark:text-gray-400">Full Name</label>
+                  <input id="fullName" type="text" placeholder="Your Name" required className="w-full px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all dark:text-white" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-widest font-bold text-gray-500 dark:text-gray-400">Email Address</label>
-                  <input type="email" placeholder="Email Address" required className="w-full px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all dark:text-white" />
+                  <label htmlFor="contactEmail" className="text-xs uppercase tracking-widest font-bold text-gray-500 dark:text-gray-400">Email Address</label>
+                  <input id="contactEmail" type="email" placeholder="Email Address" required className="w-full px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all dark:text-white" />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest font-bold text-gray-500 dark:text-gray-400">Subject</label>
-                <select className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all dark:text-gray-100">
+                <label htmlFor="subject" className="text-xs uppercase tracking-widest font-bold text-gray-500 dark:text-gray-400">Subject</label>
+                <select id="subject" className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all dark:text-gray-100">
                   <option>General Inquiry</option>
                   <option>Wholesale</option>
                   <option>Shipping Question</option>
@@ -107,8 +107,8 @@ export function ContactSection() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-widest font-bold text-gray-500">Message</label>
-                <textarea rows={4} required className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all dark:text-gray-100 resize-none"></textarea>
+                <label htmlFor="message" className="text-xs uppercase tracking-widest font-bold text-gray-500">Message</label>
+                <textarea id="message" rows={4} required className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all dark:text-gray-100 resize-none"></textarea>
               </div>
               <button type="submit" className="w-full bg-primary text-white py-4 rounded-xl font-bold uppercase tracking-[0.2em] text-sm hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center space-x-2">
                 <span>Send Message</span>
