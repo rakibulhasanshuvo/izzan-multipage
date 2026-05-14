@@ -84,3 +84,4 @@ describe('Products API PATCH handler', () => {
     expect(data.stock).toBe(10);
   });
 });
+});

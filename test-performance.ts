@@ -4,15 +4,15 @@ import { prisma } from './src/lib/db';
 
 async function run() {
   const items = Array.from({ length: 50 }).map((_, i) => ({
-    id: `prod${i}`,
+    id: `prod-none-${i}`, // Deliberately pass wrong IDs to force the name fallback
     name: `Product ${i}`,
     quantity: 1,
     price: 10
   }));
 
-  // Create products in DB
+  // Create products in DB with correct names but we'll try to find them by name
   await prisma.product.createMany({
-    data: items.map(i => ({ id: i.id, name: i.name, price: i.price, stock: 100, description: "Test", categories: "Test", img: "[]", hoverImg: null, originalPrice: null, badge: null, createdAt: new Date(), updatedAt: new Date() })),
+    data: items.map((i, idx) => ({ id: `actual-prod-${idx}`, name: i.name, price: i.price, stock: 100, description: "Test", categories: "Test", img: "[]", hoverImg: null, originalPrice: null, badge: null, createdAt: new Date(), updatedAt: new Date() })),
   });
 
   const req = new NextRequest('http://localhost:3000/api/orders', {
@@ -34,7 +34,7 @@ async function run() {
   console.log(`Status: ${response.status}`);
   const data = await response.json()
   console.log(data);
-  console.log(`Execution time: ${end - start} ms`);
+  console.log(`Execution time (fallback scenario): ${end - start} ms`);
 
   // cleanup
   await prisma.product.deleteMany({ where: { categories: "Test" }});
