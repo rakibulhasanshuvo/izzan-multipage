@@ -63,7 +63,10 @@ export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
 
   if (process.env.STORAGE_PROVIDER === "vercel") {
     // Vercel Blob Upload
-    const blob = await put(filename, file, { access: 'public' });
+    const blob = await put(filename, buffer, {
+      access: 'public',
+      contentType: file.type.startsWith("image/") && file.type !== "image/gif" ? "image/webp" : file.type,
+    });
     return NextResponse.json({ success: true, url: blob.url });
   } else {
     // Local File System Upload

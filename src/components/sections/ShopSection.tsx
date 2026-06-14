@@ -115,7 +115,7 @@ export function ShopSection({ bestSellers, newArrivals, saleItems, onExplore }: 
             animate="visible"
             exit="exit"
             variants={staggerContainer}
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6"
+            className="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-6"
           >
             {displayProducts.map((product) => (
               <motion.div key={product.id} variants={cardVariant}>

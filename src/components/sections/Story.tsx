@@ -1,9 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { motion, Variants } from "framer-motion";
-import { ArrowRight } from "lucide-react";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -32,18 +30,21 @@ export function Story({ title, content, imgUrl }: { title?: string, content?: st
           className="flex flex-col space-y-6 order-2 md:order-1"
         >
           <motion.h2 variants={fadeIn} className="text-4xl md:text-5xl font-display mb-6 dark:text-gray-100">{title || "The Art of Slow Living."}</motion.h2>
-          <motion.p variants={fadeIn} className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed font-light text-lg">
-            {content || "Izzan was born from a simple desire: to create moments of stillness in a chaotic world. We believe that your space is your sanctuary, and the scents you fill it with should be as pure as nature intended."}
-          </motion.p>
+          {content ? (
+            <motion.div
+              variants={fadeIn}
+              className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed font-light text-lg"
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
+          ) : (
+            <motion.p variants={fadeIn} className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed font-light text-lg">
+              Izzan was born from a simple desire: to create moments of stillness in a chaotic world. We believe that your space is your sanctuary, and the scents you fill it with should be as pure as nature intended.
+            </motion.p>
+          )}
           <motion.h3 variants={fadeIn} className="text-xl font-display font-semibold mb-4 dark:text-gray-100 text-primary">Crafted with Purpose</motion.h3>
           <motion.p variants={fadeIn} className="text-gray-600 dark:text-gray-400 mb-8 text-sm leading-relaxed">
             Every candle is hand-poured in our studio using 100% natural soy wax, lead-free cotton wicks, and premium essential oils. No toxins, no artificial dyes—just clean, sustainable burns that elevate your everyday rituals.
           </motion.p>
-          <motion.div variants={fadeIn} className="pt-4">
-            <Link href="#" className="inline-flex items-center text-primary font-semibold tracking-wider uppercase text-sm hover:underline underline-offset-4">
-              Read Our Story <ArrowRight size={16} className="ml-2" />
-            </Link>
-          </motion.div>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, x: 50 }}

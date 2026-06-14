@@ -21,21 +21,23 @@ export function Footer() {
   return (
     <footer className="bg-background-light dark:bg-background-dark pt-12 border-t border-gray-200 dark:border-gray-800 transition-colors duration-300">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-3 gap-12 items-center">
-        <div className="text-left">
+        <div className="text-center md:text-left flex flex-col items-center md:items-start">
           <h2 className="font-display text-xl mb-2">Stay in Touch</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Email signup for 15% OFF</p>
-          <form onSubmit={handleSubmit} className="flex w-full max-w-sm">
+          <form onSubmit={handleSubmit} className="flex w-full max-w-sm mx-auto md:mx-0">
             <input
-              className="flex-1 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-l-full focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-800 dark:text-white"
-              placeholder="Email address"
+              className="flex-1 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-l-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-white"
+              placeholder="Email address…"
               type="email"
               required
+              autoComplete="email"
+              spellCheck={false}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               aria-label="Email address for newsletter"
             />
             <button
-              className="bg-primary text-white px-6 py-2 text-sm font-semibold tracking-wider rounded-r-full hover:bg-opacity-90 transition-colors cursor-pointer"
+              className="bg-primary text-white px-6 py-2 text-sm font-semibold tracking-wider rounded-r-full hover:bg-opacity-90 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               type="submit"
             >
               SIGN UP
@@ -43,30 +45,29 @@ export function Footer() {
           </form>
         </div>
         <div className="text-center">
-          <Link href="/" className="text-5xl font-logo text-text-light dark:text-text-dark hover:text-primary transition-colors">Izzan</Link>
+          <Link href="/" className="text-5xl font-logo text-text-light dark:text-text-dark hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded px-2">Izzan</Link>
         </div>
-        <div className="flex flex-col md:flex-row justify-end items-start md:items-center space-y-6 md:space-y-0 md:space-x-12">
-          <div className="flex flex-col space-y-2 text-sm">
-            <Link className="hover:text-primary transition-colors" href="#contact">Contact</Link>
-            <Link className="hover:text-primary transition-colors" href="#faq">FAQ</Link>
-            <Link className="hover:text-primary transition-colors" href="#story">Our Story</Link>
-            <Link className="hover:text-primary transition-colors" href="#shop">Shop</Link>
+        <div className="flex flex-col md:flex-row justify-end items-center md:items-center space-y-6 md:space-y-0 md:space-x-12 text-center md:text-left">
+          <div className="flex flex-col items-center md:items-start space-y-2 text-sm">
+            <Link className="hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary px-2 rounded" href="/contact">Support & FAQ</Link>
+            <Link className="hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary px-2 rounded" href="/story">Our Story</Link>
+            <Link className="hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary px-2 rounded" href="/shop">Shop</Link>
           </div>
-          <div className="flex flex-col items-start md:items-end space-y-4">
+          <div className="flex flex-col items-center md:items-end space-y-4">
             <div className="flex space-x-4">
-              <Link className="text-gray-600 dark:text-gray-400 hover:text-primary transition-colors" href="#" aria-label="Instagram">
+              <Link className="text-gray-600 dark:text-gray-400 hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1" href="#" aria-label="Instagram">
                 <Camera size={20} />
               </Link>
-              <Link className="text-gray-600 dark:text-gray-400 hover:text-primary transition-colors" href="#" aria-label="Chat">
+              <Link className="text-gray-600 dark:text-gray-400 hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1" href="#" aria-label="Chat">
                 <MessageCircle size={20} />
               </Link>
-              <Link className="text-gray-600 dark:text-gray-400 hover:text-primary transition-colors" href="#" aria-label="Share">
+              <Link className="text-gray-600 dark:text-gray-400 hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1" href="#" aria-label="Share">
                 <Share2 size={20} />
               </Link>
             </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-2 md:text-right">Payment methods</p>
-              <div className="flex space-x-2">
+            <div className="flex flex-col items-center md:items-end">
+              <p className="text-xs text-gray-500 mb-2 text-center md:text-right">Payment methods</p>
+              <div className="flex justify-center md:justify-end space-x-2">
                 <div className="w-8 h-5 bg-gray-200 dark:bg-gray-700 rounded text-[8px] flex items-center justify-center font-bold">VISA</div>
                 <div className="w-8 h-5 bg-gray-200 dark:bg-gray-700 rounded text-[8px] flex items-center justify-center font-bold">MC</div>
                 <div className="w-8 h-5 bg-gray-200 dark:bg-gray-700 rounded text-[8px] flex items-center justify-center font-bold">AMEX</div>

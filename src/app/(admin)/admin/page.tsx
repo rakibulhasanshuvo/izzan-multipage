@@ -1,282 +1,108 @@
 import React from "react";
-import Image from "next/image";
 import { prisma } from "@/lib/db";
-import { cn } from "@/lib/utils";
+import OverviewClientContainer from "@/components/admin/OverviewClientContainer";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminOverview() {
-  // Fetch some real stats
+  // 1. Basic Stats
   const productCount = await prisma.product.count();
-  const recentProducts = await prisma.product.findMany({
-    take: 3,
-    orderBy: { createdAt: "desc" },
-  });
-
   const orderCount = await prisma.order.count();
   const customersCount = await prisma.customer.count();
+  
   const revenueObj = await prisma.order.aggregate({
     _sum: { totalAmount: true },
   });
   const totalRevenue = revenueObj._sum.totalAmount || 0;
 
+  // 2. Fetch Lists
   const recentOrders = await prisma.order.findMany({
-    take: 4,
+    take: 6,
     orderBy: { createdAt: "desc" },
   });
 
+  const recentProducts = await prisma.product.findMany({
+    take: 3,
+    orderBy: { createdAt: "desc" },
+  });
+
+  const lowStockProducts = await prisma.product.findMany({
+    where: { stock: { lt: 10 } },
+    take: 5,
+  });
+
+  // 3. Fetch monthly target sales
+  const firstDayOfMonth = new Date();
+  firstDayOfMonth.setDate(1);
+  firstDayOfMonth.setHours(0, 0, 0, 0);
+
+  const monthlyRevenueObj = await prisma.order.aggregate({
+    where: {
+      createdAt: { gte: firstDayOfMonth },
+      status: { not: "Cancelled" },
+    },
+    _sum: { totalAmount: true },
+  });
+  const currentMonthSales = monthlyRevenueObj._sum.totalAmount || 0;
+
+  // 4. Compile Daily Chart Data Points (Past 7 Days)
+  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const chartData = [];
+
+  // Fetch all orders from the past 7 days to compile daily statistics
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const pastWeekOrders = await prisma.order.findMany({
+    where: {
+      createdAt: { gte: sevenDaysAgo },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dayName = weekdays[d.getDay()];
+    const dateStr = `${months[d.getMonth()]} ${d.getDate()}`;
+
+    const dayOrders = pastWeekOrders.filter((order) => {
+      const orderDate = new Date(order.createdAt);
+      return (
+        orderDate.getDate() === d.getDate() &&
+        orderDate.getMonth() === d.getMonth() &&
+        orderDate.getFullYear() === d.getFullYear()
+      );
+    });
+
+    const revenue = dayOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+    const ordersCount = dayOrders.length;
+
+    chartData.push({
+      label: dayName,
+      revenue,
+      orders: ordersCount,
+      dateStr,
+    });
+  }
+
+  // Monthly Target Parameter (Boutique target)
+  const salesTarget = 1500;
+
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      {/* Page Header */}
-      <div className="mb-10">
-        <h1 className="font-serif text-[36px] text-zinc-900 dark:text-zinc-100 leading-tight mb-2">
-          Performance Overview
-        </h1>
-        <p className="text-[16px] text-zinc-500 dark:text-zinc-400">
-          A summary of your boutique&apos;s metrics for the current period.
-        </p>
-      </div>
-
-      {/* Analytics Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {/* Revenue Card (Real) */}
-        <StatCard
-          title="Total Revenue"
-          value={`$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          trend="Live"
-          icon="account_balance_wallet"
-        />
-        {/* Orders Card (Real) */}
-        <StatCard
-          title="Total Orders"
-          value={orderCount.toString()}
-          trend="Live"
-          icon="local_mall"
-        />
-        {/* Products Card (Real) */}
-        <StatCard
-          title="Active Products"
-          value={productCount.toString()}
-          trend="Live"
-          icon="inventory_2"
-        />
-        {/* Customers Card (Real) */}
-        <StatCard
-          title="Total Customers"
-          value={customersCount.toString()}
-          trend="Live"
-          icon="groups"
-        />
-      </div>
-
-      {/* Lower Section Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Recent Orders Table (Spans 2 columns) */}
-        <div className="xl:col-span-2 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-3xl rounded-3xl p-6 md:p-8 border border-white dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-          <div className="flex justify-between items-end mb-8">
-            <div>
-              <h3 className="font-serif text-[28px] text-zinc-900 dark:text-zinc-100 leading-tight">
-                Recent Orders
-              </h3>
-              <p className="text-[15px] text-zinc-500 dark:text-zinc-400 mt-1">
-                Latest transactions across all channels.
-              </p>
-            </div>
-            <a
-              href="/admin/orders"
-              className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors uppercase tracking-widest group flex items-center gap-1"
-            >
-              View All
-              <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">
-                arrow_right_alt
-              </span>
-            </a>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse whitespace-nowrap">
-              <thead>
-                <tr>
-                  <th className="text-[12px] text-zinc-400 dark:text-zinc-500 pb-4 font-semibold px-4 pl-0 uppercase tracking-widest">
-                    Order ID
-                  </th>
-                  <th className="text-[12px] text-zinc-400 dark:text-zinc-500 pb-4 font-semibold px-4 uppercase tracking-widest">
-                    Customer
-                  </th>
-                  <th className="text-[12px] text-zinc-400 dark:text-zinc-500 pb-4 font-semibold px-4 uppercase tracking-widest">
-                    Date
-                  </th>
-                  <th className="text-[12px] text-zinc-400 dark:text-zinc-500 pb-4 font-semibold px-4 text-right uppercase tracking-widest">
-                    Amount
-                  </th>
-                  <th className="text-[12px] text-zinc-400 dark:text-zinc-500 pb-4 font-semibold px-4 pr-0 text-right uppercase tracking-widest">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="text-[15px] text-zinc-800 dark:text-zinc-200">
-                {recentOrders.map((order, i) => {
-                  const dateStr = new Date(order.createdAt).toLocaleDateString(
-                    "en-US",
-                    { month: "short", day: "numeric", year: "numeric" },
-                  );
-                  return (
-                    <tr
-                      key={order.id}
-                      className={cn(
-                        "group transition-colors",
-                        i % 2 === 0 ? "bg-zinc-50/50 dark:bg-zinc-800/50" : "bg-transparent",
-                      )}
-                    >
-                      <td className="py-5 px-4 pl-0 font-medium text-zinc-900 dark:text-zinc-100 rounded-l-2xl group-hover:text-primary transition-colors">
-                        #{order.id.slice(-6).toUpperCase()}
-                      </td>
-                      <td className="py-5 px-4">{order.customerName}</td>
-                      <td className="py-5 px-4 text-zinc-500 dark:text-zinc-400">{dateStr}</td>
-                      <td className="py-5 px-4 text-right font-medium">
-                        ${order.totalAmount.toFixed(2)}
-                      </td>
-                      <td className="py-5 px-4 pr-0 text-right rounded-r-2xl">
-                        <span
-                          className={cn(
-                            "inline-flex px-3.5 py-1.5 rounded-full text-[11px] font-medium uppercase tracking-wider border",
-                            order.status === "Shipped" ||
-                              order.status === "Delivered"
-                              ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-100/50 dark:border-green-500/20"
-                              : order.status === "Processing"
-                                ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-100/50 dark:border-blue-500/20"
-                                : order.status === "Cancelled"
-                                  ? "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-100/50 dark:border-red-500/20"
-                                  : order.status === "Pending"
-                                    ? "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-100/50 dark:border-amber-500/20"
-                                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200/50 dark:border-zinc-700/50",
-                          )}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {recentOrders.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-zinc-500 dark:text-zinc-400">
-                      No recent orders.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Top Products */}
-        <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-3xl rounded-3xl p-6 md:p-8 border border-white dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-          <div className="mb-8">
-            <h3 className="font-serif text-[28px] text-zinc-900 dark:text-zinc-100 leading-tight">
-              Latest Inventory
-            </h3>
-            <p className="text-[15px] text-zinc-500 dark:text-zinc-400 mt-1">
-              Recently added products.
-            </p>
-          </div>
-          <div className="space-y-6">
-            {recentProducts.map((product) => (
-              <div
-                key={product.id}
-                className="flex items-center gap-5 group cursor-pointer p-2 -m-2 rounded-2xl hover:bg-zinc-50/80 dark:hover:bg-zinc-800/80 transition-colors"
-              >
-                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-700/50 flex-shrink-0 shadow-sm relative">
-                  <Image
-                    src={product.img}
-                    alt={product.name}
-                    fill
-                    sizes="64px"
-                    className="object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 ring-1 ring-inset ring-black/5 dark:ring-white/5 rounded-2xl pointer-events-none"></div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-[16px] font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:text-primary transition-colors">
-                    {product.name}
-                  </h4>
-                  <p className="text-[14px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
-                    {product.categories.split(",")[0]}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[16px] font-medium text-zinc-900 dark:text-zinc-100">
-                    ${product.price}
-                  </p>
-                  <p className="text-[12px] font-medium text-zinc-400 dark:text-zinc-500 mt-1">
-                    {product.badge || "Active"}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({
-  title,
-  value,
-  trend,
-  icon,
-}: {
-  title: string;
-  value: string;
-  trend: string;
-  icon: string;
-}) {
-  const isPositive = trend !== "Live" && !trend.startsWith("-");
-  return (
-    <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-3xl rounded-3xl p-6 border border-white dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col justify-between group hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all duration-500 relative overflow-hidden">
-      {/* Subtle background glow */}
-      <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors duration-500"></div>
-
-      <div className="flex justify-between items-start mb-8 relative z-10">
-        <h3 className="text-[13px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.15em]">
-          {title}
-        </h3>
-        <div className="w-10 h-10 rounded-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-800 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-sm">
-          <span className="material-symbols-outlined text-zinc-400 dark:text-zinc-500 group-hover:text-primary transition-colors text-[20px]">
-            {icon}
-          </span>
-        </div>
-      </div>
-      <div className="relative z-10">
-        <div className="flex items-baseline gap-3 mb-3">
-          <span className="text-[44px] font-serif text-zinc-900 dark:text-zinc-100 leading-none tracking-tight">
-            {value}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          {trend === "Live" ? (
-            <span className="bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 border border-green-100/50 dark:border-green-500/20">
-              <span className="w-1.5 h-1.5 bg-green-500 dark:bg-green-400 rounded-full animate-pulse"></span>{" "}
-              Live
-            </span>
-          ) : (
-            <span
-              className={cn(
-                "px-3 py-1 rounded-full text-[11px] font-medium flex items-center gap-1 border",
-                isPositive
-                  ? "bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-100/50 dark:border-green-500/20"
-                  : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-100/50 dark:border-red-500/20",
-              )}
-            >
-              <span className="material-symbols-outlined text-[14px]">
-                {isPositive ? "trending_up" : "trending_down"}
-              </span>{" "}
-              {trend}
-            </span>
-          )}
-          <span className="text-[12px] text-zinc-400 dark:text-zinc-500 font-medium">
-            vs last month
-          </span>
-        </div>
-      </div>
-    </div>
+    <OverviewClientContainer
+      productCount={productCount}
+      orderCount={orderCount}
+      customersCount={customersCount}
+      totalRevenue={totalRevenue}
+      recentOrders={recentOrders}
+      recentProducts={recentProducts}
+      lowStockProducts={lowStockProducts}
+      chartData={chartData}
+      currentMonthSales={currentMonthSales}
+      salesTarget={salesTarget}
+    />
   );
 }

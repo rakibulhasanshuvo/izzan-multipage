@@ -2,22 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { apiHandler } from "@/lib/api";
+import { createCustomerSchema, updateCustomerSchema } from "@/lib/validation";
 
 export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
   const data = await req.json();
-  if (!data.name || !data.phone) {
-    return NextResponse.json({ error: "Missing required fields (name, phone)" }, { status: 400 });
+  const validationResult = createCustomerSchema.safeParse(data);
+  if (!validationResult.success) {
+    const error = validationResult.error.issues[0];
+    if (error.path.includes("name") || error.path.includes("phone")) {
+      return NextResponse.json({ error: "Missing required fields (name, phone)" }, { status: 400 });
+    }
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  const validatedData = validationResult.data;
   const customer = await prisma.customer.create({
     data: {
-      name: data.name,
-      email: data.email || null,
-      phone: data.phone,
-      zila: data.zila || "",
-      upozila: data.upozila || "",
-      location: data.location || null,
-      tier: data.tier || "Bronze",
-      totalSpend: data.totalSpend ? parseFloat(data.totalSpend) : 0,
+      name: validatedData.name,
+      email: validatedData.email || null,
+      phone: validatedData.phone,
+      zila: validatedData.zila || "",
+      upozila: validatedData.upozila || "",
+      location: validatedData.location || null,
+      tier: validatedData.tier || "Bronze",
+      totalSpend: validatedData.totalSpend || 0,
     },
   });
   return NextResponse.json(customer);
@@ -25,44 +33,35 @@ export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
 
 export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) {
   const data = await req.json();
-  const { id, ...updateData } = data;
-
-  if (!id) {
+  
+  if (!data.id) {
     return NextResponse.json({ error: "Missing customer ID" }, { status: 400 });
   }
 
+  const validationResult = updateCustomerSchema.safeParse(data);
+  if (!validationResult.success) {
+    const error = validationResult.error.issues[0];
+    let msg = error.message;
+    if (error.path.includes("name")) msg = "Name must be a non-empty string";
+    if (error.path.includes("email")) msg = "Invalid email";
+    if (error.path.includes("totalSpend")) msg = "Invalid total spend";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
+
+  const validatedData = validationResult.data;
   const updateFields: Record<string, unknown> = {};
 
-  if (updateData.name !== undefined) {
-    if (typeof updateData.name !== "string" || updateData.name.trim() === "") {
-      return NextResponse.json({ error: "Name must be a non-empty string" }, { status: 400 });
-    }
-    updateFields.name = updateData.name.trim();
-  }
-
-  if (updateData.email !== undefined) {
-    if (typeof updateData.email !== "string" || updateData.email.trim() === "" || !updateData.email.includes("@")) {
-      return NextResponse.json({ error: "Invalid email" }, { status: 400 });
-    }
-    updateFields.email = updateData.email.trim();
-  }
-
-  if (updateData.phone !== undefined) updateFields.phone = updateData.phone;
-  if (updateData.zila !== undefined) updateFields.zila = updateData.zila;
-  if (updateData.upozila !== undefined) updateFields.upozila = updateData.upozila;
-  if (updateData.location !== undefined) updateFields.location = updateData.location;
-  if (updateData.tier !== undefined) updateFields.tier = updateData.tier;
-
-  if (updateData.totalSpend !== undefined) {
-    const parsedSpend = parseFloat(updateData.totalSpend);
-    if (isNaN(parsedSpend)) {
-      return NextResponse.json({ error: "Invalid total spend" }, { status: 400 });
-    }
-    updateFields.totalSpend = parsedSpend;
-  }
+  if (validatedData.name !== undefined) updateFields.name = validatedData.name;
+  if (validatedData.phone !== undefined) updateFields.phone = validatedData.phone;
+  if (validatedData.email !== undefined) updateFields.email = validatedData.email;
+  if (validatedData.zila !== undefined) updateFields.zila = validatedData.zila;
+  if (validatedData.upozila !== undefined) updateFields.upozila = validatedData.upozila;
+  if (validatedData.location !== undefined) updateFields.location = validatedData.location;
+  if (validatedData.tier !== undefined) updateFields.tier = validatedData.tier;
+  if (validatedData.totalSpend !== undefined) updateFields.totalSpend = validatedData.totalSpend;
 
   const existingCustomer = await prisma.customer.findUnique({
-    where: { id }
+    where: { id: data.id }
   });
 
   if (!existingCustomer) {
@@ -70,7 +69,7 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
   }
 
   const customer = await prisma.customer.update({
-    where: { id },
+    where: { id: data.id },
     data: updateFields,
   });
 

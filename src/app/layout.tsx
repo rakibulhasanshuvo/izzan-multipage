@@ -13,7 +13,7 @@ const playfair = Playfair_Display({
 
 const lato = Lato({
   subsets: ["latin"],
-  weight: ["300", "400", "700"],
+  weight: ["300", "400", "700", "900"],
   variable: "--font-lato",
 });
 
@@ -66,7 +66,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="overflow-x-hidden relative" data-scroll-behavior="smooth">
       <head>
         <Script
           id="json-ld"
@@ -74,7 +74,10 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${playfair.variable} ${lato.variable} ${inter.variable} ${notoSerif.variable} ${parisienne.variable} font-body antialiased min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark transition-colors duration-300 flex flex-col`}>
+      <body 
+        className={`${playfair.variable} ${lato.variable} ${inter.variable} ${notoSerif.variable} ${parisienne.variable} font-body antialiased min-h-screen overflow-x-hidden bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark transition-colors duration-300 flex flex-col relative`}
+        suppressHydrationWarning
+      >
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <CartProvider>

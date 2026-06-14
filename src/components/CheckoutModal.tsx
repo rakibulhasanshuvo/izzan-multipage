@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Phone, User, Home, Mail } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import FocusTrap from "focus-trap-react";
 import { IMaskInput } from "react-imask";
 import { toast } from "sonner";
@@ -16,7 +16,7 @@ interface CheckoutModalProps {
 export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const { cartItems, cartTotal, clearCart, toggleCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [idempotencyKey, setIdempotencyKey] = useState("");
+  const idempotencyKeyRef = useRef("");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -28,7 +28,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      setIdempotencyKey(crypto.randomUUID());
+      idempotencyKeyRef.current = crypto.randomUUID();
     }
   }, [isOpen]);
 
@@ -52,7 +52,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           ...formData,
           items: cartItems.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity })),
           totalAmount: cartTotal,
-          idempotencyKey,
+          idempotencyKey: idempotencyKeyRef.current,
         }),
       });
 
@@ -103,13 +103,14 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors dark:text-gray-400 cursor-pointer"
+                    className="p-2 rounded-full hover:bg-gray-250 dark:hover:bg-gray-800 transition-colors dark:text-gray-400 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="Close checkout modal"
                   >
                     <X size={20} />
                   </button>
                 </div>
 
-                <div className="overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-6 min-h-0">
                   <form onSubmit={handleSubmit} className="space-y-4" id="checkout-form">
                     <div className="space-y-1">
                       <label htmlFor="name" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Full Name *</label>
@@ -122,10 +123,11 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                           id="name"
                           name="name"
                           required
+                          autoComplete="name"
                           value={formData.name}
                           onChange={handleChange}
-                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
-                          placeholder="Your full name"
+                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
+                          placeholder="Your full name…"
                         />
                       </div>
                     </div>
@@ -141,13 +143,15 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                           id="phone"
                           name="phone"
                           required
+                          autoComplete="tel"
+                          inputMode="tel"
                           value={formData.phone}
                           unmask={true} // true|false|'typed'
                           onAccept={(value: string) => {
                             setFormData((prev) => ({ ...prev, phone: value }));
                           }}
-                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
-                          placeholder="017-1234-5678"
+                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
+                          placeholder="017-1234-5678…"
                         />
                       </div>
                     </div>
@@ -162,15 +166,17 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                           type="email"
                           id="email"
                           name="email"
+                          autoComplete="email"
+                          spellCheck={false}
                           value={formData.email}
                           onChange={handleChange}
-                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
-                          placeholder="your@email.com"
+                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
+                          placeholder="your@email.com…"
                         />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label htmlFor="zila" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Zila / District *</label>
                         <div className="relative">
@@ -182,10 +188,11 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                             id="zila"
                             name="zila"
                             required
+                            autoComplete="address-level2"
                             value={formData.zila}
                             onChange={handleChange}
-                            className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
-                            placeholder="e.g. Dhaka"
+                            className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
+                            placeholder="e.g. Dhaka…"
                           />
                         </div>
                       </div>
@@ -201,10 +208,11 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                             id="upozila"
                             name="upozila"
                             required
+                            autoComplete="address-level3"
                             value={formData.upozila}
                             onChange={handleChange}
-                            className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
-                            placeholder="e.g. Mirpur"
+                            className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
+                            placeholder="e.g. Mirpur…"
                           />
                         </div>
                       </div>
@@ -220,11 +228,12 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                           id="shippingAddress"
                           name="shippingAddress"
                           required
+                          autoComplete="street-address"
                           value={formData.shippingAddress}
                           onChange={handleChange}
                           rows={3}
-                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-800 dark:text-gray-100 text-sm transition-all resize-none"
-                          placeholder="House No, Road No, Area"
+                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all resize-none"
+                          placeholder="House No, Road No, Area…"
                         />
                       </div>
                     </div>
@@ -248,7 +257,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Processing...
+                        Processing…
                       </span>
                     ) : (
                       "Confirm Order"

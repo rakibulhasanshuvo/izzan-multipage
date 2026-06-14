@@ -15,12 +15,14 @@ vi.mock('@/lib/db', async () => {
 import { POST } from './route';
 import { prisma } from '@/lib/db';
 import { PrismaClient } from '@/generated/client';
+import { rateLimitMap } from '@/lib/rate-limit';
 
 const prismaMock = prisma as unknown as ReturnType<typeof import('vitest-mock-extended').mockDeep<PrismaClient>>;
 
 describe('Orders API POST handler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    rateLimitMap.clear();
   });
 
   const createRequest = (body: Record<string, unknown>) => {
@@ -205,4 +207,55 @@ describe('Orders API POST handler', () => {
     expect(response.status).toBe(400);
     expect(data.error).toBe('Insufficient stock for Product 1. Only 10 left.');
   });
+
+  it('should roll back and return 400 if database stock goes below zero post-update due to race conditions', async () => {
+    const req = createRequest({
+      ...validPayload,
+      items: [
+        { id: 'prod1', name: 'Product 1', quantity: 8, price: 100 },
+      ],
+    });
+
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
+
+    prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
+      const txMock = {
+        product: {
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
+          update: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', stock: -2 }),
+        },
+      };
+
+      if (typeof callback === 'function') {
+         return callback(txMock);
+      }
+    });
+
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toContain('Insufficient stock for Product 1');
+  });
+
+  it('should rate limit orders after too many requests', async () => {
+    const req = createRequest(validPayload);
+    rateLimitMap.set('order:unknown_ip', { count: 100, resetTime: Date.now() + 10000 });
+
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(data.error).toContain('Too many checkout requests');
+  });
+
+  it('should return 400 if email has an invalid format', async () => {
+    const req = createRequest({ ...validPayload, email: 'not-an-email' });
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Missing required fields or empty cart');
+  });
 });
+

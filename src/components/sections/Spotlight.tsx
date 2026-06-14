@@ -1,10 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { motion, Variants } from "framer-motion";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
-import { products } from "@/lib/mockData";
 import { Product } from "@/generated/client";
 
 const fadeIn: Variants = {
@@ -22,16 +20,17 @@ const staggerContainer: Variants = {
   }
 };
 
-export function Spotlight({ videoUrl }: { videoUrl?: string }) {
+export function Spotlight({ product, videoUrl }: { product: Product | null; videoUrl?: string }) {
   const { addToCart } = useCart();
   
   const handleAddToCart = () => {
-    const lavenderDrift = products.find(p => p.id === "1");
-    if (lavenderDrift) {
-      addToCart(lavenderDrift as unknown as Product);
-      toast.success("Lavender Drift added to cart!", {
+    if (product) {
+      addToCart(product);
+      toast.success(`${product.name} added to cart!`, {
         description: "You've added 1 item to your sanctuary.",
       });
+    } else {
+      toast.error("Product not available");
     }
   };
 
@@ -69,9 +68,28 @@ export function Spotlight({ videoUrl }: { videoUrl?: string }) {
         >
           <motion.div variants={fadeIn}>
             <span className="text-primary font-bold tracking-[0.3em] uppercase text-xs mb-4 block">Product Spotlight</span>
-            <h2 className="text-5xl md:text-6xl font-display mt-2 dark:text-gray-100 leading-tight">Lavender <span className="italic font-normal">Drift</span></h2>
+            <h2 className="text-5xl md:text-6xl font-display mt-2 dark:text-gray-100 leading-tight">
+              {product ? (
+                product.name.includes(" ") ? (
+                  <>
+                    {product.name.substring(0, product.name.lastIndexOf(" "))}{" "}
+                    <span className="italic font-normal">
+                      {product.name.substring(product.name.lastIndexOf(" ") + 1)}
+                    </span>
+                  </>
+                ) : (
+                  product.name
+                )
+              ) : (
+                <>
+                  Lavender <span className="italic font-normal">Drift</span>
+                </>
+              )}
+            </h2>
             <div className="flex items-center space-x-4 mt-4">
-              <p className="text-2xl font-bold text-primary dark:text-primary-light">$28.00</p>
+              <p className="text-2xl font-bold text-primary dark:text-primary-light">
+                ${product ? product.price.toFixed(2) : "28.00"}
+              </p>
               <div className="h-4 w-[1px] bg-gray-300 dark:bg-gray-700"></div>
               <div className="flex items-center space-x-1">
                 <span className="text-xs uppercase tracking-widest font-bold text-gray-400">Intensity:</span>
@@ -85,16 +103,24 @@ export function Spotlight({ videoUrl }: { videoUrl?: string }) {
           </motion.div>
 
           <motion.p variants={fadeIn} className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-light">
-            Transform your evening routine with our signature <span className="font-semibold italic">Lavender Drift</span>. Hand-poured with 100% natural soy wax, this candle offers a deep, calming aroma designed to melt away stress and prepare your mind for restful sleep.
+            {product?.description || (
+              <>
+                Transform your evening routine with our signature <span className="font-semibold italic">Lavender Drift</span>. Hand-poured with 100% natural soy wax, this candle offers a deep, calming aroma designed to melt away stress and prepare your mind for restful sleep.
+              </>
+            )}
           </motion.p>
 
           <motion.div variants={fadeIn} className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 relative">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h3 className="font-display text-xl mb-1 dark:text-gray-100">Signature Candle</h3>
+                <h3 className="font-display text-xl mb-1 dark:text-gray-100">
+                  {product ? product.name : "Signature Candle"}
+                </h3>
                 <p className="text-xs text-primary font-bold uppercase tracking-widest">Hand-Poured</p>
               </div>
-              <span className="text-2xl font-bold dark:text-gray-100">$28.00</span>
+              <span className="text-2xl font-bold dark:text-gray-100">
+                ${product ? product.price.toFixed(2) : "28.00"}
+              </span>
             </div>
             <h4 className="font-bold uppercase tracking-[0.2em] text-xs text-gray-400 border-b border-gray-200 dark:border-gray-700 pb-3 mb-6">Scent Notes</h4>
             <div className="grid grid-cols-3 gap-8">

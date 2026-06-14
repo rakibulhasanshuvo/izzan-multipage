@@ -38,6 +38,36 @@ export async function updateOrderStatus(id: string, status: string) {
   return order;
 }
 
+export async function updateOrderTracking(
+  id: string,
+  trackingNumber: string | null | undefined,
+  trackingCarrier: string | null | undefined
+) {
+  await ensureAdmin();
+  if (!id) {
+    throw new Error("Invalid input: Missing ID");
+  }
+
+  const existingOrder = await prisma.order.findUnique({
+    where: { id }
+  });
+
+  if (!existingOrder) {
+    throw new Error("Order not found");
+  }
+
+  const order = await prisma.order.update({
+    where: { id },
+    data: {
+      trackingNumber: trackingNumber ? trackingNumber.trim() : null,
+      trackingCarrier: trackingCarrier ? trackingCarrier.trim() : null,
+    },
+  });
+
+  revalidatePath("/admin/orders");
+  return order;
+}
+
 export async function deleteProduct(id: string) {
   await ensureAdmin();
   if (!id) throw new Error("Missing product ID");
@@ -227,8 +257,8 @@ export async function updateAdminCredentials(data: unknown) {
   }
 
   if (newPassword && newPassword.trim() !== "") {
-    if (newPassword.length < 6) {
-      throw new Error("New password must be at least 6 characters long");
+    if (newPassword.length < 8) {
+      throw new Error("New password must be at least 8 characters long");
     }
     updateData.password = await bcrypt.hash(newPassword, 10);
   }

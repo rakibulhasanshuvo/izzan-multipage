@@ -38,7 +38,8 @@ export function FAQ() {
           <div key={idx} className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-white dark:bg-gray-900 transition-colors duration-300">
             <button 
               onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-              className="w-full flex justify-between items-center p-6 text-left focus:outline-none"
+              aria-expanded={openFaq === idx}
+              className="w-full flex justify-between items-center p-6 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
             >
               <span className="font-semibold dark:text-gray-100">{faq.question}</span>
               <motion.div

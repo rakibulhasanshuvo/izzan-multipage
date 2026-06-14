@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { test, expect, vi, describe, beforeEach, it } from "vitest";
+import { expect, vi, describe, beforeEach, it } from "vitest";
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import * as auth from "@/lib/auth";
 import { PrismaClient } from '@/generated/client';
+import { PATCH } from "./route";
 
 vi.mock("next-auth/next", () => ({ getServerSession: vi.fn().mockResolvedValue(true) }));
 
@@ -37,7 +38,6 @@ describe('Products API PATCH handler', () => {
   };
 
   it('should return 400 if ID is missing', async () => {
-    const { PATCH } = await import("./route");
     const req = createRequest({});
     const res = await PATCH(req);
     expect(res.status).toBe(400);
@@ -46,7 +46,6 @@ describe('Products API PATCH handler', () => {
   });
 
   it('should return 404 if product is not found', async () => {
-    const { PATCH } = await import("./route");
     prismaMock.product.findUnique.mockResolvedValue(null as any);
 
     const req = createRequest({ id: "non-existent", name: "Valid Name", price: 10, stock: 5 });
@@ -57,7 +56,6 @@ describe('Products API PATCH handler', () => {
   });
 
   it('should return 400 if name is invalid', async () => {
-    const { PATCH } = await import("./route");
     const req = createRequest({ id: '123', name: '' });
     const res = await PATCH(req);
     expect(res.status).toBe(400);
@@ -66,7 +64,6 @@ describe('Products API PATCH handler', () => {
   });
 
   it('should return 400 if price is invalid', async () => {
-    const { PATCH } = await import("./route");
     const req = createRequest({ id: "123", price: "invalid" });
     const res = await PATCH(req);
     expect(res.status).toBe(400);
@@ -75,7 +72,6 @@ describe('Products API PATCH handler', () => {
   });
 
   it('should return 400 if stock is invalid', async () => {
-    const { PATCH } = await import("./route");
     const req = createRequest({ id: "123", stock: "abc" });
     const res = await PATCH(req);
     expect(res.status).toBe(400);
@@ -84,7 +80,6 @@ describe('Products API PATCH handler', () => {
   });
 
   it('should return 400 if original price is invalid', async () => {
-    const { PATCH } = await import("./route");
     const req = createRequest({ id: "123", originalPrice: "invalid" });
     const res = await PATCH(req);
     expect(res.status).toBe(400);
@@ -93,7 +88,6 @@ describe('Products API PATCH handler', () => {
   });
 
   it('should successfully update a product', async () => {
-    const { PATCH } = await import("./route");
     const mockProduct = { id: "123", name: "Old Name", price: 10, stock: 5 };
     prismaMock.product.findUnique.mockResolvedValue(mockProduct as any);
     prismaMock.product.update.mockImplementation(async ({ data }: any) => ({ ...mockProduct, ...data }) as any);
@@ -108,7 +102,6 @@ describe('Products API PATCH handler', () => {
   });
 
   it('should successfully clear original price', async () => {
-    const { PATCH } = await import("./route");
     const mockProduct = { id: "123", name: "Old Name", price: 10, stock: 5, originalPrice: 20 };
     prismaMock.product.findUnique.mockResolvedValue(mockProduct as any);
     prismaMock.product.update.mockImplementation(async ({ data }: any) => ({ ...mockProduct, ...data }) as any);
@@ -121,7 +114,6 @@ describe('Products API PATCH handler', () => {
   });
 
   it('should successfully update all fields', async () => {
-    const { PATCH } = await import("./route");
     const mockProduct = { id: "123", name: "Old", description: "Old desc", price: 10, originalPrice: 20, img: "old.jpg", hoverImg: "old_h.jpg", categories: "old,cat", badge: "Old Badge", stock: 5 };
     prismaMock.product.findUnique.mockResolvedValue(mockProduct as any);
     prismaMock.product.update.mockImplementation(async ({ data }: any) => ({ ...mockProduct, ...data }) as any);

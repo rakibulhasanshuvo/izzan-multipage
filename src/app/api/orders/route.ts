@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { apiHandler } from "@/lib/api";
+import { getClientIp, checkRateLimit } from "@/lib/rate-limit";
+import { checkoutSchema } from "@/lib/validation";
 
 export const POST = apiHandler(async function POST(req: NextRequest) {
-  const data = await req.json();
-  const { name, phone, email, zila, upozila, shippingAddress, items, idempotencyKey } = data;
+  // Rate limiting to prevent checkout spam
+  const ip = getClientIp(req);
+  const isAllowed = await checkRateLimit(`order:${ip}`);
+  if (!isAllowed) {
+    return NextResponse.json({ error: "Too many checkout requests. Please try again later." }, { status: 429 });
+  }
 
-  if (!name || !phone || !zila || !upozila || !shippingAddress || !items || !Array.isArray(items) || items.length === 0) {
+  const data = await req.json();
+  const validationResult = checkoutSchema.safeParse(data);
+  if (!validationResult.success) {
     return NextResponse.json({ error: "Missing required fields or empty cart" }, { status: 400 });
   }
+
+  const { name, phone, email, zila, upozila, shippingAddress, items, idempotencyKey } = validationResult.data;
 
   // Idempotency check to prevent duplicate orders
   if (idempotencyKey) {
@@ -112,12 +122,16 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         calculatedTotal += dbProduct.price * item.quantity;
       }
 
-      // Perform consolidated stock updates
+      // Perform consolidated stock updates and verify stock limits inside the write transaction
       for (const [productId, quantity] of stockUpdates.entries()) {
-        await tx.product.update({
+        const updatedProduct = await tx.product.update({
           where: { id: productId },
           data: { stock: { decrement: quantity } }
         });
+
+        if (updatedProduct.stock < 0) {
+          throw new Error(`Insufficient stock for ${updatedProduct.name}. Only ${updatedProduct.stock + quantity} left.`);
+        }
       }
 
       // 2. Customer Upsert

@@ -21,6 +21,8 @@ model Product {
   stock         Int      @default(100)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 model Order {
@@ -36,9 +38,14 @@ model Order {
   items           String
   customerId      String?
   idempotencyKey  String?   @unique
+  trackingNumber  String?
+  trackingCarrier String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   customer        Customer? @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@index([createdAt])
 }
 
 model Customer {

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { apiHandler } from "@/lib/api";
+import { createProductSchema, updateProductSchema } from "@/lib/validation";
 
-export const GET = withAuth(apiHandler(async function GET(_req: NextRequest) {
+export const GET = withAuth(apiHandler(async function GET() {
   const products = await prisma.product.findMany({
     orderBy: { updatedAt: "desc" },
   });
@@ -12,20 +13,22 @@ export const GET = withAuth(apiHandler(async function GET(_req: NextRequest) {
 
 export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
   const data = await req.json();
-  if (!data.name || !data.price || data.stock === undefined) {
+  const validationResult = createProductSchema.safeParse(data);
+  if (!validationResult.success) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
+  const validatedData = validationResult.data;
   const product = await prisma.product.create({
     data: {
-      name: data.name,
-      description: data.description,
-      price: parseFloat(data.price),
-      originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : null,
-      img: data.img,
-      hoverImg: data.hoverImg,
-      categories: data.categories,
-      badge: data.badge,
-      stock: parseInt(data.stock),
+      name: validatedData.name,
+      description: validatedData.description,
+      price: validatedData.price,
+      originalPrice: validatedData.originalPrice,
+      img: validatedData.img,
+      hoverImg: validatedData.hoverImg,
+      categories: validatedData.categories,
+      badge: validatedData.badge,
+      stock: validatedData.stock,
     },
   });
   return NextResponse.json(product);
@@ -33,59 +36,38 @@ export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
 
 export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) {
   const data = await req.json();
-  const { id, ...updateData } = data;
-
-  if (!id) {
+  
+  if (!data.id) {
     return NextResponse.json({ error: "Missing product ID" }, { status: 400 });
   }
 
+  const validationResult = updateProductSchema.safeParse(data);
+  if (!validationResult.success) {
+    const error = validationResult.error.issues[0];
+    let msg = error.message;
+    if (error.path.includes("name")) msg = "Name must be a non-empty string";
+    if (error.path.includes("price")) msg = "Invalid price";
+    if (error.path.includes("originalPrice")) msg = "Invalid original price";
+    if (error.path.includes("stock")) msg = "Invalid stock";
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
+
+  const validatedData = validationResult.data;
   const updateFields: Record<string, unknown> = {};
 
-  if (updateData.name !== undefined) {
-    if (typeof updateData.name !== "string" || updateData.name.trim() === "") {
-      return NextResponse.json({ error: "Name must be a non-empty string" }, { status: 400 });
-    }
-    updateFields.name = updateData.name.trim();
-  }
-
-  if (updateData.description !== undefined) updateFields.description = updateData.description;
-
-  if (updateData.price !== undefined) {
-    const parsedPrice = parseFloat(updateData.price);
-    if (isNaN(parsedPrice)) {
-      return NextResponse.json({ error: "Invalid price" }, { status: 400 });
-    }
-    updateFields.price = parsedPrice;
-  }
-
-  if (updateData.originalPrice !== undefined) {
-    if (updateData.originalPrice) {
-      const parsedOriginalPrice = parseFloat(updateData.originalPrice);
-      if (isNaN(parsedOriginalPrice)) {
-        return NextResponse.json({ error: "Invalid original price" }, { status: 400 });
-      }
-      updateFields.originalPrice = parsedOriginalPrice;
-    } else {
-      updateFields.originalPrice = null;
-    }
-  }
-
-  if (updateData.img !== undefined) updateFields.img = updateData.img;
-  if (updateData.hoverImg !== undefined) updateFields.hoverImg = updateData.hoverImg;
-  if (updateData.categories !== undefined) updateFields.categories = updateData.categories;
-  if (updateData.badge !== undefined) updateFields.badge = updateData.badge;
-
-  if (updateData.stock !== undefined) {
-    const parsedStock = parseInt(updateData.stock, 10);
-    if (isNaN(parsedStock)) {
-      return NextResponse.json({ error: "Invalid stock" }, { status: 400 });
-    }
-    updateFields.stock = parsedStock;
-  }
+  if (validatedData.name !== undefined) updateFields.name = validatedData.name;
+  if (validatedData.description !== undefined) updateFields.description = validatedData.description;
+  if (validatedData.price !== undefined) updateFields.price = validatedData.price;
+  if (validatedData.originalPrice !== undefined) updateFields.originalPrice = validatedData.originalPrice;
+  if (validatedData.img !== undefined) updateFields.img = validatedData.img;
+  if (validatedData.hoverImg !== undefined) updateFields.hoverImg = validatedData.hoverImg;
+  if (validatedData.categories !== undefined) updateFields.categories = validatedData.categories;
+  if (validatedData.badge !== undefined) updateFields.badge = validatedData.badge;
+  if (validatedData.stock !== undefined) updateFields.stock = validatedData.stock;
 
   // Prevent IDOR or update of non-existent record gracefully
   const existingProduct = await prisma.product.findUnique({
-    where: { id }
+    where: { id: validatedData.id }
   });
 
   if (!existingProduct) {
@@ -93,7 +75,7 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
   }
 
   const product = await prisma.product.update({
-    where: { id },
+    where: { id: validatedData.id },
     data: updateFields,
   });
   return NextResponse.json(product);

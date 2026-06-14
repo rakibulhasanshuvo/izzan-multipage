@@ -43,7 +43,7 @@ export function CartDrawer() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-full md:w-[450px] bg-background-light dark:bg-[#1a1f1b] z-[90] shadow-2xl flex flex-col"
+              className="fixed top-0 right-0 h-full w-full md:w-[450px] bg-background-light dark:bg-[#1a1f1b] z-[90] shadow-2xl flex flex-col pb-24 md:pb-0"
               role="dialog"
               aria-modal="true"
               aria-label="Shopping Cart"
@@ -65,7 +65,8 @@ export function CartDrawer() {
                 )}
                 <button 
                   onClick={toggleCart}
-                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400 cursor-pointer"
+                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  aria-label="Close cart"
                 >
                   <X size={24} />
                 </button>
@@ -113,7 +114,8 @@ export function CartDrawer() {
                         <h4 className="text-sm font-display font-medium dark:text-gray-100">{item.name}</h4>
                         <button 
                           onClick={() => removeFromCart(item.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors"
+                          className="text-gray-400 hover:text-red-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1"
+                          aria-label="Remove item from cart"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -124,14 +126,16 @@ export function CartDrawer() {
                         <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-sm">
                           <button 
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400"
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+                            aria-label="Decrease quantity"
                           >
                             <Minus size={14} />
                           </button>
                           <span className="w-8 text-center text-xs font-semibold dark:text-gray-200">{item.quantity}</span>
                           <button 
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400"
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+                            aria-label="Increase quantity"
                           >
                             <Plus size={14} />
                           </button>

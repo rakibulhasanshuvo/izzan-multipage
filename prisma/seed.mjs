@@ -40,7 +40,7 @@ const productsData = [
   { name: "Himalayan Salt Diffuser", price: 45, img: IMAGES[0], hoverImg: IMAGES[1], categories: "New Arrivals", badge: "New" },
   { name: "Frankincense Oil", price: 38, img: IMAGES[1], hoverImg: IMAGES[2], categories: "Best Sellers", badge: "" },
   { name: "Neroli Blossom", price: 34, img: IMAGES[2], hoverImg: IMAGES[3], categories: "Sale", originalPrice: 42, badge: "Sale" },
-  { name: "Aura Signature Collection", price: 85, img: IMAGES[3], hoverImg: IMAGES[0], categories: "Best Sellers, New Arrivals", badge: "Best Seller" },
+  { name: "Izzan Signature Collection", price: 85, img: IMAGES[3], hoverImg: IMAGES[0], categories: "Best Sellers, New Arrivals", badge: "Best Seller" },
 ];
 
 async function main() {
@@ -61,7 +61,7 @@ async function main() {
       { key: "hero_title", value: "Discover Your Moment of Calm", section: "hero" },
       { key: "hero_subtitle", value: "Handcrafted, Natural Candles & Essential Oils. Elevate Your Space.", section: "hero" },
       { key: "story_title", value: "Our Story", section: "story" },
-      { key: "story_content", value: "At Aura, we believe that your home should be a sanctuary. Our journey began with a simple goal: to create scents that inspire peace and mindfulness.", section: "story" },
+      { key: "story_content", value: "At Izzan, we believe that your home should be a sanctuary. Our journey began with a simple goal: to create scents that inspire peace and mindfulness.", section: "story" },
 
       { key: "hero_video_url", value: "", section: "hero" },
       { key: "hero_video_poster", value: "https://lh3.googleusercontent.com/aida-public/AB6AXuAA-cKA0BI5PyiKmmlJ1V4jP1syMuPAzOAXIg7d-HjGJcIi-wOO_raH4mHQISILYP2dCAe3YP8niL9GpCqDGx6U8kAhAJPf1IJEPHryVq-UTqasBOwMnjEhr_6pcPLPG38UbgVhyUd0EDmxBB7oZqinh86xlSSHIGNXBltOus4NhdIR7NMUktxgeJh409TEpLaA5a_g0YFX-JUoUK6mH0gN5DaWIOvpOULZDRFWAnDvBNuh8UppFkbV0cNJjEgGinBO3d1T8xaM-Vu8", section: "hero" },
@@ -76,8 +76,8 @@ async function main() {
       { key: "community_1_img", value: "/images/community-1.png", section: "community" },
       { key: "community_2_img", value: "/images/community-2.png", section: "community" },
       { key: "community_3_img", value: "/images/community-3.png", section: "community" },
-      { key: "community_4_img", value: "https://lh3.googleusercontent.com/aida-public/AB6AXuDIDE2F4Nv-A22bv0inayjUaRJLcS0bkQlr2QPziWSLLwHEOuiHmCgQRawZ1vUFoXCkDcOQDnc89CjhmuiyWpopVGUtTb5tPxmAZRLBk3fQqix7CCwY2MMxDHKmNPfvbrdXtkQh2NBnB1oP-fOFU3up8ZoMga4eBv1H9X7JXK99tV7p8SFlaImUb8tXfUyiulb3DW9vMLtOr56ol2GoWjkYXGvCMxvMXBOlTBTd81fX0JP82WIY9Bi99-aMl3WSmKI8LefUY2_7fdll", section: "community" },
-      { key: "community_5_img", value: "https://lh3.googleusercontent.com/aida-public/AB6AXuBVRS56JXxhvBOmwAnxPzsdkGHOqJHT9et-LYEFwMxGmVIUECqiH7lcXVXuu-XJUSkc_VvJ36f2FJrJpH6NJFuOU1rrbe04rY3A6japGe2FAiBaOPuHUiAdBW2Y0m-Sjn4bGbRH45ABHwEOkEZxncal_hrvss02p1Q9KMWAevVACZXBkuO2AeDa7gtFDqGrgYZjdK7ziqC_Kp5PzZ8sInDxWBI27-ylTsrd35nkix0xvOlTwz5sGteSeaH4upAk5_pBeZ1xJA0r7Z58", section: "community" },
+      { key: "community_4_img", value: "/images/community-4.png", section: "community" },
+      { key: "community_5_img", value: "/images/community-5.png", section: "community" },
     ];
 
     for (const content of cmsData) {
@@ -89,22 +89,30 @@ async function main() {
     }
 
 
-    // Create 4 Admins
+    // Create Admins
     console.log('Seeding Admins...');
-    const hashedPass = await bcrypt.hash('admin123', 10);
-    const admins = ['admin1', 'admin2', 'admin3', 'admin4'];
+    const seedUser = process.env.INITIAL_ADMIN_USERNAME;
+    const seedPass = process.env.INITIAL_ADMIN_PASSWORD;
 
-    for (const username of admins) {
-      await prisma.admin.upsert({
-        where: { username },
-        update: {},
-        create: {
-          username,
-          password: hashedPass,
-        },
-      });
+    if (process.env.NODE_ENV === 'production' && (!seedUser || !seedPass)) {
+      console.warn('⚠️ Skipped administrative user seeding in production because INITIAL_ADMIN_USERNAME and INITIAL_ADMIN_PASSWORD are not set.');
+    } else {
+      const admins = seedUser ? [seedUser.trim()] : ['admin1', 'admin2', 'admin3', 'admin4'];
+      const password = seedPass || 'admin123';
+      const hashedPass = await bcrypt.hash(password, 10);
+
+      for (const username of admins) {
+        await prisma.admin.upsert({
+          where: { username },
+          update: {},
+          create: {
+            username,
+            password: hashedPass,
+          },
+        });
+      }
+      console.log(`Admins seeded successfully. (Count: ${admins.length})`);
     }
-    console.log('Admins seeded successfully.');
 
     
     console.log('Seeding finished.');

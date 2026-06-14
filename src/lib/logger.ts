@@ -8,7 +8,7 @@ const logger = winston.createLogger({
     winston.format.splat(),
     winston.format.json()
   ),
-  defaultMeta: { service: "aura-app" },
+  defaultMeta: { service: "izzan-app" },
   transports: [
     new winston.transports.Console({
       format: winston.format.combine(

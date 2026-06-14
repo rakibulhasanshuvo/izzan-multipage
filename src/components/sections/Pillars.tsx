@@ -19,20 +19,20 @@ const staggerContainer: Variants = {
 };
 
 const pillars = [
-  { 
-    title: "100% Natural Soy Wax", 
-    subtitle: "Clean, non-toxic burn for your sanctuary.", 
-    img: "/images/pillar-wax.png" 
+  {
+    title: "100% Natural Soy Wax",
+    subtitle: "Clean, non-toxic burn for your sanctuary.",
+    img: "/images/pillar-wax.png"
   },
-  { 
-    title: "Pure Essential Oils", 
-    subtitle: "Therapeutic-grade scents from nature.", 
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCVmDWzO3fIsa6g8efDclw6fOt6K0ZJuceIbbrDTaD2Lyup9gS9lNFkMxB73LazQVYHFhBmALDWnYbd2v6w8WuErf5e4Vz82GS_Od72Mf1OlAuTukU5Oeyby1hGQXAfQIpYZEUBI2hBHRZc5UpwYghogk-pJsppAQBNHIE3XH0kxgQIlcj_x9NVei5WeFiaD1w-KxTTY7ik-KnMJ7DgH9tJg4l8Hgk1q1QLCjurasFTKxaAIXCfeA3lHICD8n2ZVZJux9A1t-KQ2TOZ" 
+  {
+    title: "Pure Essential Oils",
+    subtitle: "Therapeutic-grade scents from nature.",
+    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCVmDWzO3fIsa6g8efDclw6fOt6K0ZJuceIbbrDTaD2Lyup9gS9lNFkMxB73LazQVYHFhBmALDWnYbd2v6w8WuErf5e4Vz82GS_Od72Mf1OlAuTukU5Oeyby1hGQXAfQIpYZEUBI2hBHRZc5UpwYghogk-pJsppAQBNHIE3XH0kxgQIlcj_x9NVei5WeFiaD1w-KxTTY7ik-KnMJ7DgH9tJg4l8Hgk1q1QLCjurasFTKxaAIXCfeA3lHICD8n2ZVZJux9A1t-KQ2TOZ"
   },
-  { 
-    title: "Hand-Poured", 
-    subtitle: "Small batch craftsmanship with love.", 
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDIDE2F4Nv-A22bv0inayjUaRJLcS0bkQlr2QPziWSLLwHEOuiHmCgQRawZ1vUFoXCkDcOQDnc89CjhmuiyWpopVGUtTb5tPxmAZRLBk3fQqix7CCwY2MMxDHKmNPfvbrdXtkQh2NBnB1oP-fOFU3up8ZoMga4eBv1H9X7JXK99tV7p8SFlaImUb8tXfUyiulb3DW9vMLtOr56ol2GoWjkYXGvCMxvMXBOlTBTd81fX0JP82WIY9Bi99-aMl3WSmKI8LefUY2_7fdll" 
+  {
+    title: "Hand-Poured",
+    subtitle: "Small batch craftsmanship with love.",
+    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDIDE2F4Nv-A22bv0inayjUaRJLcS0bkQlr2QPziWSLLwHEOuiHmCgQRawZ1vUFoXCkDcOQDnc89CjhmuiyWpopVGUtTb5tPxmAZRLBk3fQqix7CCwY2MMxDHKmNPfvbrdXtkQh2NBnB1oP-fOFU3up8ZoMga4eBv1H9X7JXK99tV7p8SFlaImUb8tXfUyiulb3DW9vMLtOr56ol2GoWjkYXGvCMxvMXBOlTBTd81fX0JP82WIY9Bi99-aMl3WSmKI8LefUY2_7fdll"
   }
 ];
 
@@ -44,7 +44,7 @@ export function Pillars({ images = [] }: { images?: string[] }) {
         <motion.h2 variants={fadeIn} className="text-4xl md:text-5xl font-display mb-4 dark:text-gray-100">The Izzan Promise</motion.h2>
         <motion.p variants={fadeIn} className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-light leading-relaxed">Crafted with intention. We never compromise on quality or your well-being, ensuring every scent is a sanctuary.</motion.p>
       </motion.div>
-      <motion.div 
+      <motion.div
         className="grid grid-cols-1 md:grid-cols-3 gap-8"
         initial="hidden"
         whileInView="visible"
@@ -53,11 +53,11 @@ export function Pillars({ images = [] }: { images?: string[] }) {
       >
         {pillars.map((pillar, idx) => (
           <motion.div key={idx} variants={fadeIn} className="relative aspect-[4/5] overflow-hidden rounded-3xl group cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500">
-            <Image 
+            <Image
               src={images[idx] || pillar.img}
               alt=""
-              fill 
-              className="object-cover group-hover:scale-110 transition-transform duration-1000 ease-out" 
+              fill
+              className="object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:via-black/40 transition-all duration-500"></div>
             <div className="absolute inset-0 flex flex-col items-center justify-end text-white p-10 text-center translate-y-4 group-hover:translate-y-0 transition-transform duration-500">

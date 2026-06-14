@@ -67,7 +67,7 @@ export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string,
         >
           <motion.h1 
             variants={revealContainer}
-            className="text-6xl md:text-8xl font-display font-semibold mb-8 leading-[1.1] flex flex-col"
+            className="text-5xl md:text-8xl font-display font-semibold mb-8 leading-[1.1] break-words"
           >
             {title || "Discover Your Moment of Calm."}
           </motion.h1>

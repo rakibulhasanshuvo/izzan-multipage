@@ -1,6 +1,6 @@
 import { describe, it, vi, beforeEach, expect } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth, rateLimitMap, checkRateLimit } from "./auth";
+import { withAuth, rateLimitMap, checkRateLimit, getClientIp } from "./auth";
 
 // Mock getServerSession to bypass headers() issue outside Next.js request scope
 vi.mock("next-auth/next", () => ({
@@ -17,94 +17,87 @@ describe("auth limits and checks", () => {
     rateLimitMap.clear();
   });
 
+  describe("getClientIp", () => {
+    it("should extract first IP from x-forwarded-for header", () => {
+      const req = new NextRequest("http://localhost", {
+        headers: { "x-forwarded-for": "203.0.113.195, 70.41.3.18, 150.172.238.178" },
+      });
+      expect(getClientIp(req)).toBe("203.0.113.195");
+    });
+
+    it("should fall back to x-real-ip when x-forwarded-for is missing", () => {
+      const req = new NextRequest("http://localhost", {
+        headers: { "x-real-ip": "198.51.100.1" },
+      });
+      expect(getClientIp(req)).toBe("198.51.100.1");
+    });
+
+    it("should fall back to req.ip when headers are missing", () => {
+      const req = new NextRequest("http://localhost");
+      Object.defineProperty(req, "ip", { value: "192.0.2.1", writable: true });
+      expect(getClientIp(req)).toBe("192.0.2.1");
+    });
+
+    it("should return 'unknown_ip' if no headers or req.ip exist", () => {
+      const req = new NextRequest("http://localhost");
+      expect(getClientIp(req)).toBe("unknown_ip");
+    });
+  });
+
   describe("checkRateLimit", () => {
-    it("should allow first request", () => {
-      expect(checkRateLimit("1.1.1.1")).toBe(true);
+    it("should allow first request", async () => {
+      expect(await checkRateLimit("1.1.1.1")).toBe(true);
       expect(rateLimitMap.has("1.1.1.1")).toBe(true);
       expect(rateLimitMap.get("1.1.1.1")?.count).toBe(1);
     });
 
-    it("should increment count for existing request", () => {
-      checkRateLimit("2.2.2.2");
-      expect(checkRateLimit("2.2.2.2")).toBe(true);
+    it("should increment count for existing request", async () => {
+      await checkRateLimit("2.2.2.2");
+      expect(await checkRateLimit("2.2.2.2")).toBe(true);
       expect(rateLimitMap.get("2.2.2.2")?.count).toBe(2);
     });
   });
 
-  it("should use req.ip if available and ignore x-forwarded-for", async () => {
-    const handler = async () => {
-      return NextResponse.json({ success: true });
-    };
-    const wrappedHandler = withAuth(handler);
+  describe("withAuth rate limit isolation", () => {
+    it("should rate limit a single IP after 100 requests", async () => {
+      const handler = async () => NextResponse.json({ success: true });
+      const wrappedHandler = withAuth(handler);
 
-    const mockReq1 = new NextRequest("http://localhost");
-    Object.defineProperty(mockReq1, "ip", { value: "20.0.0.1", writable: true });
+      const req = new NextRequest("http://localhost", {
+        headers: { "x-forwarded-for": "10.0.0.1" }
+      });
 
-    for (let i = 0; i < 100; i++) {
-      const res = await wrappedHandler(mockReq1);
-      expect(res.status).not.toBe(429);
-    }
+      for (let i = 0; i < 100; i++) {
+        const res = await wrappedHandler(req);
+        expect(res.status).not.toBe(429);
+      }
 
-    const res101 = await wrappedHandler(mockReq1);
-    expect(res101.status).toBe(429);
-  });
-
-  it("should fall back to 'unknown_ip' when req.ip is missing, ignoring x-forwarded-for", async () => {
-    const handler = async () => {
-      return NextResponse.json({ success: true });
-    };
-
-    const wrappedHandler = withAuth(handler);
-
-    const mockReq = new NextRequest("http://localhost", {
-      headers: new Headers({
-        "x-forwarded-for": "30.0.0.5, 30.0.0.6",
-      }),
+      const res101 = await wrappedHandler(req);
+      expect(res101.status).toBe(429);
     });
 
-    for (let i = 0; i < 100; i++) {
-      await wrappedHandler(mockReq);
-    }
+    it("should isolate rate limiting per IP and not block other clients", async () => {
+      const handler = async () => NextResponse.json({ success: true });
+      const wrappedHandler = withAuth(handler);
 
-    const res101 = await wrappedHandler(mockReq);
-    expect(res101.status).toBe(429);
-  });
+      // Exhaust limit on IP 10.0.0.2
+      const reqBlock = new NextRequest("http://localhost", {
+        headers: { "x-forwarded-for": "10.0.0.2" }
+      });
+      for (let i = 0; i < 100; i++) {
+        await wrappedHandler(reqBlock);
+      }
+      // Verification: 10.0.0.2 is blocked
+      const resBlock = await wrappedHandler(reqBlock);
+      expect(resBlock.status).toBe(429);
 
-  it("should ignore spoofed headers completely", async () => {
-    const handler = async () => {
-      return NextResponse.json({ success: true });
-    };
-
-    const wrappedHandler = withAuth(handler);
-
-    const reqSpoofed1 = new NextRequest("http://localhost", {
-      headers: new Headers({
-        "x-forwarded-for": "40.0.0.1",
-      }),
+      // Verify that IP 10.0.0.3 is NOT blocked
+      const reqAllow = new NextRequest("http://localhost", {
+        headers: { "x-forwarded-for": "10.0.0.3" }
+      });
+      const resAllow = await wrappedHandler(reqAllow);
+      expect(resAllow.status).toBe(200);
     });
-
-    for (let i = 0; i < 50; i++) {
-      await wrappedHandler(reqSpoofed1);
-    }
-
-    const reqSpoofed2 = new NextRequest("http://localhost", {
-      headers: new Headers({
-        "x-forwarded-for": "40.0.0.2",
-      }),
-    });
-
-    for (let i = 0; i < 50; i++) {
-      await wrappedHandler(reqSpoofed2);
-    }
-
-    const reqSpoofed3 = new NextRequest("http://localhost", {
-      headers: new Headers({
-        "x-forwarded-for": "40.0.0.3",
-      }),
-    });
-    const res = await wrappedHandler(reqSpoofed3);
-
-    // We expect 429 because the first 100 requests filled up the bucket for unknown_ip
-    expect(res.status).toBe(429);
   });
 });
+

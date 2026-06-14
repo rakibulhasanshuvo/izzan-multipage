@@ -1,104 +1,185 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
-import { ShoppingCart, Sun, Moon, Menu, X, ArrowRight } from "lucide-react";
+import { ShoppingCart, Sun, Moon, ArrowRight, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { CartDrawer } from "./CartDrawer";
 import { Search } from "./Search";
-import FocusTrap from "focus-trap-react";
 import { useMounted } from "@/hooks/useMounted";
+import { motion, AnimatePresence } from "framer-motion";
 
-interface HeaderProps {
-  onViewAllProducts?: () => void;
-}
-
-export function Header({ onViewAllProducts }: HeaderProps) {
+export function Header() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
   const mounted = useMounted();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
   const { cartCount, toggleCart } = useCart();
 
-  const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
-  const closeMenu = () => setIsMobileMenuOpen(false);
+  const isShop = pathname === "/shop" || pathname.startsWith("/product/");
+  const isStory = pathname === "/story";
+  const isSupport = pathname === "/contact";
 
   return (
     <>
-      <div className="w-full bg-primary text-white text-xs md:text-sm py-2 text-center flex justify-center items-center tracking-widest uppercase font-bold">
-        Free Shipping on orders over $50 <ArrowRight size={14} className="ml-2" />
+      <div className="w-full bg-[#607c64] dark:bg-[#2d3730] text-white text-[10px] md:text-xs py-2 px-4 text-center flex flex-wrap justify-center items-center tracking-[0.2em] uppercase font-bold transition-colors">
+        <span className="break-words text-center">Free Shipping on orders over $50</span> <ArrowRight size={12} className="ml-2 shrink-0" />
       </div>
-      <header className="w-full bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50 py-4 px-6 md:px-12 border-b border-gray-200 dark:border-gray-800 transition-all duration-300">
+      <header className="w-full bg-white/85 dark:bg-[#1a1f1b]/85 backdrop-blur-md sticky top-0 z-50 py-4 px-6 md:px-12 border-b border-black/5 dark:border-white/5 transition-all duration-300">
         <div className="max-w-[1600px] mx-auto flex justify-between items-center relative z-20">
-          <Link href="/" onClick={closeMenu} className="text-3xl md:text-4xl font-logo text-text-light dark:text-text-dark">
-            Izzan
-          </Link>
+          
+          {/* Logo & Mobile Menu Hamburger Icon */}
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-2 -ml-2 text-gray-700 dark:text-gray-300 hover:text-primary transition-colors focus:outline-none cursor-pointer"
+              aria-label="Open Menu"
+            >
+              <Menu size={20} />
+            </button>
+            <Link 
+              href="/" 
+              className="font-display text-xl md:text-2xl uppercase tracking-[0.25em] font-semibold text-gray-900 dark:text-gray-100 hover:opacity-85 transition-opacity cursor-pointer select-none"
+            >
+              Izzan
+            </Link>
+          </div>
+
+          {/* Nav Links with dynamic active state & sliding underlines */}
           <nav className="hidden md:flex space-x-10">
-            <Link href="/#shop" className="text-[11px] tracking-[0.2em] font-bold uppercase hover:text-primary transition-colors">Shop</Link>
-            <Link href="/#story" className="text-[11px] tracking-[0.2em] font-bold uppercase hover:text-primary transition-colors">Story</Link>
-            <Link href="/#discover" className="text-[11px] tracking-[0.2em] font-bold uppercase hover:text-primary transition-colors">Discover</Link>
-            <Link href="/#reviews" className="text-[11px] tracking-[0.2em] font-bold uppercase hover:text-primary transition-colors">Reviews</Link>
+            <Link 
+              href="/shop" 
+              className={`text-xs md:text-[13px] tracking-[0.22em] font-black uppercase relative py-1 transition-all ${
+                isShop 
+                  ? "text-[#607c64] dark:text-[#84a98c] after:w-full" 
+                  : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 after:w-0"
+              } after:absolute after:bottom-0 after:left-0 after:h-[1.5px] after:bg-[#607c64] dark:after:bg-[#84a98c] after:transition-all after:duration-300 hover:after:w-full`}
+            >
+              Shop
+            </Link>
+            <Link 
+              href="/story" 
+              className={`text-xs md:text-[13px] tracking-[0.22em] font-black uppercase relative py-1 transition-all ${
+                isStory 
+                  ? "text-[#607c64] dark:text-[#84a98c] after:w-full" 
+                  : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 after:w-0"
+              } after:absolute after:bottom-0 after:left-0 after:h-[1.5px] after:bg-[#607c64] dark:after:bg-[#84a98c] after:transition-all after:duration-300 hover:after:w-full`}
+            >
+              Story
+            </Link>
+            <Link 
+              href="/contact" 
+              className={`text-xs md:text-[13px] tracking-[0.22em] font-black uppercase relative py-1 transition-all ${
+                isSupport 
+                  ? "text-[#607c64] dark:text-[#84a98c] after:w-full" 
+                  : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 after:w-0"
+              } after:absolute after:bottom-0 after:left-0 after:h-[1.5px] after:bg-[#607c64] dark:after:bg-[#84a98c] after:transition-all after:duration-300 hover:after:w-full`}
+            >
+              Support
+            </Link>
           </nav>
-          <div className="flex items-center space-x-4 md:space-x-6">
-            <Search onViewAll={onViewAllProducts} />
 
-
+          {/* Right Action Icons with Tactile Circular Hover Frames */}
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <Search />
 
             {mounted && (
               <button
                 onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                className="text-text-light dark:text-text-dark hover:text-primary transition-colors cursor-pointer"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-text-light dark:text-text-dark hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#607c64] dark:hover:text-[#84a98c] transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 aria-label="Toggle dark mode"
               >
-                {resolvedTheme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+                {resolvedTheme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
               </button>
             )}
+
             <button
               onClick={toggleCart}
-              className="text-text-light dark:text-text-dark hover:text-primary transition-colors relative"
+              className="hidden md:flex w-10 h-10 rounded-full items-center justify-center text-text-light dark:text-text-dark hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#607c64] dark:hover:text-[#84a98c] transition-all relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Shopping Cart"
             >
-              <ShoppingCart size={20} />
+              <ShoppingCart size={18} />
               {mounted && cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center animate-in zoom-in duration-300">
+                <span className="absolute top-1.5 right-1.5 bg-[#607c64] dark:bg-[#84a98c] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-in zoom-in duration-300 shadow-md">
                   {cartCount}
                 </span>
               )}
             </button>
-            <button
-              className="md:hidden text-text-light dark:text-text-dark hover:text-primary transition-colors"
-              aria-label="Toggle mobile menu"
-              onClick={toggleMenu}
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
           </div>
         </div>
-
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <FocusTrap focusTrapOptions={{ fallbackFocus: "body", escapeDeactivates: false }}>
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="md:hidden absolute top-full left-0 right-0 bg-background-light dark:bg-background-dark border-b border-gray-200 dark:border-gray-800 overflow-hidden shadow-lg z-10"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Mobile Menu"
-              >
-              <nav className="flex flex-col px-8 py-6 space-y-8">
-                <Link href="/#shop" onClick={closeMenu} className="text-sm tracking-widest uppercase hover:text-primary transition-colors">Shop</Link>
-                <Link href="/#story" onClick={closeMenu} className="text-sm tracking-widest uppercase hover:text-primary transition-colors">Story</Link>
-                <Link href="/#discover" onClick={closeMenu} className="text-sm tracking-widest uppercase hover:text-primary transition-colors">Discover</Link>
-                <Link href="/#reviews" onClick={closeMenu} className="text-sm tracking-widest uppercase hover:text-primary transition-colors">Reviews</Link>
-              </nav>
-              </motion.div>
-            </FocusTrap>
-          )}
-        </AnimatePresence>
       </header>
+
+      {/* Mobile Menu Drawer */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="md:hidden fixed inset-0 z-[120] bg-black/40 backdrop-blur-sm"
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "tween", duration: 0.3 }}
+              className="md:hidden fixed top-0 left-0 h-full w-64 bg-background-light dark:bg-[#1a1f1b] z-[130] shadow-2xl p-6 flex flex-col space-y-6"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Mobile Navigation Menu"
+            >
+              <div className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-gray-800">
+                <span className="font-display text-lg uppercase tracking-[0.2em] font-semibold text-gray-900 dark:text-gray-100">
+                  Menu
+                </span>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 -mr-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-gray-500"
+                  aria-label="Close menu"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <nav className="flex flex-col space-y-4">
+                <Link
+                  href="/shop"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-sm font-bold tracking-widest uppercase py-2 border-b border-black/5 dark:border-white/5 ${
+                    isShop ? "text-[#607c64] dark:text-[#84a98c]" : "text-gray-600 dark:text-gray-300"
+                  }`}
+                >
+                  Shop
+                </Link>
+                <Link
+                  href="/story"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-sm font-bold tracking-widest uppercase py-2 border-b border-black/5 dark:border-white/5 ${
+                    isStory ? "text-[#607c64] dark:text-[#84a98c]" : "text-gray-600 dark:text-gray-300"
+                  }`}
+                >
+                  Story
+                </Link>
+                <Link
+                  href="/contact"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-sm font-bold tracking-widest uppercase py-2 border-b border-black/5 dark:border-white/5 ${
+                    isSupport ? "text-[#607c64] dark:text-[#84a98c]" : "text-gray-600 dark:text-gray-300"
+                  }`}
+                >
+                  Support
+                </Link>
+              </nav>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       <CartDrawer />
     </>
   );

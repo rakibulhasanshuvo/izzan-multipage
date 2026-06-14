@@ -3,31 +3,34 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Search as SearchIcon, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { products } from "@/lib/mockData";
+import { fetchStorefrontProducts } from "@/app/actions/products";
 import { Product } from "@/generated/client";
 import Image from "next/image";
 import Link from "next/link";
 
-interface SearchProps {
-  onViewAll?: () => void;
-}
-
-export function Search({ onViewAll }: SearchProps) {
+export function Search() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
-    const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchStorefrontProducts().then((data) => setDbProducts(data as unknown as Product[]));
+    }
+  }, [isOpen]);
 
   const results = useMemo(() => {
     if (query.trim() === "") {
       return [];
     }
 
-    const filtered = products.filter((p) =>
+    const filtered = dbProducts.filter((p) =>
       p.name.toLowerCase().includes(query.toLowerCase()) ||
       p.categories.toLowerCase().includes(query.toLowerCase())
     );
-    return filtered.slice(0, 5) as unknown as Product[];
-  }, [query]);
+    return filtered.slice(0, 5);
+  }, [query, dbProducts]);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -41,10 +44,10 @@ export function Search({ onViewAll }: SearchProps) {
     <>
       <button 
         onClick={toggleSearch}
-        className="text-text-light dark:text-text-dark hover:text-primary transition-colors"
+        className="w-10 h-10 rounded-full flex items-center justify-center text-text-light dark:text-text-dark hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#607c64] dark:hover:text-[#84a98c] transition-all cursor-pointer"
         aria-label="Search Products"
       >
-        <SearchIcon size={20} />
+        <SearchIcon size={18} />
       </button>
 
       <AnimatePresence>
@@ -69,12 +72,19 @@ export function Search({ onViewAll }: SearchProps) {
                 <input 
                   ref={inputRef}
                   type="text" 
-                  placeholder="Search for candles, oils, scents..." 
-                  className="flex-1 bg-transparent border-none focus:outline-none text-lg dark:text-gray-100 placeholder-gray-400"
+                  aria-label="Search catalog"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="Search for candles, oils, scents…" 
+                  className="flex-1 bg-transparent border-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-md text-lg dark:text-gray-100 placeholder-gray-400 px-2"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
-                <button onClick={toggleSearch} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <button 
+                  onClick={toggleSearch} 
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1 cursor-pointer"
+                  aria-label="Close search"
+                >
                   <X size={24} />
                 </button>
               </div>
@@ -88,7 +98,7 @@ export function Search({ onViewAll }: SearchProps) {
                         <button 
                           key={s} 
                           onClick={() => setQuery(s)}
-                          className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-xs font-medium hover:bg-primary hover:text-white transition-colors"
+                          className="px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full text-xs font-medium hover:bg-primary hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
                         >
                           {s}
                         </button>
@@ -101,9 +111,9 @@ export function Search({ onViewAll }: SearchProps) {
                     {results.map((product) => (
                       <Link 
                         key={product.id} 
-                        href={`#product-${product.id}`}
+                        href={`/shop#product-${product.id}`}
                         onClick={toggleSearch}
-                        className="flex items-center p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
+                        className="flex items-center p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-800">
                           <Image src={product.img} alt={product.name} fill className="object-cover" />
@@ -118,21 +128,19 @@ export function Search({ onViewAll }: SearchProps) {
                   </div>
                 ) : (
                   <div className="py-12 text-center text-gray-500">
-                    <p>No results found for &quot;{query}&quot;</p>
+                    <p>No results found for &ldquo;{query}&rdquo;</p>
                   </div>
                 )}
               </div>
               
               <div className="bg-gray-50 dark:bg-gray-800/50 p-4 text-center">
-                <button 
-                  onClick={() => {
-                    onViewAll?.();
-                    setIsOpen(false);
-                  }}
-                  className="text-xs font-bold uppercase tracking-widest text-primary hover:underline cursor-pointer"
+                <Link 
+                  href="/shop"
+                  onClick={() => setIsOpen(false)}
+                  className="text-xs font-bold uppercase tracking-widest text-primary hover:underline cursor-pointer inline-block"
                 >
                   View All Products
-                </button>
+                </Link>
               </div>
             </motion.div>
           </div>

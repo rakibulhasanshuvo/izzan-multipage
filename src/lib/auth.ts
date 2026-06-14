@@ -1,43 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth-options";
-import { Redis } from "@upstash/redis";
+import {
+  checkRateLimit,
+  getClientIp,
+  rateLimitMap,
+  RATE_LIMIT_WINDOW,
+  MAX_REQUESTS
+} from "./rate-limit";
 
-// Redis client (only initialized if REDIS_URL is present)
-const redis = process.env.REDIS_URL 
-  ? new Redis({ url: process.env.REDIS_URL, token: process.env.REDIS_TOKEN || "" })
-  : null;
+export {
+  checkRateLimit,
+  getClientIp,
+  rateLimitMap,
+  RATE_LIMIT_WINDOW,
+  MAX_REQUESTS
+};
 
-// Local fallback Rate limiting state
-export const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-export const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
-export const MAX_REQUESTS = 100;
-
-export async function checkRateLimit(ip: string): Promise<boolean> {
-  const now = Date.now();
-
-  if (redis) {
-    // Distributed rate limit (Vercel)
-    const key = `rate_limit:${ip}`;
-    const requests = await redis.incr(key);
-    if (requests === 1) {
-      await redis.pexpire(key, RATE_LIMIT_WINDOW);
-    }
-    return requests <= MAX_REQUESTS;
-  } else {
-    // Local fallback (VPS)
-    const record = rateLimitMap.get(ip);
-    if (!record || record.resetTime < now) {
-      rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-      return true;
-    }
-    if (record.count >= MAX_REQUESTS) {
-      return false;
-    }
-    record.count += 1;
-    return true;
-  }
-}
 
 /**
  * Basic authentication check for admin routes.
@@ -69,10 +48,10 @@ export async function checkAdminAuth(req?: NextRequest): Promise<boolean> {
  */
 export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Promise<NextResponse> | NextResponse) {
   return async (req: NextRequest, ...args: unknown[]) => {
-    const reqIp = (req as unknown as { ip?: string }).ip;
-    const ip = reqIp || "unknown_ip";
+    const ip = getClientIp(req);
 
-    const allowed = await checkRateLimit(ip);
+    // Isolate admin endpoint rate limit bucket
+    const allowed = await checkRateLimit(`admin:${ip}`);
     if (!allowed) {
       return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
     }
@@ -97,3 +76,4 @@ export function verifyToken(token?: string): boolean {
   }
   return token === expectedToken;
 }
+

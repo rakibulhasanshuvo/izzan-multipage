@@ -4,6 +4,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 
 import { prisma } from "./db";
+import { checkRateLimit } from "./rate-limit";
+import { headers } from "next/headers";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -16,6 +18,18 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) {
           return null;
+        }
+
+        // Get IP address from headers during the authentication request on server
+        const reqHeaders = await headers();
+        const forwarded = reqHeaders.get("x-forwarded-for");
+        const realIp = reqHeaders.get("x-real-ip");
+        const ip = forwarded ? forwarded.split(",")[0].trim() : (realIp || "unknown_ip");
+
+        // Prefix to separate login attempts rate limiting bucket
+        const allowed = await checkRateLimit(`login:${ip}`);
+        if (!allowed) {
+          throw new Error("Too many login attempts. Please try again later.");
         }
 
         const admin = await prisma.admin.findUnique({
@@ -45,7 +59,9 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/admin/login",
   },
-  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-key-for-development",
+  secret: process.env.NEXTAUTH_SECRET || (process.env.NODE_ENV === "production" ? (() => {
+    throw new Error("Security Config Error: NEXTAUTH_SECRET environment variable must be configured in production.");
+  })() : "fallback-secret-key-for-development"),
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -62,3 +78,4 @@ export const authOptions: NextAuthOptions = {
     }
   }
 };
+
