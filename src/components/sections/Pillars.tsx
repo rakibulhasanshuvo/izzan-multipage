@@ -53,12 +53,7 @@ export function Pillars({ images = [] }: { images?: string[] }) {
       >
         {pillars.map((pillar, idx) => (
           <motion.div key={idx} variants={fadeIn} className="relative aspect-[4/5] overflow-hidden rounded-3xl group cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500">
-            <Image
-              src={images[idx] || pillar.img}
-              alt=""
-              fill
-              className="object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
-            />
+            <Image src={images[idx] || pillar.img} alt="" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover group-hover:scale-110 transition-transform duration-1000 ease-out" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:via-black/40 transition-all duration-500"></div>
             <div className="absolute inset-0 flex flex-col items-center justify-end text-white p-10 text-center translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
               <h3 className="text-2xl font-display font-semibold mb-4 leading-tight">{pillar.title}</h3>
