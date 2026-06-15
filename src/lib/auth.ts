@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./auth-options";
+import crypto from "crypto";
 import {
   checkRateLimit,
   getClientIp,
@@ -16,7 +17,6 @@ export {
   RATE_LIMIT_WINDOW,
   MAX_REQUESTS
 };
-
 
 /**
  * Basic authentication check for admin routes.
@@ -35,8 +35,15 @@ export async function checkAdminAuth(req?: NextRequest): Promise<boolean> {
       ? authHeader.split(" ")[1] 
       : tokenCookie;
     
-    if (token && process.env.ADMIN_TOKEN && token === process.env.ADMIN_TOKEN) {
-      return true;
+    if (token && process.env.ADMIN_TOKEN) {
+      const tokenBuffer = Buffer.from(token);
+      const expectedBuffer = Buffer.from(process.env.ADMIN_TOKEN);
+
+      if (tokenBuffer.byteLength === expectedBuffer.byteLength) {
+        if (crypto.timingSafeEqual(tokenBuffer, expectedBuffer)) {
+          return true;
+        }
+      }
     }
   }
 
@@ -74,6 +81,12 @@ export function verifyToken(token?: string): boolean {
     console.error("ADMIN_TOKEN is not configured");
     return false;
   }
-  return token === expectedToken;
-}
 
+  const tokenBuffer = Buffer.from(token);
+  const expectedBuffer = Buffer.from(expectedToken);
+
+  if (tokenBuffer.byteLength !== expectedBuffer.byteLength) {
+    return false;
+  }
+  return crypto.timingSafeEqual(tokenBuffer, expectedBuffer);
+}
