@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { motion, Variants } from "framer-motion";
+import sanitizeHtml from "sanitize-html";
+import { useMemo } from "react";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -19,6 +21,17 @@ const staggerContainer: Variants = {
 };
 
 export function Story({ title, content, imgUrl }: { title?: string, content?: string, imgUrl?: string }) {
+  const sanitizedContent = useMemo(() => {
+    if (!content) return "";
+    return sanitizeHtml(content, {
+      allowedTags: sanitizeHtml.defaults.allowedTags.concat([ 'img', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span' ]),
+      allowedAttributes: {
+        ...sanitizeHtml.defaults.allowedAttributes,
+        '*': ['style', 'class'],
+      }
+    });
+  }, [content]);
+
   return (
     <section id="story" className="py-24 px-6 md:px-12 max-w-[1600px] mx-auto scroll-mt-20">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center flex-col-reverse md:flex-row">
@@ -34,7 +47,7 @@ export function Story({ title, content, imgUrl }: { title?: string, content?: st
             <motion.div
               variants={fadeIn}
               className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed font-light text-lg"
-              dangerouslySetInnerHTML={{ __html: content }}
+              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
             />
           ) : (
             <motion.p variants={fadeIn} className="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed font-light text-lg">
