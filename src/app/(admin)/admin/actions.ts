@@ -85,7 +85,7 @@ const ProductSchema = z.object({
   name: z.string().min(1, "Name must be a non-empty string"),
   description: z.string().optional().nullable(),
   price: z.coerce.number().min(0, "Invalid price"),
-  originalPrice: z.coerce.number().nullable().optional(),
+  originalPrice: z.preprocess(val => val === '' ? null : val, z.coerce.number().nonnegative().nullable().optional()),
   img: z.string().optional(),
   hoverImg: z.string().optional().nullable(),
   categories: z.string().optional(),
