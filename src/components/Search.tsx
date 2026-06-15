@@ -116,7 +116,7 @@ export function Search() {
                         className="flex items-center p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-gray-800">
-                          <Image src={product.img} alt={product.name} fill className="object-cover" />
+                          <Image src={product.img} alt={product.name} fill sizes="64px" className="object-cover" />
                         </div>
                         <div className="ml-4 flex-1">
                           <h4 className="font-semibold text-sm dark:text-gray-100 group-hover:text-primary transition-colors">{product.name}</h4>

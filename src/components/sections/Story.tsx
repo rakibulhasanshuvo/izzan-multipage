@@ -66,12 +66,7 @@ export function Story({ title, content, imgUrl }: { title?: string, content?: st
           transition={{ duration: 0.8 }}
           className="relative aspect-[4/3] w-full rounded-lg overflow-hidden shadow-xl order-1 md:order-2"
         >
-          <Image
-            src={imgUrl || "/images/story-workshop.png"}
-            alt="Hand pouring candles"
-            fill
-            className="object-cover"
-          />
+          <Image src={imgUrl || "/images/story-workshop.png"} alt="Hand pouring candles" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
         </motion.div>
       </div>
     </section>
