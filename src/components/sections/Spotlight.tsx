@@ -53,6 +53,7 @@ export function Spotlight({ product, videoUrl }: { product: Product | null; vide
             loop
             muted
             playsInline
+            preload="none"
             className="w-full h-full object-cover hover:scale-105 transition-transform duration-1000"
           >
             <track kind="captions" srcLang="en" label="English" />
