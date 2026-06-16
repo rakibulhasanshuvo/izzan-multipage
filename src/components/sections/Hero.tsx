@@ -49,6 +49,7 @@ export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string,
           loop
           muted
           playsInline
+          preload="none"
           className="object-cover object-center w-full h-full absolute inset-0"
           poster={posterUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuAA-cKA0BI5PyiKmmlJ1V4jP1syMuPAzOAXIg7d-HjGJcIi-wOO_raH4mHQISILYP2dCAe3YP8niL9GpCqDGx6U8kAhAJPf1IJEPHryVq-UTqasBOwMnjEhr_6pcPLPG38UbgVhyUd0EDmxBB7oZqinh86xlSSHIGNXBltOus4NhdIR7NMUktxgeJh409TEpLaA5a_g0YFX-JUoUK6mH0gN5DaWIOvpOULZDRFWAnDvBNuh8UppFkbV0cNJjEgGinBO3d1T8xaM-Vu8"}
         >
