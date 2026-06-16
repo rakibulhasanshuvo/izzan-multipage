@@ -20,7 +20,7 @@ export function Footer() {
 
   return (
     <footer className="bg-background-light dark:bg-background-dark pt-12 border-t border-gray-200 dark:border-gray-800 transition-colors duration-300">
-      <div className="max-w-[1600px] mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-3 gap-12 items-center">
+      <div className="max-w-[1600px] mx-auto px-4 md:px-8 lg:px-12 grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 items-center">
         <div className="text-center md:text-left flex flex-col items-center md:items-start">
           <h2 className="font-display text-xl mb-2">Stay in Touch</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Email signup for 15% OFF</p>

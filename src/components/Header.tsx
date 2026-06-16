@@ -27,7 +27,7 @@ export function Header() {
       <div className="w-full bg-[#607c64] dark:bg-[#2d3730] text-white text-[10px] md:text-xs py-2 px-4 text-center flex flex-wrap justify-center items-center tracking-[0.2em] uppercase font-bold transition-colors">
         <span className="break-words text-center">Free Shipping on orders over $50</span> <ArrowRight size={12} className="ml-2 shrink-0" />
       </div>
-      <header className="w-full bg-white/85 dark:bg-[#1a1f1b]/85 backdrop-blur-md sticky top-0 z-50 py-4 px-6 md:px-12 border-b border-black/5 dark:border-white/5 transition-all duration-300">
+      <header className="w-full bg-white/85 dark:bg-[#1a1f1b]/85 backdrop-blur-md sticky top-0 z-50 py-4 px-4 md:px-8 lg:px-12 border-b border-black/5 dark:border-white/5 transition-all duration-300">
         <div className="max-w-[1600px] mx-auto flex justify-between items-center relative z-20">
           
           {/* Logo & Mobile Menu Hamburger Icon */}

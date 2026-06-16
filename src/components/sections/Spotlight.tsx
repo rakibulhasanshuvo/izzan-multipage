@@ -35,11 +35,11 @@ export function Spotlight({ product, videoUrl }: { product: Product | null; vide
   };
 
   return (
-    <section className="bg-secondary-light dark:bg-secondary-dark py-24 transition-colors duration-300 relative overflow-hidden">
+    <section className="bg-secondary-light dark:bg-secondary-dark py-16 md:py-24 transition-colors duration-300 relative overflow-hidden">
       {/* Decorative background element */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
-      <div className="max-w-7xl mx-auto px-6 md:px-12 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
@@ -111,7 +111,7 @@ export function Spotlight({ product, videoUrl }: { product: Product | null; vide
             )}
           </motion.p>
 
-          <motion.div variants={fadeIn} className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 relative">
+          <motion.div variants={fadeIn} className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 relative">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="font-display text-xl mb-1 dark:text-gray-100">
