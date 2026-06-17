@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   serverExternalPackages: ["@prisma/client", "better-sqlite3"],
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       {
         protocol: 'https',
@@ -40,5 +42,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
-

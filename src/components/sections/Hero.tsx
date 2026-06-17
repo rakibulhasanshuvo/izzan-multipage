@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion, Variants, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import { preload } from "react-dom";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -32,6 +33,9 @@ const revealContainer: Variants = {
 
 
 export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string, subtitle?: string, videoUrl?: string, posterUrl?: string }) {
+  const finalPoster = posterUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuAA-cKA0BI5PyiKmmlJ1V4jP1syMuPAzOAXIg7d-HjGJcIi-wOO_raH4mHQISILYP2dCAe3YP8niL9GpCqDGx6U8kAhAJPf1IJEPHryVq-UTqasBOwMnjEhr_6pcPLPG38UbgVhyUd0EDmxBB7oZqinh86xlSSHIGNXBltOus4NhdIR7NMUktxgeJh409TEpLaA5a_g0YFX-JUoUK6mH0gN5DaWIOvpOULZDRFWAnDvBNuh8UppFkbV0cNJjEgGinBO3d1T8xaM-Vu8";
+  preload(finalPoster, { as: "image", fetchPriority: "high" });
+
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -51,7 +55,7 @@ export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string,
           playsInline
           preload="none"
           className="object-cover object-center w-full h-full absolute inset-0"
-          poster={posterUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuAA-cKA0BI5PyiKmmlJ1V4jP1syMuPAzOAXIg7d-HjGJcIi-wOO_raH4mHQISILYP2dCAe3YP8niL9GpCqDGx6U8kAhAJPf1IJEPHryVq-UTqasBOwMnjEhr_6pcPLPG38UbgVhyUd0EDmxBB7oZqinh86xlSSHIGNXBltOus4NhdIR7NMUktxgeJh409TEpLaA5a_g0YFX-JUoUK6mH0gN5DaWIOvpOULZDRFWAnDvBNuh8UppFkbV0cNJjEgGinBO3d1T8xaM-Vu8"}
+          poster={finalPoster}
         >
           <track kind="captions" srcLang="en" label="English" />
           {videoUrl && <source src={videoUrl} type="video/mp4" />}
@@ -89,4 +93,3 @@ export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string,
     </section>
   );
 }
-

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Playfair_Display, Lato, Inter, Noto_Serif, Parisienne } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import Script from "next/script";
-import "material-symbols/outlined.css";
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
 
