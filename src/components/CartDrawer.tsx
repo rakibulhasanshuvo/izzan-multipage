@@ -37,13 +37,13 @@ export function CartDrawer() {
           />
           
           {/* Drawer */}
-          <FocusTrap focusTrapOptions={{ fallbackFocus: "body", escapeDeactivates: false }}>
+          <FocusTrap focusTrapOptions={{ fallbackFocus: "body", escapeDeactivates: false, allowOutsideClick: true }}>
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-full md:w-[450px] bg-background-light dark:bg-[#1a1f1b] z-[90] shadow-2xl flex flex-col pb-24 md:pb-0"
+              className="fixed top-0 right-0 h-full w-full md:w-[450px] bg-background-light dark:bg-[#1a1f1b] z-[90] shadow-2xl flex flex-col pb-[calc(env(safe-area-inset-bottom)+3rem)] md:pb-0"
               role="dialog"
               aria-modal="true"
               aria-label="Shopping Cart"
