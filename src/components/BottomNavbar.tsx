@@ -47,8 +47,8 @@ export function BottomNavbar() {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/80 dark:bg-[#1a1f1b]/80 backdrop-blur-lg border-t border-black/5 dark:border-white/5 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] px-4 py-2 transition-all duration-300 pb-safe-bottom">
-      <nav className="flex justify-around items-center h-12 max-w-md mx-auto relative">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/80 dark:bg-[#1a1f1b]/80 backdrop-blur-lg border-t border-black/5 dark:border-white/5 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-all duration-300">
+      <nav aria-label="Mobile Navigation" className="flex justify-around items-center h-12 max-w-md mx-auto relative">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.isActive;
@@ -76,7 +76,7 @@ export function BottomNavbar() {
 
               {/* Text Label */}
               <span
-                className={`text-[9px] tracking-wider uppercase mt-1 font-bold transition-colors duration-200 ${
+                className={`text-xs tracking-wider uppercase mt-1 font-bold transition-colors duration-200 ${
                   isActive
                     ? "text-[#607c64] dark:text-[#84a98c]"
                     : "text-gray-400 dark:text-gray-500"
