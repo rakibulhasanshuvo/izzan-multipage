@@ -59,7 +59,7 @@ export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string,
         </video>
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/30 md:to-transparent dark:from-black/95 dark:via-black/70"></div>
       </motion.div>
-      <motion.div style={{ opacity }} className="relative z-10 max-w-[1600px] mx-auto px-6 md:px-12 w-full text-white">
+      <motion.div style={{ opacity }} className="relative z-10 max-w-[1600px] mx-auto px-4 md:px-8 lg:px-12 w-full text-white">
         <motion.div 
           className="max-w-2xl"
           initial="hidden"

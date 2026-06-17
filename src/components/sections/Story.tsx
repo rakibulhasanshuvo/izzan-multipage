@@ -33,8 +33,8 @@ export function Story({ title, content, imgUrl }: { title?: string, content?: st
   }, [content]);
 
   return (
-    <section id="story" className="py-24 px-6 md:px-12 max-w-[1600px] mx-auto scroll-mt-20">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center flex-col-reverse md:flex-row">
+    <section id="story" className="py-16 md:py-24 px-4 md:px-8 lg:px-12 max-w-[1600px] mx-auto scroll-mt-20">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center flex-col-reverse md:flex-row">
         <motion.div
           initial="hidden"
           whileInView="visible"

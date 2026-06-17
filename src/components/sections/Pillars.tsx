@@ -38,7 +38,7 @@ const pillars = [
 
 export function Pillars({ images = [] }: { images?: string[] }) {
   return (
-    <section className="pt-32 pb-16 px-6 md:px-12 max-w-[1600px] mx-auto">
+    <section className="pt-20 md:pt-32 pb-12 md:pb-16 px-4 md:px-8 lg:px-12 max-w-[1600px] mx-auto">
       <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="text-center mb-12">
         <motion.span variants={fadeIn} className="text-primary font-bold tracking-[0.3em] uppercase text-[10px] mb-4 block">Our Values</motion.span>
         <motion.h2 variants={fadeIn} className="text-4xl md:text-5xl font-display mb-4 dark:text-gray-100">The Izzan Promise</motion.h2>
@@ -55,7 +55,7 @@ export function Pillars({ images = [] }: { images?: string[] }) {
           <motion.div key={idx} variants={fadeIn} className="relative aspect-[4/5] overflow-hidden rounded-3xl group cursor-pointer shadow-xl hover:shadow-2xl transition-all duration-500">
             <Image src={images[idx] || pillar.img} alt="" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover group-hover:scale-110 transition-transform duration-1000 ease-out" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:via-black/40 transition-all duration-500"></div>
-            <div className="absolute inset-0 flex flex-col items-center justify-end text-white p-10 text-center translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+            <div className="absolute inset-0 flex flex-col items-center justify-end text-white p-6 md:p-10 text-center translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
               <h3 className="text-2xl font-display font-semibold mb-4 leading-tight">{pillar.title}</h3>
               <p className="text-xs text-gray-300 font-light tracking-wide leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">{pillar.subtitle}</p>
               <div className="mt-6 w-8 h-[1px] bg-primary group-hover:w-16 transition-all duration-500"></div>

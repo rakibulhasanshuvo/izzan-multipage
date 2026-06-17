@@ -166,7 +166,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
       <Pillars images={[cms.pillar_1_img, cms.pillar_2_img, cms.pillar_3_img].filter(Boolean)} />
       
       {/* Portfolio Catalog Section */}
-      <div className="max-w-[1600px] mx-auto px-6 md:px-12 py-16 min-h-[70vh]">
+      <div className="max-w-[1600px] mx-auto px-4 md:px-8 lg:px-12 py-12 md:py-16 min-h-[70vh]">
         <div className="text-center mb-10">
           <span className="text-[#607c64] dark:text-[#84a98c] font-bold tracking-[0.25em] uppercase text-xs mb-2 block">
             Handcrafted Scent Portfolio
@@ -246,7 +246,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
                 setSearchQuery("");
                 setSortBy("default");
               }}
-              className="mt-6 bg-[#607c64] text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.1em] hover:bg-opacity-90 transition-all cursor-pointer"
+              className="mt-6 bg-[#607c64] text-white px-4 md:px-8 lg:px-12 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.1em] hover:bg-opacity-90 transition-all cursor-pointer"
             >
               Reset All Filters
             </button>
@@ -291,7 +291,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
         )}
 
         {/* E-Commerce Value Props Footer */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-24 pt-12 border-t border-gray-200 dark:border-gray-800 text-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 md:mt-24 pt-8 md:pt-12 border-t border-gray-200 dark:border-gray-800 text-center">
           <div className="p-4 flex flex-col items-center">
             <div className="w-12 h-12 rounded-full bg-[#607c64]/10 text-[#607c64] flex items-center justify-center mb-4 font-bold text-lg">100%</div>
             <h4 className="font-semibold text-base mb-1 dark:text-gray-200">Natural Ingredients</h4>
@@ -328,8 +328,8 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
       </div>
 
       {/* Ingredients & Materials Showcase */}
-      <div className="py-24 bg-zinc-50 dark:bg-zinc-900/40 border-y border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-12">
+      <div className="py-16 md:py-24 bg-zinc-50 dark:bg-zinc-900/40 border-y border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12">
           <div className="text-center mb-16">
             <span className="text-[#607c64] dark:text-[#84a98c] font-bold tracking-[0.25em] uppercase text-xs mb-2 block">
               Pure Craftsmanship
@@ -351,7 +351,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
                 <button
                   key={tab.id}
                   onClick={() => setActiveIngredientTab(tab.id)}
-                  className={`flex items-center space-x-2 px-6 py-3.5 rounded-full text-xs md:text-sm font-semibold tracking-wider uppercase transition-all duration-300 cursor-pointer ${
+                  className={`flex items-center space-x-2 px-4 md:px-8 lg:px-12 py-3.5 rounded-full text-xs md:text-sm font-semibold tracking-wider uppercase transition-all duration-300 cursor-pointer ${
                     isActive
                       ? "bg-[#607c64] text-white shadow-lg shadow-[#607c64]/20 scale-105"
                       : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700/50 border border-gray-100 dark:border-gray-800"
@@ -365,7 +365,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
           </div>
 
           {/* Tab content panel */}
-          <div className="relative min-h-[380px] bg-white dark:bg-zinc-800/40 border border-gray-100 dark:border-zinc-800/70 rounded-3xl p-8 md:p-12 shadow-sm backdrop-blur-sm">
+          <div className="relative min-h-[380px] bg-white dark:bg-zinc-800/40 border border-gray-100 dark:border-zinc-800/70 rounded-3xl p-6 md:p-12 shadow-sm backdrop-blur-sm">
             <AnimatePresence mode="wait">
               {INGREDIENTS_DATA.map((tab) => {
                 if (tab.id !== activeIngredientTab) return null;
@@ -377,7 +377,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -15 }}
                     transition={{ duration: 0.3 }}
-                    className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center"
+                    className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center"
                   >
                     <div className="lg:col-span-7 space-y-6">
                       <div className="flex items-center space-x-3">
@@ -414,7 +414,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
                     </div>
 
                     <div className="lg:col-span-5 flex justify-center">
-                      <div className="relative w-full aspect-square max-w-[280px] rounded-3xl bg-gradient-to-tr from-[#607c64]/5 to-[#607c64]/20 dark:from-zinc-800 dark:to-zinc-700/30 border border-gray-100 dark:border-zinc-800 flex flex-col items-center justify-center p-8 text-center shadow-inner group">
+                      <div className="relative w-full aspect-square max-w-[280px] rounded-3xl bg-gradient-to-tr from-[#607c64]/5 to-[#607c64]/20 dark:from-zinc-800 dark:to-zinc-700/30 border border-gray-100 dark:border-zinc-800 flex flex-col items-center justify-center p-6 md:p-8 text-center shadow-inner group">
                         <div className="w-20 h-20 rounded-2xl bg-white dark:bg-zinc-800 text-[#607c64] dark:text-[#84a98c] flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-500">
                           <IconComponent size={36} />
                         </div>
@@ -449,7 +449,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
       {/* Community Gallery (Instagram Wall) */}
       {communityImages.length > 0 && (
         <div className="border-t border-gray-100 dark:border-gray-800/50 py-16 bg-background-light dark:bg-background-dark transition-colors duration-300">
-          <div className="text-center mb-8 px-6">
+          <div className="text-center mb-8 px-4 md:px-8 lg:px-12">
             <h2 className="text-3xl font-display dark:text-gray-100 font-semibold">Our Community</h2>
             <p className="text-sm text-gray-500 mt-2 font-light">Tag us @izzan_moment to share your moment of calm.</p>
           </div>

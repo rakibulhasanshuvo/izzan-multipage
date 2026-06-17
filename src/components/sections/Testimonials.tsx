@@ -27,8 +27,8 @@ const testimonials = [
 
 export function Testimonials({ images = [] }: { images?: string[] }) {
   return (
-    <section id="reviews" className="bg-secondary-light dark:bg-secondary-dark py-20 transition-colors duration-300">
-      <div className="px-6 md:px-12 max-w-[1600px] mx-auto text-center">
+    <section id="reviews" className="bg-secondary-light dark:bg-secondary-dark py-12 md:py-20 transition-colors duration-300">
+      <div className="px-4 md:px-8 lg:px-12 max-w-[1600px] mx-auto text-center">
         <motion.h2 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn} className="text-3xl md:text-4xl font-display mb-12 dark:text-gray-100">Customer Favorites</motion.h2>
         <motion.div 
           className="grid grid-cols-1 md:grid-cols-3 gap-8"
@@ -38,7 +38,7 @@ export function Testimonials({ images = [] }: { images?: string[] }) {
           variants={staggerContainer}
         >
           {testimonials.map((testimonial, idx) => (
-            <motion.div key={idx} variants={fadeIn} className="flex flex-col items-center bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+            <motion.div key={idx} variants={fadeIn} className="flex flex-col items-center bg-white dark:bg-gray-800 p-6 md:p-8 rounded-lg shadow-sm">
               <div className="w-full aspect-video relative overflow-hidden mb-6 rounded-md">
                 <Image alt="" className="object-cover" src={images[idx] || testimonial.img} fill sizes="(max-width: 768px) 100vw, 33vw" />
               </div>
