@@ -113,6 +113,9 @@ export function BottomNavbar() {
             <Link
               key={item.label}
               href={item.href!}
+              onClick={() => {
+                if (isCartOpen) toggleCart();
+              }}
               className="flex-1 flex justify-center items-center h-full focus:outline-none"
               aria-label={item.label}
             >
