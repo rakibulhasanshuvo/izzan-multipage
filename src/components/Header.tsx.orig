@@ -11,7 +11,7 @@ import { Search } from "./Search";
 import { useMounted } from "@/hooks/useMounted";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function Header({ className }: { className?: string }) {
+export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
   const mounted = useMounted();
@@ -24,12 +24,12 @@ export function Header({ className }: { className?: string }) {
 
   return (
     <>
-      <div className={`w-full bg-[#607c64] dark:bg-[#2d3730] text-white text-[10px] md:text-xs py-2 px-4 text-center flex flex-wrap justify-center items-center tracking-[0.2em] uppercase font-bold transition-colors ${className}`}>
+      <div className="w-full bg-[#607c64] dark:bg-[#2d3730] text-white text-[10px] md:text-xs py-2 px-4 text-center flex flex-wrap justify-center items-center tracking-[0.2em] uppercase font-bold transition-colors">
         <span className="break-words text-center">Free Shipping on orders over $50</span> <ArrowRight size={12} className="ml-2 shrink-0" />
       </div>
       <header className="w-full bg-white/85 dark:bg-[#1a1f1b]/85 backdrop-blur-md sticky top-0 z-50 py-4 px-4 md:px-8 lg:px-12 border-b border-black/5 dark:border-white/5 transition-all duration-300">
         <div className="max-w-[1600px] mx-auto flex justify-between items-center relative z-20">
-          
+
           {/* Logo & Mobile Menu Hamburger Icon */}
           <div className="flex items-center space-x-2">
             <button
@@ -39,8 +39,8 @@ export function Header({ className }: { className?: string }) {
             >
               <Menu size={20} />
             </button>
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="font-display text-xl md:text-2xl uppercase tracking-[0.25em] font-semibold text-gray-900 dark:text-gray-100 hover:opacity-85 transition-opacity cursor-pointer select-none"
             >
               Izzan
@@ -49,31 +49,31 @@ export function Header({ className }: { className?: string }) {
 
           {/* Nav Links with dynamic active state & sliding underlines */}
           <nav className="hidden md:flex space-x-10">
-            <Link 
-              href="/shop" 
+            <Link
+              href="/shop"
               className={`text-xs md:text-[13px] tracking-[0.22em] font-black uppercase relative py-1 transition-all ${
-                isShop 
-                  ? "text-[#607c64] dark:text-[#84a98c] after:w-full" 
+                isShop
+                  ? "text-[#607c64] dark:text-[#84a98c] after:w-full"
                   : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 after:w-0"
               } after:absolute after:bottom-0 after:left-0 after:h-[1.5px] after:bg-[#607c64] dark:after:bg-[#84a98c] after:transition-all after:duration-300 hover:after:w-full`}
             >
               Shop
             </Link>
-            <Link 
-              href="/story" 
+            <Link
+              href="/story"
               className={`text-xs md:text-[13px] tracking-[0.22em] font-black uppercase relative py-1 transition-all ${
-                isStory 
-                  ? "text-[#607c64] dark:text-[#84a98c] after:w-full" 
+                isStory
+                  ? "text-[#607c64] dark:text-[#84a98c] after:w-full"
                   : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 after:w-0"
               } after:absolute after:bottom-0 after:left-0 after:h-[1.5px] after:bg-[#607c64] dark:after:bg-[#84a98c] after:transition-all after:duration-300 hover:after:w-full`}
             >
               Story
             </Link>
-            <Link 
-              href="/contact" 
+            <Link
+              href="/contact"
               className={`text-xs md:text-[13px] tracking-[0.22em] font-black uppercase relative py-1 transition-all ${
-                isSupport 
-                  ? "text-[#607c64] dark:text-[#84a98c] after:w-full" 
+                isSupport
+                  ? "text-[#607c64] dark:text-[#84a98c] after:w-full"
                   : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100 after:w-0"
               } after:absolute after:bottom-0 after:left-0 after:h-[1.5px] after:bg-[#607c64] dark:after:bg-[#84a98c] after:transition-all after:duration-300 hover:after:w-full`}
             >
