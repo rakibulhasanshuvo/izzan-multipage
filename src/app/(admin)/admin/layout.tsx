@@ -1,3 +1,4 @@
+import "material-symbols/outlined.css";
 import React from "react";
 import SideNavBar from "@/components/admin/SideNavBar";
 import TopAppBar from "@/components/admin/TopAppBar";
