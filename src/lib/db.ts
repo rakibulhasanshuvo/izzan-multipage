@@ -12,7 +12,7 @@ const isSqlite = databaseUrl?.startsWith("file:") || !databaseUrl;
 
 let dbPath = databaseUrl ? databaseUrl.replace("file:", "") : path.resolve(process.cwd(), "prisma", "dev.db");
 
-if (isSqlite && process.env.NODE_ENV === "production" && !databaseUrl) {
+if (isSqlite && process.env.VERCEL === "1" && !databaseUrl) {
   // In Vercel, the file system is read-only except for /tmp.
   // We need to copy the seeded database to /tmp so we can write to it.
   const tmpPath = path.join("/tmp", "dev.db");

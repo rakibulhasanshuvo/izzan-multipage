@@ -53,7 +53,7 @@ export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string,
           loop
           muted
           playsInline
-          preload="none"
+          preload="auto"
           className="object-cover object-center w-full h-full absolute inset-0"
           poster={finalPoster}
         >
