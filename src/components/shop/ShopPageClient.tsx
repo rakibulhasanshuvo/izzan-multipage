@@ -602,7 +602,7 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
                 layout
                 className="grid grid-cols-1 min-[400px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"
               >
-                {filteredProducts.map((product) => (
+                {filteredProducts.map((product, index) => (
                   <motion.div
                     key={product.id}
                     layout
@@ -611,7 +611,7 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <ProductCard item={product} onQuickView={setQuickViewProduct} />
+                    <ProductCard item={product} onQuickView={setQuickViewProduct} priority={index < 4} />
                   </motion.div>
                 ))}
               </motion.div>

@@ -10,7 +10,7 @@ export default function StorefrontLayout({
 }) {
   return (
     <>
-      <Header className="min-h-[100px]" />
+      <Header />
       <main className="flex-1 pb-16 md:pb-0 relative">
         {children}
       </main>

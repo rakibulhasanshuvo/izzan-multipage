@@ -261,7 +261,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
               layout
               className="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
             >
-              {visibleProducts.map((product) => (
+              {visibleProducts.map((product, index) => (
                 <motion.div
                   key={product.id}
                   layout
@@ -270,7 +270,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <ProductCard item={product} onQuickView={setQuickViewProduct} />
+                  <ProductCard item={product} onQuickView={setQuickViewProduct} priority={index < 5} />
                 </motion.div>
               ))}
             </motion.div>

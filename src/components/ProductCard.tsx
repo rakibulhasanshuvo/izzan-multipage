@@ -7,7 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { useState } from "react";
 import { Check } from "lucide-react";
 
-export function ProductCard({ item, onQuickView }: { item: Product; onQuickView?: (product: Product) => void }) {
+export function ProductCard({ item, onQuickView, priority = false }: { item: Product; onQuickView?: (product: Product) => void; priority?: boolean }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
 
@@ -36,6 +36,7 @@ export function ProductCard({ item, onQuickView }: { item: Product; onQuickView?
             fill
             draggable={false}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            priority={priority}
           />
 
           {item.hoverImg && (
