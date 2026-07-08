@@ -63,7 +63,7 @@ async function main() {
       { key: "story_title", value: "Our Story", section: "story" },
       { key: "story_content", value: "At Izzan, we believe that your home should be a sanctuary. Our journey began with a simple goal: to create scents that inspire peace and mindfulness.", section: "story" },
 
-      { key: "hero_video_url", value: "", section: "hero" },
+      { key: "hero_video_url", value: "/videos/hero.mp4", section: "hero" },
       { key: "hero_video_poster", value: "https://lh3.googleusercontent.com/aida-public/AB6AXuAA-cKA0BI5PyiKmmlJ1V4jP1syMuPAzOAXIg7d-HjGJcIi-wOO_raH4mHQISILYP2dCAe3YP8niL9GpCqDGx6U8kAhAJPf1IJEPHryVq-UTqasBOwMnjEhr_6pcPLPG38UbgVhyUd0EDmxBB7oZqinh86xlSSHIGNXBltOus4NhdIR7NMUktxgeJh409TEpLaA5a_g0YFX-JUoUK6mH0gN5DaWIOvpOULZDRFWAnDvBNuh8UppFkbV0cNJjEgGinBO3d1T8xaM-Vu8", section: "hero" },
       { key: "pillar_1_img", value: "/images/pillar-wax.png", section: "pillars" },
       { key: "pillar_2_img", value: "https://lh3.googleusercontent.com/aida-public/AB6AXuCVmDWzO3fIsa6g8efDclw6fOt6K0ZJuceIbbrDTaD2Lyup9gS9lNFkMxB73LazQVYHFhBmALDWnYbd2v6w8WuErf5e4Vz82GS_Od72Mf1OlAuTukU5Oeyby1hGQXAfQIpYZEUBI2hBHRZc5UpwYghogk-pJsppAQBNHIE3XH0kxgQIlcj_x9NVei5WeFiaD1w-KxTTY7ik-KnMJ7DgH9tJg4l8Hgk1q1QLCjurasFTKxaAIXCfeA3lHICD8n2ZVZJux9A1t-KQ2TOZ", section: "pillars" },
