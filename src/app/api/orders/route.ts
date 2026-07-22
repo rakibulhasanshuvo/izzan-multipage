@@ -5,6 +5,23 @@ import { getClientIp, checkRateLimit } from "@/lib/rate-limit";
 import { checkoutSchema } from "@/lib/validation";
 
 export const POST = apiHandler(async function POST(req: NextRequest) {
+  // CSRF protection: validate Origin / Referer header
+  const origin = req.headers.get("origin");
+  const referer = req.headers.get("referer");
+  const host = req.headers.get("host");
+
+  if (origin) {
+    const originHost = new URL(origin).host;
+    if (host && originHost !== host) {
+      return NextResponse.json({ error: "Forbidden: cross-origin request" }, { status: 403 });
+    }
+  } else if (referer) {
+    const refererHost = new URL(referer).host;
+    if (host && refererHost !== host) {
+      return NextResponse.json({ error: "Forbidden: cross-origin request" }, { status: 403 });
+    }
+  }
+
   // Rate limiting to prevent checkout spam
   const ip = getClientIp(req);
   const isAllowed = await checkRateLimit(`order:${ip}`);

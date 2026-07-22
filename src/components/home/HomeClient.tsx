@@ -166,7 +166,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
       <Pillars images={[cms.pillar_1_img, cms.pillar_2_img, cms.pillar_3_img].filter(Boolean)} />
       
       {/* Portfolio Catalog Section */}
-      <div className="max-w-[1600px] mx-auto px-4 md:px-8 lg:px-12 py-12 md:py-16 min-h-[70vh]">
+      <div id="shop" className="max-w-[1600px] mx-auto px-4 md:px-8 lg:px-12 py-12 md:py-16 min-h-[70vh] scroll-mt-24">
         <div className="text-center mb-10">
           <span className="text-[#607c64] dark:text-[#84a98c] font-bold tracking-[0.25em] uppercase text-xs mb-2 block">
             Handcrafted Scent Portfolio
@@ -314,7 +314,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
       <Spotlight product={spotlightProduct} videoUrl={cms.spotlight_video} />
       
       {/* Brand Story Preview */}
-      <div className="relative py-8 bg-background-light dark:bg-background-dark transition-colors duration-300">
+      <div id="story" className="relative py-8 bg-background-light dark:bg-background-dark transition-colors duration-300 scroll-mt-24">
         <Story title={cms.story_title} content={cms.story_content} imgUrl={cms.story_img} />
         <div className="flex justify-center -mt-8 mb-16 relative z-10">
           <Link

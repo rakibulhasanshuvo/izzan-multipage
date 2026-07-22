@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { apiHandler } from "@/lib/api";
+const VALID_ORDER_STATUSES = ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"] as const;
 
 export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) {
   const data = await req.json();
@@ -11,8 +12,8 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
     return NextResponse.json({ error: "Missing order ID" }, { status: 400 });
   }
 
-  if (status === undefined || typeof status !== "string" || status.trim() === "") {
-    return NextResponse.json({ error: "Status must be a non-empty string" }, { status: 400 });
+  if (!status || typeof status !== "string" || !VALID_ORDER_STATUSES.includes(status.trim() as typeof VALID_ORDER_STATUSES[number])) {
+    return NextResponse.json({ error: `Invalid order status. Must be one of: ${VALID_ORDER_STATUSES.join(", ")}` }, { status: 400 });
   }
 
   const existingOrder = await prisma.order.findUnique({

@@ -91,9 +91,11 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
   }, [isWriteReviewOpen]);
 
   const handleAddToCart = () => {
+    const variantSlug = selectedVolume ? selectedVolume.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "";
     const itemWithOption = {
       ...product,
-      name: `${product.name} (${selectedVolume})`
+      id: variantSlug ? `${product.id}-${variantSlug}` : product.id,
+      name: selectedVolume ? `${product.name} (${selectedVolume})` : product.name
     };
     
     for (let i = 0; i < quantity; i++) {
@@ -101,7 +103,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
     }
 
     toast.success("Added to Cart!", {
-      description: `${quantity}x ${product.name} (${selectedVolume}) successfully added.`
+      description: `${quantity}x ${product.name}${selectedVolume ? ` (${selectedVolume})` : ""} successfully added.`
     });
   };
 

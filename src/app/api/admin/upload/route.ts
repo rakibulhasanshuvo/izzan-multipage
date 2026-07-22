@@ -32,9 +32,20 @@ export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
+  // File size limits: 10 MB for images, 100 MB for videos
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
+  const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
+
   const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm"];
   if (!allowedMimeTypes.includes(file.type)) {
     return NextResponse.json({ error: "Unsupported file type. Please upload an image or video." }, { status: 400 });
+  }
+
+  const isVideo = file.type.startsWith("video/");
+  const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+  if (file.size > maxSize) {
+    const maxMB = Math.round(maxSize / (1024 * 1024));
+    return NextResponse.json({ error: `File too large. Maximum size is ${maxMB} MB.` }, { status: 400 });
   }
 
   const arrayBuffer = await file.arrayBuffer();

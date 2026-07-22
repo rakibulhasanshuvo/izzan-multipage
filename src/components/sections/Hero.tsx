@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, Variants, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { preload } from "react-dom";
 
 const fadeIn: Variants = {
@@ -34,7 +34,10 @@ const revealContainer: Variants = {
 
 export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string, subtitle?: string, videoUrl?: string, posterUrl?: string }) {
   const finalPoster = posterUrl || "/images/hero-poster.png";
-  preload(finalPoster, { as: "image", fetchPriority: "high" });
+  
+  useEffect(() => {
+    preload(finalPoster, { as: "image", fetchPriority: "high" });
+  }, [finalPoster]);
 
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({

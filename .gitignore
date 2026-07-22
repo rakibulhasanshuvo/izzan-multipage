@@ -37,6 +37,9 @@ yarn-error.log*
 # leftover audit/scratch files
 .security_audit_fixed
 
+# log files (may contain sensitive stack traces)
+*.log
+
 # vercel
 .vercel
 

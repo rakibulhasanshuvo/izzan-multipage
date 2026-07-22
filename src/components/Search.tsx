@@ -15,10 +15,10 @@ export function Search() {
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && dbProducts.length === 0) {
       fetchStorefrontProducts().then((data) => setDbProducts(data as unknown as Product[]));
     }
-  }, [isOpen]);
+  }, [isOpen, dbProducts.length]);
 
   const results = useMemo(() => {
     if (query.trim() === "") {

@@ -59,7 +59,17 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/admin/login",
   },
-  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-key-for-development",
+  secret: (() => {
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret && process.env.NODE_ENV === "production") {
+      throw new Error("Fatal: NEXTAUTH_SECRET is required in production. Generate one with: openssl rand -base64 32");
+    }
+    if (!secret) {
+      console.warn("⚠️ NEXTAUTH_SECRET is not set. Using insecure dev-only fallback. Do NOT deploy like this.");
+      return "insecure-dev-only-do-not-deploy";
+    }
+    return secret;
+  })(),
   callbacks: {
     async jwt({ token, user }) {
       if (user) {

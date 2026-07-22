@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion, Variants } from "framer-motion";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
@@ -47,10 +48,13 @@ export function Spotlight({ product, videoUrl }: { product: Product | null; vide
           transition={{ duration: 1, ease: "easeOut" }}
           className="relative aspect-[4/5] w-full rounded-3xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.15)] dark:shadow-[0_40px_80px_rgba(0,0,0,0.4)]"
         >
-          <img
+          <Image
             src={product?.img || "https://lh3.googleusercontent.com/aida-public/AB6AXuD8oz6-Sg586xPq5mJx1g1FLgZ5HcTKJliYsmN46wDI_VUNFS6cC-ocsffImJho4F8OKRpexTgbDv8mLcCDnnNh9BlUZawueRnl9SYPcKMT-bml6_BE5sIoOYyfc7wmmBkxCjDh7gE0id9zfDRErApzvuBNuP4AntNOOgbuvCQGmeEIkK3ZmT7ujCYFxXCupsPBj1V_BCkDMOxI2_rl41q-amM7V7DgXe5p1b5m2iKpn_VUxE94gQyHUb8PBTsd9mzHRZixaQgnlyGn"}
             alt={product?.name || "Lavender Drift Candle"}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-1000"
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover hover:scale-105 transition-transform duration-1000"
           />
         </motion.div>
 

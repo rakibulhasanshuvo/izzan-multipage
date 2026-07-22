@@ -85,7 +85,7 @@ export function Header() {
           <div className="flex items-center space-x-2 md:space-x-3">
             <Search />
 
-            {mounted && (
+            {mounted ? (
               <button
                 onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
                 className="w-10 h-10 rounded-full flex items-center justify-center text-text-light dark:text-text-dark hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#607c64] dark:hover:text-[#84a98c] transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -93,11 +93,13 @@ export function Header() {
               >
                 {resolvedTheme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
               </button>
+            ) : (
+              <div className="w-10 h-10 rounded-full" aria-hidden="true" />
             )}
 
             <button
               onClick={toggleCart}
-              className="hidden md:flex w-10 h-10 rounded-full items-center justify-center text-text-light dark:text-text-dark hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#607c64] dark:hover:text-[#84a98c] transition-all relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex w-10 h-10 rounded-full items-center justify-center text-text-light dark:text-text-dark hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#607c64] dark:hover:text-[#84a98c] transition-all relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Shopping Cart"
             >
               <ShoppingCart size={18} />

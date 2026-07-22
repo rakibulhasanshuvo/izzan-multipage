@@ -80,12 +80,12 @@ export function ProductCard({ item, onQuickView, priority = false }: { item: Pro
         {/* Info Section */}
         <div className="px-1 text-center flex-1 flex flex-col justify-between">
           <div>
-            <h2 className="text-sm md:text-base font-display font-semibold mb-1 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">{item.name}</h2>
+            <h3 className="text-sm md:text-base font-display font-semibold mb-1 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">{item.name}</h3>
             <div className="flex items-center justify-center space-x-2 mb-4">
               {item.originalPrice && (
-                <span className="text-gray-600 dark:text-gray-400 line-through text-xs md:text-sm font-light">${item.originalPrice}</span>
+                <span className="text-gray-600 dark:text-gray-400 line-through text-xs md:text-sm font-light">${typeof item.originalPrice === 'number' ? item.originalPrice.toFixed(2) : item.originalPrice}</span>
               )}
-              <span className="text-xs md:text-sm text-gray-800 dark:text-gray-300 font-bold">${item.price}</span>
+              <span className="text-xs md:text-sm text-gray-800 dark:text-gray-300 font-bold">${item.price.toFixed(2)}</span>
             </div>
           </div>
         </div>

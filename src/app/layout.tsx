@@ -8,17 +8,20 @@ import AuthProvider from "@/components/AuthProvider";
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
+  display: "swap",
 });
 
 const lato = Lato({
   subsets: ["latin"],
   weight: ["300", "400", "700", "900"],
   variable: "--font-lato",
+  display: "swap",
 });
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
 });
 
 const notoSerif = Noto_Serif({
@@ -26,12 +29,14 @@ const notoSerif = Noto_Serif({
   style: ["normal", "italic"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-noto-serif",
+  display: "swap",
 });
 
 const parisienne = Parisienne({
   subsets: ["latin"],
   weight: ["400"],
   variable: "--font-parisienne",
+  display: "swap",
 });
 
 export const metadata: Metadata = {

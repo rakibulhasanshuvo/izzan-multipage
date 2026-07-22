@@ -94,24 +94,21 @@ async function main() {
     const seedUser = process.env.INITIAL_ADMIN_USERNAME;
     const seedPass = process.env.INITIAL_ADMIN_PASSWORD;
 
-    if (process.env.NODE_ENV === 'production' && (!seedUser || !seedPass)) {
-      console.warn('⚠️ Skipped administrative user seeding in production because INITIAL_ADMIN_USERNAME and INITIAL_ADMIN_PASSWORD are not set.');
+    if (!seedUser || !seedPass) {
+      console.warn('⚠️ Skipped admin seeding: INITIAL_ADMIN_USERNAME and INITIAL_ADMIN_PASSWORD env vars are required.');
+      console.warn('   Set these in your .env file to create an admin account.');
     } else {
-      const admins = seedUser ? [seedUser.trim()] : ['admin1', 'admin2', 'admin3', 'admin4'];
-      const password = seedPass || 'admin123';
-      const hashedPass = await bcrypt.hash(password, 10);
+      const hashedPass = await bcrypt.hash(seedPass, 12);
 
-      for (const username of admins) {
-        await prisma.admin.upsert({
-          where: { username },
-          update: {},
-          create: {
-            username,
-            password: hashedPass,
-          },
-        });
-      }
-      console.log(`Admins seeded successfully. (Count: ${admins.length})`);
+      await prisma.admin.upsert({
+        where: { username: seedUser.trim() },
+        update: {},
+        create: {
+          username: seedUser.trim(),
+          password: hashedPass,
+        },
+      });
+      console.log(`Admin "${seedUser.trim()}" seeded successfully.`);
     }
 
     
