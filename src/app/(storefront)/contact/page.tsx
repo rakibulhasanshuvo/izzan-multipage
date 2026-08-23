@@ -14,7 +14,7 @@ export default function ContactPage() {
         <h1 className="text-4xl md:text-6xl font-display mb-6 dark:text-gray-100">
           Support Center
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto font-light text-sm md:text-base leading-relaxed">
+        <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-light text-sm md:text-base leading-relaxed">
           Submit an inquiry, browse answers to frequently asked questions, or explore guidelines on how to care for your artisanal candles and oils.
         </p>
       </div>
@@ -33,7 +33,7 @@ export default function ContactPage() {
       <div className="border-t border-gray-100 dark:border-gray-800/50 mt-16 pt-16 bg-black/[0.01] dark:bg-white/[0.01] py-16">
         <div className="text-center mb-8 px-6">
           <h2 className="text-3xl font-display dark:text-gray-100">Artisanal Scent Ritual</h2>
-          <p className="text-sm text-gray-500 mt-2 font-light">Follow our candle care guidelines for a clean burn and rich scent release.</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 font-light">Follow our candle care guidelines for a clean burn and rich scent release.</p>
         </div>
         <CareGuide />
       </div>
@@ -44,7 +44,7 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left max-w-3xl mx-auto mt-8">
           <div className="p-6 bg-black/[0.01] dark:bg-white/[0.01] rounded-2xl border border-gray-200 dark:border-gray-800">
             <h3 className="font-semibold text-base mb-2 dark:text-gray-200">Main Office & Production</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 font-light leading-relaxed">
+            <p className="text-sm text-gray-600 dark:text-gray-400 font-light leading-relaxed">
               12 Scented Lane, Suite 400<br />
               Calm District, NY 10001<br />
               United States
@@ -52,7 +52,7 @@ export default function ContactPage() {
           </div>
           <div className="p-6 bg-black/[0.01] dark:bg-white/[0.01] rounded-2xl border border-gray-200 dark:border-gray-800">
             <h3 className="font-semibold text-base mb-2 dark:text-gray-200">Hours of Operation</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 font-light leading-relaxed">
+            <p className="text-sm text-gray-600 dark:text-gray-400 font-light leading-relaxed">
               Monday – Friday: 9:00 AM – 6:00 PM EST<br />
               Saturday: 10:00 AM – 4:00 PM EST<br />
               Sunday: Closed

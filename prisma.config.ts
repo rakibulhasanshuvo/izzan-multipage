@@ -10,6 +10,6 @@ export default defineConfig({
     seed: "node ./prisma/seed.mjs",
   },
   datasource: {
-    url: "file:./prisma/dev.db",
+    url: "file:./dev.db",
   },
 });

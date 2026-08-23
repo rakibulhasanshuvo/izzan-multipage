@@ -25,11 +25,14 @@ describe('Orders API POST handler', () => {
     rateLimitMap.clear();
   });
 
-  const createRequest = (body: Record<string, unknown>) => {
+  const createRequest = (body: Record<string, unknown>, headers: Record<string, string> = {}) => {
     return new NextRequest('http://localhost:3000/api/orders', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        // Same-origin marker required by the fail-closed CSRF check
+        Origin: 'http://localhost:3000',
+        ...headers,
       },
       body: JSON.stringify(body),
     });
@@ -46,6 +49,48 @@ describe('Orders API POST handler', () => {
       { id: 'prod1', name: 'Product 1', quantity: 2, price: 100 },
     ],
   };
+
+  it('should return 403 when Origin does not match Host (cross-site CSRF)', async () => {
+    const req = createRequest(validPayload, { Origin: 'http://evil.example' });
+    const response = await POST(req);
+
+    expect(response.status).toBe(403);
+    const data = await response.json();
+    expect(data.error).toContain('cross-origin');
+  });
+
+  it('should return 403 when neither Origin nor Referer is present (fail-closed)', async () => {
+    const req = createRequest(validPayload, {
+      Origin: '',
+      Referer: '',
+    });
+    // NextRequest drops empty headers; build one without them entirely
+    const bareReq = new NextRequest('http://localhost:3000/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(validPayload),
+    });
+    void req;
+    const response = await POST(bareReq);
+
+    expect(response.status).toBe(403);
+  });
+
+  it('should accept a matching Referer when Origin is absent', async () => {
+    const req = new NextRequest('http://localhost:3000/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Referer: 'http://localhost:3000/shop',
+      },
+      body: JSON.stringify({ name: 'Incomplete' }),
+    });
+    const response = await POST(req);
+    // Passes CSRF gate, then fails validation
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.error).not.toContain('cross-origin');
+  });
 
   it('should return 400 if required fields are missing', async () => {
     const req = createRequest({ name: 'Incomplete' });

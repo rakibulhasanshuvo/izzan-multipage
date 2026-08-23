@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { checkAdminAuth } from "@/lib/auth";
+import { ORDER_STATUSES } from "@/lib/validation";
+import { sanitizeCmsValue } from "@/lib/sanitize";
 import bcrypt from "bcrypt";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
@@ -17,8 +19,13 @@ async function ensureAdmin() {
 
 export async function updateOrderStatus(id: string, status: string) {
   await ensureAdmin();
-  if (!id || !status || typeof status !== "string" || status.trim() === "") {
-    throw new Error("Invalid input");
+  if (
+    !id ||
+    !status ||
+    typeof status !== "string" ||
+    !ORDER_STATUSES.includes(status.trim() as (typeof ORDER_STATUSES)[number])
+  ) {
+    throw new Error(`Invalid input. Status must be one of: ${ORDER_STATUSES.join(", ")}`);
   }
 
   const existingOrder = await prisma.order.findUnique({
@@ -35,6 +42,7 @@ export async function updateOrderStatus(id: string, status: string) {
   });
 
   revalidatePath("/admin/orders");
+  revalidatePath("/admin");
   return order;
 }
 
@@ -65,6 +73,7 @@ export async function updateOrderTracking(
   });
 
   revalidatePath("/admin/orders");
+  revalidatePath("/admin");
   return order;
 }
 
@@ -77,6 +86,9 @@ export async function deleteProduct(id: string) {
   });
 
   revalidatePath("/admin/products");
+  // Keep the ISR storefront catalog in sync with inventory changes
+  revalidatePath("/");
+  revalidatePath("/shop");
   return { success: true };
 }
 
@@ -90,7 +102,7 @@ const ProductSchema = z.object({
   hoverImg: z.string().optional().nullable(),
   categories: z.string().optional(),
   badge: z.string().optional().nullable(),
-  stock: z.coerce.number().min(0, "Invalid stock"),
+  stock: z.coerce.number().int("Invalid stock").min(0, "Invalid stock"),
 });
 
 const ProductUpdateSchema = ProductSchema.partial().extend({
@@ -119,6 +131,9 @@ export async function createProduct(data: unknown) {
   });
 
   revalidatePath("/admin/products");
+  // Keep the ISR storefront catalog in sync with inventory changes
+  revalidatePath("/");
+  revalidatePath("/shop");
   return product;
 }
 
@@ -149,6 +164,9 @@ export async function updateProduct(data: unknown) {
   });
 
   revalidatePath("/admin/products");
+  // Keep the ISR storefront catalog in sync with inventory changes
+  revalidatePath("/");
+  revalidatePath("/shop");
   return product;
 }
 
@@ -160,6 +178,7 @@ const SettingsSchema = z.object({
   emailAlerts: z.boolean().optional(),
   orderNotifs: z.boolean().optional(),
   marketingUpdates: z.boolean().optional(),
+  avatarUrl: z.string().optional().nullable(),
 });
 
 export async function updateSettings(data: unknown) {
@@ -171,23 +190,32 @@ export async function updateSettings(data: unknown) {
 
   let settings = await prisma.adminSettings.findFirst();
 
-  if (settings) {
-    settings = await prisma.adminSettings.update({
-      where: { id: settings.id },
-      data: parsed.data,
-    });
-  } else {
-    settings = await prisma.adminSettings.create({
-      data: {
-        firstName: parsed.data.firstName || "Admin",
-        lastName: parsed.data.lastName || "User",
-        email: parsed.data.email || "admin@example.com",
-        bio: parsed.data.bio || "",
-        emailAlerts: parsed.data.emailAlerts ?? true,
-        orderNotifs: parsed.data.orderNotifs ?? true,
-        marketingUpdates: parsed.data.marketingUpdates ?? false,
-      },
-    });
+  try {
+    if (settings) {
+      settings = await prisma.adminSettings.update({
+        where: { id: settings.id },
+        data: parsed.data,
+      });
+    } else {
+      settings = await prisma.adminSettings.create({
+        data: {
+          firstName: parsed.data.firstName || "Admin",
+          lastName: parsed.data.lastName || "User",
+          email: parsed.data.email || "admin@example.com",
+          bio: parsed.data.bio || "",
+          emailAlerts: parsed.data.emailAlerts ?? true,
+          orderNotifs: parsed.data.orderNotifs ?? true,
+          marketingUpdates: parsed.data.marketingUpdates ?? false,
+        },
+      });
+    }
+  } catch (error: unknown) {
+    // Unique constraint violation on the settings email
+    const err = error as { code?: string };
+    if (err?.code === "P2002") {
+      throw new Error("This email is already in use");
+    }
+    throw error;
   }
 
   revalidatePath("/admin/settings");
@@ -199,9 +227,10 @@ export async function updateCMSContent(id: string, value: string) {
   if (!id || value === undefined) {
     throw new Error("Missing required fields");
   }
+  // Sanitize HTML before storing — same policy as the /api/admin/cms route
   const content = await prisma.cMSContent.update({
     where: { id },
-    data: { value: String(value) },
+    data: { value: sanitizeCmsValue(String(value)) },
   });
 
   revalidatePath("/admin/cms");

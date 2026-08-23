@@ -41,7 +41,7 @@ export default async function StoryPage() {
       <div className="border-t border-gray-100 dark:border-gray-800/50 mt-16 pt-8">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-display dark:text-gray-100">Our Core Principles</h2>
-          <p className="text-sm text-gray-500 mt-2 font-light">The foundation of everything we create.</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 font-light">The foundation of everything we create.</p>
         </div>
         <Pillars images={[cms.pillar_1_img, cms.pillar_2_img, cms.pillar_3_img].filter(Boolean)} />
       </div>
@@ -54,7 +54,7 @@ export default async function StoryPage() {
         </h3>
         <span className="text-4xl font-serif text-[#607c64]/40 absolute bottom-6 right-8">”</span>
         <p className="font-semibold text-xs tracking-wider uppercase text-zinc-900 dark:text-gray-200">The Artisans at Izzan</p>
-        <p className="text-[10px] uppercase text-gray-400 tracking-widest mt-1">Hand-Poured in small batches</p>
+        <p className="text-[10px] uppercase text-gray-600 dark:text-gray-400 tracking-widest mt-1">Hand-Poured in small batches</p>
       </div>
 
       {/* Journey Timeline Section */}
@@ -66,7 +66,7 @@ export default async function StoryPage() {
           <h2 className="text-3xl md:text-4xl font-display font-semibold text-zinc-900 dark:text-gray-100">
             Timeline of Milestones
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto font-light leading-relaxed">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-md mx-auto font-light leading-relaxed">
             The evolution of our sustainable apothecary practices and scent formulations.
           </p>
         </div>
@@ -82,9 +82,9 @@ export default async function StoryPage() {
               <span className="text-xs font-bold text-[#607c64] dark:text-[#84a98c] tracking-widest uppercase mb-1 block">
                 Founding Year
               </span>
-              <div className="text-2xl font-bold font-display text-zinc-900 dark:text-gray-100 mb-2">
+              <h3 className="text-2xl font-bold font-display text-zinc-900 dark:text-gray-100 mb-2">
                 2024: The Scent Laboratory
-              </div>
+              </h3>
             </div>
             
             <div className="pl-6 md:pl-12 md:col-span-1">
@@ -92,7 +92,7 @@ export default async function StoryPage() {
                 <h4 className="text-sm font-semibold text-[#607c64] dark:text-[#84a98c] mb-1">
                   First trial pours of botanical extracts
                 </h4>
-                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-light">
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light">
                   Our journey began in a tiny workspace, blending pure essential oils and organic waxes. Hundreds of formulations were refined to establish our baseline clean-burn standard.
                 </p>
               </div>
@@ -108,9 +108,9 @@ export default async function StoryPage() {
               <span className="text-xs font-bold text-[#607c64] dark:text-[#84a98c] tracking-widest uppercase mb-1 block">
                 Brand Evolution
               </span>
-              <div className="text-2xl font-bold font-display text-zinc-900 dark:text-gray-100 mb-2">
+              <h3 className="text-2xl font-bold font-display text-zinc-900 dark:text-gray-100 mb-2">
                 2025: Expanding the Ritual
-              </div>
+              </h3>
             </div>
             
             <div className="pl-6 md:pl-0 md:pr-12 md:col-span-1 md:order-1">
@@ -118,7 +118,7 @@ export default async function StoryPage() {
                 <h4 className="text-sm font-semibold text-[#607c64] dark:text-[#84a98c] mb-1">
                   Launch of custom mist diffusers & wellness oils
                 </h4>
-                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-light">
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light">
                   We expanded beyond wax candles into room mist diffusers and therapeutic wellness oils. Customers embraced scent rituals as daily mindfulness anchors.
                 </p>
               </div>
@@ -134,9 +134,9 @@ export default async function StoryPage() {
               <span className="text-xs font-bold text-[#607c64] dark:text-[#84a98c] tracking-widest uppercase mb-1 block">
                 Sustainable Apothecary
               </span>
-              <div className="text-2xl font-bold font-display text-zinc-900 dark:text-gray-100 mb-2">
+              <h3 className="text-2xl font-bold font-display text-zinc-900 dark:text-gray-100 mb-2">
                 2026: Direct Relationships
-              </div>
+              </h3>
             </div>
             
             <div className="pl-6 md:pl-12 md:col-span-1">
@@ -144,7 +144,7 @@ export default async function StoryPage() {
                 <h4 className="text-sm font-semibold text-[#607c64] dark:text-[#84a98c] mb-1">
                   Establishing direct partnerships with organic farmers
                 </h4>
-                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-light">
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-light">
                   Transitioned to a fully transparent supply chain, establishing direct relationships with organic lavender and pine farmers worldwide to preserve botanical purity.
                 </p>
               </div>

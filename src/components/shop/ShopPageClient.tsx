@@ -15,9 +15,30 @@ interface ShopPageClientProps {
   initialProducts: Product[];
 }
 
-function ShopContent({ initialProducts }: ShopPageClientProps) {
+function SearchParamsHandler({
+  onCategoryChange,
+  onSearchChange,
+}: {
+  onCategoryChange: (category: string) => void;
+  onSearchChange: (search: string) => void;
+}) {
   const searchParams = useSearchParams();
-  
+
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    if (categoryParam) {
+      onCategoryChange(categoryParam);
+    }
+    const searchParam = searchParams.get("search");
+    if (searchParam) {
+      onSearchChange(searchParam);
+    }
+  }, [searchParams, onCategoryChange, onSearchChange]);
+
+  return null;
+}
+
+export default function ShopPageClient({ initialProducts }: ShopPageClientProps) {
   // Search & Sort state
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("default");
@@ -52,28 +73,6 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
       document.body.style.overflow = "unset";
     };
   }, [isMobileFilterOpen]);
-
-  // Read URL query parameters
-  useEffect(() => {
-    const categoryParam = searchParams.get("category");
-    if (categoryParam) {
-      if (["Best Sellers", "New Arrivals", "Sale"].includes(categoryParam)) {
-        setTimeout(() => {
-          setSelectedCollections([categoryParam]);
-        }, 0);
-      } else {
-        setTimeout(() => {
-          setSelectedTypes([categoryParam]);
-        }, 0);
-      }
-    }
-    const searchParam = searchParams.get("search");
-    if (searchParam) {
-      setTimeout(() => {
-        setSearchQuery(searchParam);
-      }, 0);
-    }
-  }, [searchParams]);
 
   // Helper: Get Scent Family programmatically
   const getScentFamily = (name: string): string => {
@@ -218,7 +217,7 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
       {/* Scent Finder Quiz Collapsible Card */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-gray-400">
+          <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-gray-600 dark:text-gray-400">
             Scent Finder
           </h2>
           <button
@@ -254,7 +253,7 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
 
       {/* Product Type Filter */}
       <div className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-gray-400">
+        <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-gray-600 dark:text-gray-400">
           Product Type
         </h2>
         <div className="flex flex-col gap-2">
@@ -276,7 +275,7 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
 
       {/* Collections Filter */}
       <div className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-gray-400">
+        <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-gray-600 dark:text-gray-400">
           Collections
         </h2>
         <div className="flex flex-col gap-2">
@@ -298,7 +297,7 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
 
       {/* Scent Family Filter */}
       <div className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-gray-400">
+        <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-gray-600 dark:text-gray-400">
           Scent Profile
         </h2>
         <div className="flex flex-col gap-2">
@@ -326,7 +325,7 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
 
       {/* Price Range Filter */}
       <div className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-gray-400">
+        <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-gray-600 dark:text-gray-400">
           Price Range
         </h2>
         <div className="flex flex-col gap-2">
@@ -352,7 +351,7 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
 
       {/* Availability Toggle */}
       <div className="space-y-3 pt-2">
-        <label className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.15em] text-gray-400 cursor-pointer select-none">
+        <label className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.15em] text-gray-600 dark:text-gray-400 cursor-pointer select-none">
           <input
             type="checkbox"
             id="filter-availability"
@@ -379,17 +378,17 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
           <h1 className="text-3xl md:text-4xl font-display font-semibold mb-3 text-zinc-900 dark:text-gray-100">
             The Scent Apothecary
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 font-light text-xs md:text-sm leading-relaxed">
+          <p className="text-gray-600 dark:text-gray-400 font-light text-xs md:text-sm leading-relaxed">
             Curate your space with botanically-derived aromatics. Refine by scent profile, price, and vessel size to find the sensory match tailored to your ritual goals.
           </p>
         </div>
 
         {/* Promotional Code Card */}
         <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-[#607c64]/10 dark:border-white/10 rounded-2xl p-5 w-full md:w-80 shadow-md text-center flex flex-col items-center">
-          <div className="w-10 h-10 rounded-full bg-[#607c64]/10 text-[#607c64] flex items-center justify-center mb-3">
+          <div className="w-10 h-10 rounded-full bg-[#607c64]/15 text-[#374e3b] dark:text-[#9fc1a6] flex items-center justify-center mb-3">
             <Percent size={18} />
           </div>
-          <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 block mb-1">First Order Offer</span>
+          <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-600 dark:text-gray-400 block mb-1">First Order Offer</span>
           <span className="text-sm font-bold text-gray-800 dark:text-gray-200">Save 15% on All Aromatics</span>
           <div className="mt-3 px-4 py-1.5 rounded-lg border border-dashed border-[#607c64]/30 bg-[#607c64]/5 text-xs font-bold tracking-widest text-[#607c64] dark:text-[#84a98c]">
             CALM15
@@ -470,14 +469,14 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
                 )}
               </button>
 
-              <div className="relative flex items-center bg-black/[0.02] dark:bg-white/[0.04] border border-gray-200 dark:border-gray-800 rounded-full px-3 py-2.5 max-w-[130px] flex-shrink-0">
+              <div className="relative flex items-center bg-black/[0.02] dark:bg-white/[0.04] border border-gray-200 dark:border-gray-800 rounded-full px-3 py-2 max-w-[130px] flex-shrink-0 min-h-[36px]">
                 <span className="text-gray-400 mr-1.5 flex-shrink-0">
                   <ArrowUpDown size={14} />
                 </span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-transparent border-none text-[10px] uppercase font-bold tracking-[0.05em] text-gray-700 dark:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-md w-full cursor-pointer pr-1"
+                  className="bg-transparent border-none text-[10px] uppercase font-bold tracking-[0.05em] text-gray-700 dark:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-md w-full cursor-pointer pr-1 min-h-[30px]"
                   aria-label="Sort products on mobile"
                 >
                   <option value="default" className="dark:bg-zinc-900">Default</option>
@@ -489,14 +488,14 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
             </div>
 
             {/* Sort selector on desktop */}
-            <div className="hidden lg:flex relative min-w-[160px] items-center bg-black/[0.02] dark:bg-white/[0.04] border border-gray-200 dark:border-gray-800 rounded-full px-4 py-2.5">
-              <span className="text-gray-400 mr-2">
+            <div className="hidden lg:flex relative min-w-[160px] items-center bg-black/[0.02] dark:bg-white/[0.04] border border-gray-200 dark:border-gray-800 rounded-full px-4 py-2 min-h-[36px]">
+                <span className="text-gray-400 mr-2">
                 <ArrowUpDown size={16} />
               </span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-transparent border-none text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-md w-full font-medium cursor-pointer"
+                className="bg-transparent border-none text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 rounded-md w-full font-medium cursor-pointer min-h-[30px]"
                 aria-label="Sort products"
               >
                 <option value="default" className="dark:bg-zinc-900">Sort: Default</option>
@@ -773,19 +772,19 @@ function ShopContent({ initialProducts }: ShopPageClientProps) {
         )}
       </AnimatePresence>
 
+      {/* Suspense listener for URL parameters */}
+      <Suspense fallback={null}>
+        <SearchParamsHandler
+          onCategoryChange={(cat) => {
+            if (["Best Sellers", "New Arrivals", "Sale"].includes(cat)) {
+              setSelectedCollections([cat]);
+            } else {
+              setSelectedTypes([cat]);
+            }
+          }}
+          onSearchChange={(q) => setSearchQuery(q)}
+        />
+      </Suspense>
     </div>
-  );
-}
-
-export default function ShopPageClient({ initialProducts }: ShopPageClientProps) {
-  return (
-    <Suspense fallback={
-      <div className="h-[70vh] flex flex-col gap-4 items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#607c64]"></div>
-        <div className="text-[10px] tracking-[0.2em] uppercase text-gray-400 font-bold animate-pulse">Loading…</div>
-      </div>
-    }>
-      <ShopContent initialProducts={initialProducts} />
-    </Suspense>
   );
 }

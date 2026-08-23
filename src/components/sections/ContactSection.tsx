@@ -52,7 +52,7 @@ export function ContactSection() {
                   <Mail size={20} />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-widest font-bold text-gray-400">Email Us</p>
+                  <p className="text-xs uppercase tracking-widest font-bold text-gray-600 dark:text-gray-400">Email Us</p>
                   <p className="font-semibold dark:text-gray-200">hello@izzan.com</p>
                 </div>
               </motion.div>
@@ -62,7 +62,7 @@ export function ContactSection() {
                   <Phone size={20} />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-widest font-bold text-gray-400">Call Us</p>
+                  <p className="text-xs uppercase tracking-widest font-bold text-gray-600 dark:text-gray-400">Call Us</p>
                   <p className="font-semibold dark:text-gray-200">+1 (555) 123-4567</p>
                 </div>
               </motion.div>
@@ -72,7 +72,7 @@ export function ContactSection() {
                   <MapPin size={20} />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-widest font-bold text-gray-400">Visit Us</p>
+                  <p className="text-xs uppercase tracking-widest font-bold text-gray-600 dark:text-gray-400">Visit Us</p>
                   <p className="font-semibold dark:text-gray-200">123 Sanctuary Way, Calm City, CA 90210</p>
                 </div>
               </motion.div>
@@ -89,7 +89,7 @@ export function ContactSection() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label htmlFor="fullName" className="text-xs uppercase tracking-widest font-bold text-gray-500 dark:text-gray-400">Full Name</label>
+                  <label htmlFor="fullName" className="text-xs uppercase tracking-widest font-bold text-gray-700 dark:text-gray-300">Full Name</label>
                   <input 
                     id="fullName" 
                     type="text" 
@@ -100,7 +100,7 @@ export function ContactSection() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="contactEmail" className="text-xs uppercase tracking-widest font-bold text-gray-500 dark:text-gray-400">Email Address</label>
+                  <label htmlFor="contactEmail" className="text-xs uppercase tracking-widest font-bold text-gray-700 dark:text-gray-300">Email Address</label>
                   <input 
                     id="contactEmail" 
                     type="email" 
@@ -113,7 +113,7 @@ export function ContactSection() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label htmlFor="subject" className="text-xs uppercase tracking-widest font-bold text-gray-500 dark:text-gray-400">Subject</label>
+                <label htmlFor="subject" className="text-xs uppercase tracking-widest font-bold text-gray-700 dark:text-gray-300">Subject</label>
                 <select id="subject" className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all dark:text-gray-100">
                   <option>General Inquiry</option>
                   <option>Wholesale</option>
@@ -122,7 +122,7 @@ export function ContactSection() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label htmlFor="message" className="text-xs uppercase tracking-widest font-bold text-gray-500">Message</label>
+                <label htmlFor="message" className="text-xs uppercase tracking-widest font-bold text-gray-700 dark:text-gray-300">Message</label>
                 <textarea 
                   id="message" 
                   rows={4} 

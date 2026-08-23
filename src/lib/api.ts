@@ -24,7 +24,7 @@ export function apiHandler(handler: RouteHandler, defaultErrorMessage: string = 
           );
         }
         return NextResponse.json(
-          { error: "Bad Request: " + err.message },
+          { error: "Bad Request" },
           { status: 400 }
         );
       }

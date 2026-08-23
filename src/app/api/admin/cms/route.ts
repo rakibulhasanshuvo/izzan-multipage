@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { apiHandler } from "@/lib/api";
-import sanitizeHtml from "sanitize-html";
+import { sanitizeCmsValue } from "@/lib/sanitize";
 import { z } from "zod";
 
 const cmsUpdateSchema = z.object({
@@ -21,15 +21,7 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
   const { id, value } = validationResult.data;
 
   // Sanitize HTML content before storing (defense-in-depth)
-  const sanitizedValue = sanitizeHtml(String(value), {
-    allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span']),
-    allowedAttributes: {
-      ...sanitizeHtml.defaults.allowedAttributes,
-      '*': ['style', 'class'],
-      'a': ['href', 'target', 'rel'],
-      'img': ['src', 'alt', 'width', 'height'],
-    },
-  });
+  const sanitizedValue = sanitizeCmsValue(value);
 
   const content = await prisma.cMSContent.update({
     where: { id },

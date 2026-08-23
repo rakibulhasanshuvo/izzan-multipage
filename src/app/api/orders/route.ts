@@ -1,25 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { apiHandler } from "@/lib/api";
+import { logger } from "@/lib/logger";
 import { getClientIp, checkRateLimit } from "@/lib/rate-limit";
 import { checkoutSchema } from "@/lib/validation";
 
 export const POST = apiHandler(async function POST(req: NextRequest) {
-  // CSRF protection: validate Origin / Referer header
+  // CSRF protection: Origin / Referer must match Host (fail-closed).
   const origin = req.headers.get("origin");
   const referer = req.headers.get("referer");
   const host = req.headers.get("host");
 
-  if (origin) {
-    const originHost = new URL(origin).host;
-    if (host && originHost !== host) {
-      return NextResponse.json({ error: "Forbidden: cross-origin request" }, { status: 403 });
+  const parseHost = (value: string | null): string | null => {
+    if (!value) return null;
+    try {
+      return new URL(value).host;
+    } catch {
+      return null;
     }
-  } else if (referer) {
-    const refererHost = new URL(referer).host;
-    if (host && refererHost !== host) {
-      return NextResponse.json({ error: "Forbidden: cross-origin request" }, { status: 403 });
+  };
+
+  // Fall back to deriving host from req.url when the Host header is absent
+  let effectiveHost = host;
+  if (!effectiveHost) {
+    try {
+      effectiveHost = new URL(req.url).host;
+    } catch {
+      effectiveHost = null;
     }
+  }
+
+  const requestHost = parseHost(origin) ?? parseHost(referer);
+  if (!requestHost || !effectiveHost || requestHost !== effectiveHost) {
+    return NextResponse.json({ error: "Forbidden: cross-origin request" }, { status: 403 });
   }
 
   // Rate limiting to prevent checkout spam
@@ -203,6 +216,14 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
 
   } catch (error: unknown) {
     const err = error as Error;
-    return NextResponse.json({ error: err.message || "Failed to process order" }, { status: 400 });
+    // Only forward whitelisted, user-facing business messages; anything else
+    // (e.g. Prisma internals) is logged server-side and returned generically.
+    const message = err?.message || "";
+    const SAFE_MESSAGES = ["Insufficient stock", "Product not found:", "Invalid item structure"];
+    if (SAFE_MESSAGES.some((prefix) => message.startsWith(prefix))) {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    logger.error("Order failed:", { error: message });
+    return NextResponse.json({ error: "Failed to process order. Please try again." }, { status: 400 });
   }
 }, "Failed to create order");

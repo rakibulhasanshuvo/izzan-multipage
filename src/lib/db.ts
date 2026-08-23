@@ -10,7 +10,12 @@ const globalForPrisma = global as unknown as { prisma: PrismaClient };
 const databaseUrl = env.DATABASE_URL;
 const isSqlite = databaseUrl?.startsWith("file:") || !databaseUrl;
 
-let dbPath = databaseUrl ? databaseUrl.replace("file:", "") : path.resolve(process.cwd(), "prisma", "dev.db");
+const rawPath = databaseUrl ? databaseUrl.replace(/^file:/, "") : "prisma/dev.db";
+let dbPath = path.isAbsolute(rawPath)
+  ? rawPath
+  : rawPath.startsWith("prisma/") || rawPath.startsWith("./prisma/")
+  ? path.resolve(process.cwd(), rawPath)
+  : path.resolve(process.cwd(), "prisma", rawPath.replace(/^\.\//, ""));
 
 if (isSqlite && process.env.VERCEL === "1" && !databaseUrl) {
   // In Vercel, the file system is read-only except for /tmp.

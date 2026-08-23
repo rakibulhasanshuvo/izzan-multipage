@@ -25,7 +25,14 @@ export default function LoginPage() {
       });
 
       if (res?.error) {
-        setError("Invalid username or password");
+        // "CredentialsSignin" = authorize returned null (bad credentials).
+        // Any other value is a server-thrown message (e.g. rate limiting)
+        // forwarded verbatim by NextAuth v4 — safe to display.
+        setError(
+          res.error === "CredentialsSignin"
+            ? "Invalid username or password"
+            : res.error
+        );
       } else {
         router.push("/admin");
         router.refresh();
@@ -44,15 +51,10 @@ export default function LoginPage() {
       <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-5%] w-[30%] h-[30%] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-md bg-white/80 backdrop-blur-xl p-8 md:p-12 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white relative z-10"
-      >
+      <div className="w-full max-w-md bg-white/90 backdrop-blur-xl p-8 md:p-12 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-white relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="text-center mb-10">
           <h1 className="font-serif text-[32px] text-zinc-900 leading-tight mb-2">Welcome Back</h1>
-          <p className="text-[15px] text-zinc-500">Sign in to the admin dashboard.</p>
+          <p className="text-[15px] text-zinc-600">Sign in to the admin dashboard.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -67,7 +69,7 @@ export default function LoginPage() {
           )}
 
           <div className="space-y-2">
-            <label className="text-[13px] font-semibold text-zinc-500 uppercase tracking-widest block" htmlFor="username">
+            <label className="text-[13px] font-semibold text-zinc-700 uppercase tracking-widest block" htmlFor="username">
               Username
             </label>
             <input
@@ -82,7 +84,7 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[13px] font-semibold text-zinc-500 uppercase tracking-widest block" htmlFor="password">
+            <label className="text-[13px] font-semibold text-zinc-700 uppercase tracking-widest block" htmlFor="password">
               Password
             </label>
             <input
@@ -104,7 +106,7 @@ export default function LoginPage() {
             {isLoading ? "Signing in..." : "Sign In"}
           </button>
         </form>
-      </motion.div>
+      </div>
     </div>
   );
 }

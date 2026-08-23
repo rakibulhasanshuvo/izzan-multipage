@@ -94,6 +94,7 @@ export default function RecentOrdersTableClient({ recentOrders }: { recentOrders
       </div>
 
       <OrderDetailModal
+        key={selectedOrder?.id || "none"}
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);

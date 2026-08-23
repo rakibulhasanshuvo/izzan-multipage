@@ -70,8 +70,8 @@ export function ShopSection({ bestSellers, newArrivals, saleItems, onExplore }: 
           <motion.h2 variants={fadeIn} className="text-4xl md:text-5xl font-display mb-4 dark:text-gray-100">
             Our Collection
           </motion.h2>
-          <motion.p variants={fadeIn} className="text-gray-500 dark:text-gray-400 max-w-lg mx-auto font-light leading-relaxed text-sm">
-            Every product is crafted with intention — pure ingredients, timeless design, and scents that transform your space.
+          <motion.p variants={fadeIn} className="text-gray-600 dark:text-gray-400 max-w-lg mx-auto font-light leading-relaxed text-sm">
+            Handcrafted with 100% natural soy wax, therapeutic essential oils, and crackling wood wicks.
           </motion.p>
         </motion.div>
 

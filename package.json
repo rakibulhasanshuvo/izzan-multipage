@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push --accept-data-loss && prisma db seed && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
     "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
     "db:push": "prisma db push"
   },
   "dependencies": {
@@ -29,15 +31,15 @@
     "imask": "^7.6.1",
     "lucide-react": "^1.8.0",
     "material-symbols": "^0.44.4",
+    "next": "^16.2.6",
     "next-auth": "^4.24.14",
     "next-themes": "^0.4.6",
-    "playright": "^0.0.22",
     "prisma": "^6.19.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-imask": "^7.6.1",
     "sanitize-html": "^2.17.5",
-    "sharp": "^0.34.5",
+    "sharp": "^0.35.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
@@ -54,7 +56,6 @@
     "@vitest/coverage-v8": "^4.1.6",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.6",
-    "next": "^16.2.6",
     "tailwindcss": "^4",
     "tsx": "^4.22.0",
     "typescript": "^5.9.3",
@@ -62,6 +63,7 @@
     "vitest-mock-extended": "^4.0.0"
   },
   "overrides": {
+    "deepmerge-ts": "^8.0.0",
     "esbuild": "^0.28.1",
     "postcss": "^8.5.10",
     "uuid": "^11.1.1"

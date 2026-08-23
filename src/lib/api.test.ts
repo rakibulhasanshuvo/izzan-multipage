@@ -80,7 +80,7 @@ describe('apiHandler', () => {
     await wrappedHandler(mockReq);
 
     expect(NextResponse.json).toHaveBeenCalledWith(
-      { error: 'Bad Request: Unique constraint failed' },
+      { error: 'Bad Request' },
       { status: 400 }
     );
   });
@@ -94,7 +94,7 @@ describe('apiHandler', () => {
     await wrappedHandler(mockReq);
 
     expect(NextResponse.json).toHaveBeenCalledWith(
-      { error: 'Bad Request: Custom code error' },
+      { error: 'Bad Request' },
       { status: 400 }
     );
   });

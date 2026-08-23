@@ -158,7 +158,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
       <div className="mb-8">
         <Link 
           href="/shop" 
-          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-gray-500 hover:text-primary transition-colors cursor-pointer group"
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-[#84a98c] transition-colors cursor-pointer group"
         >
           <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
           Back to Shop Collection
@@ -496,7 +496,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                     ))}
                   </div>
 
-                  <h4 className="text-xs font-bold text-gray-800 dark:text-gray-150">{rev.title}</h4>
+                  <h3 className="text-xs font-bold text-gray-800 dark:text-gray-100">{rev.title}</h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400 font-light leading-relaxed">{rev.comment}</p>
                 </div>
               ))}

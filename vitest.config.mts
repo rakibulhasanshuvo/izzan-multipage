@@ -4,8 +4,10 @@ import path from 'path';
 export default defineConfig({
   test: {
     environment: 'node',
+    setupFiles: ['./vitest.setup.ts'],
     env: {
       ADMIN_TOKEN: 'test-token',
+      TRUST_PROXY: 'true',
     },
     globals: true,
     coverage: {

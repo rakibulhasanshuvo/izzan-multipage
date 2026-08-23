@@ -21,7 +21,7 @@ const staggerContainer: Variants = {
   }
 };
 
-export function Spotlight({ product, videoUrl }: { product: Product | null; videoUrl?: string }) {
+export function Spotlight({ product }: { product: Product | null; videoUrl?: string }) {
   const { addToCart } = useCart();
   
   const handleAddToCart = () => {
@@ -91,7 +91,7 @@ export function Spotlight({ product, videoUrl }: { product: Product | null; vide
               </p>
               <div className="h-4 w-[1px] bg-gray-300 dark:bg-gray-700"></div>
               <div className="flex items-center space-x-1">
-                <span className="text-xs uppercase tracking-widest font-bold text-gray-400">Intensity:</span>
+                <span className="text-xs uppercase tracking-widest font-bold text-gray-600 dark:text-gray-400">Intensity:</span>
                 <div className="flex space-x-1">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div key={i} className={`w-3 h-1 rounded-full ${i <= 3 ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
@@ -121,7 +121,7 @@ export function Spotlight({ product, videoUrl }: { product: Product | null; vide
                 ${product ? product.price.toFixed(2) : "28.00"}
               </span>
             </div>
-            <h4 className="font-bold uppercase tracking-[0.2em] text-xs text-gray-400 border-b border-gray-200 dark:border-gray-700 pb-3 mb-6">Scent Notes</h4>
+            <h4 className="font-bold uppercase tracking-[0.2em] text-xs text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 pb-3 mb-6">Scent Notes</h4>
             <div className="grid grid-cols-3 gap-8">
               <div className="space-y-1">
                 <p className="text-xs text-primary font-bold uppercase tracking-widest">Top</p>

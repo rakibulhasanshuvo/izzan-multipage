@@ -1,19 +1,6 @@
 import type { NextConfig } from "next";
 
-const isDev = process.env.NODE_ENV === "development";
-
-const cspHeader = `
-  default-src 'self';
-  script-src 'self' 'unsafe-inline' blob: data: ${isDev ? "'unsafe-eval'" : ""};
-  style-src 'self' 'unsafe-inline';
-  img-src 'self' blob: data: https://lh3.googleusercontent.com;
-  font-src 'self' data:;
-  media-src 'self' blob: data: https://storage.googleapis.com;
-  connect-src 'self' ${isDev ? "ws: wss:" : ""};
-`.replace(/\s{2,}/g, " ").trim();
-
 const nextConfig: NextConfig = {
-  output: "standalone",
   serverExternalPackages: ["@prisma/client", "better-sqlite3"],
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -32,12 +19,10 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           {
-            key: "Content-Security-Policy",
-            value: cspHeader,
-          },
-          {
             key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
+            // 'preload' intentionally omitted until the domain is confirmed
+            // HTTPS-ready and submitted to the HSTS preload list
+            value: "max-age=63072000; includeSubDomains",
           },
           {
             key: "X-Frame-Options",
@@ -54,6 +39,18 @@ const nextConfig: NextConfig = {
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
+          },
+        ],
+      },
+      {
+        // User-generated uploads are isolated in an opaque origin so that a
+        // malicious file (even if it slips past validation) cannot execute
+        // scripts on the site's origin.
+        source: "/uploads/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "sandbox",
           },
         ],
       },

@@ -4,7 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 
 import { prisma } from "./db";
-import { checkRateLimit } from "./rate-limit";
+import { checkRateLimit, getClientIpFromHeaders, MAX_LOGIN_ATTEMPTS } from "./rate-limit";
 import { headers } from "next/headers";
 
 export const authOptions: NextAuthOptions = {
@@ -22,13 +22,14 @@ export const authOptions: NextAuthOptions = {
 
         // Get IP address from headers during the authentication request on server
         const reqHeaders = await headers();
-        const forwarded = reqHeaders.get("x-forwarded-for");
-        const realIp = reqHeaders.get("x-real-ip");
-        const ip = forwarded ? forwarded.split(",")[0].trim() : (realIp || "unknown_ip");
+        const ip = getClientIpFromHeaders(reqHeaders);
 
-        // Prefix to separate login attempts rate limiting bucket
-        const allowed = await checkRateLimit(`login:${ip}`);
+        // Prefix to separate login attempts rate limiting bucket (strict limit)
+        const allowed = await checkRateLimit(`login:${ip}`, MAX_LOGIN_ATTEMPTS);
         if (!allowed) {
+          // In NextAuth v4 the thrown message is forwarded verbatim to the
+          // client via the ?error= query param (see core/routes/callback.js);
+          // returning null instead yields the generic "CredentialsSignin".
           throw new Error("Too many login attempts. Please try again later.");
         }
 

@@ -32,7 +32,7 @@ const INGREDIENTS_DATA = [
     ],
     stat: "100% Vegan",
     tagline: "Eco-friendly base",
-    badgeColor: "bg-[#607c64]/10 text-[#607c64] dark:bg-[#84a98c]/10 dark:text-[#84a98c]"
+    badgeColor: "bg-[#607c64]/15 text-[#374e3b] dark:bg-[#84a98c]/20 dark:text-[#9fc1a6]"
   },
   {
     id: "botanical-oils",
@@ -280,7 +280,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
               <div className="flex justify-center mt-12">
                 <Link
                   href={selectedCategory === "All" ? "/shop" : `/shop?category=${encodeURIComponent(selectedCategory)}`}
-                  className="group inline-flex items-center space-x-3 px-10 py-4 border border-[#607c64]/20 text-[#607c64] rounded-full font-bold tracking-[0.2em] text-xs md:text-sm uppercase hover:bg-[#607c64] hover:text-white hover:border-[#607c64] transition-all duration-500 hover:shadow-lg hover:shadow-[#607c64]/10 cursor-pointer animate-in fade-in slide-in-from-bottom-2 duration-700"
+                  className="group inline-flex items-center space-x-3 px-10 py-4 border border-[#607c64]/40 text-[#374e3b] dark:text-[#9fc1a6] rounded-full font-bold tracking-[0.2em] text-xs md:text-sm uppercase hover:bg-[#607c64] hover:text-white hover:border-[#607c64] transition-all duration-500 hover:shadow-lg hover:shadow-[#607c64]/10 cursor-pointer animate-in fade-in slide-in-from-bottom-2 duration-700"
                 >
                   <span>Explore Full Collection</span>
                   <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
@@ -293,19 +293,19 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
         {/* E-Commerce Value Props Footer */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 md:mt-24 pt-8 md:pt-12 border-t border-gray-200 dark:border-gray-800 text-center">
           <div className="p-4 flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-[#607c64]/10 text-[#607c64] flex items-center justify-center mb-4 font-bold text-lg">100%</div>
+            <div className="w-12 h-12 rounded-full bg-[#607c64]/15 text-[#374e3b] dark:text-[#9fc1a6] flex items-center justify-center mb-4 font-bold text-lg">100%</div>
             <h4 className="font-semibold text-base mb-1 dark:text-gray-200">Natural Ingredients</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Handmade with premium soy wax and therapeutic-grade essential oils.</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">Handmade with premium soy wax and therapeutic-grade essential oils.</p>
           </div>
           <div className="p-4 flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-[#607c64]/10 text-[#607c64] flex items-center justify-center mb-4 font-bold text-lg">🚀</div>
+            <div className="w-12 h-12 rounded-full bg-[#607c64]/15 text-[#374e3b] dark:text-[#9fc1a6] flex items-center justify-center mb-4 font-bold text-lg">🚀</div>
             <h4 className="font-semibold text-base mb-1 dark:text-gray-200">Free Express Delivery</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Complimentary tracked shipping on all orders over $50 nationwide.</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">Complimentary tracked shipping on all orders over $50 nationwide.</p>
           </div>
           <div className="p-4 flex flex-col items-center">
-            <div className="w-12 h-12 rounded-full bg-[#607c64]/10 text-[#607c64] flex items-center justify-center mb-4 font-bold text-lg">✨</div>
+            <div className="w-12 h-12 rounded-full bg-[#607c64]/15 text-[#374e3b] dark:text-[#9fc1a6] flex items-center justify-center mb-4 font-bold text-lg">✨</div>
             <h4 className="font-semibold text-base mb-1 dark:text-gray-200">Small-Batch Crafted</h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Poured in small batches in our studio to preserve scent integrity.</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">Poured in small batches in our studio to preserve scent integrity.</p>
           </div>
         </div>
       </div>
@@ -319,7 +319,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
         <div className="flex justify-center -mt-8 mb-16 relative z-10">
           <Link
             href="/story"
-            className="group inline-flex items-center space-x-3 px-10 py-4 border border-[#607c64]/20 text-[#607c64] rounded-full font-bold tracking-[0.2em] text-xs md:text-sm uppercase hover:bg-[#607c64] hover:text-white hover:border-[#607c64] transition-all duration-500 hover:shadow-lg hover:shadow-[#607c64]/10 cursor-pointer"
+            className="group inline-flex items-center space-x-3 px-10 py-4 border border-[#607c64]/30 text-[#374e3b] dark:text-[#9fc1a6] rounded-full font-bold tracking-[0.2em] text-xs md:text-sm uppercase hover:bg-[#607c64] hover:text-white hover:border-[#607c64] transition-all duration-500 hover:shadow-lg hover:shadow-[#607c64]/10 cursor-pointer"
           >
             <span>Read Our Full Story</span>
             <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />
@@ -331,13 +331,13 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
       <div className="py-16 md:py-24 bg-zinc-50 dark:bg-zinc-900/40 border-y border-gray-100 dark:border-gray-800/50 transition-colors duration-300">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 lg:px-12">
           <div className="text-center mb-16">
-            <span className="text-[#607c64] dark:text-[#84a98c] font-bold tracking-[0.25em] uppercase text-xs mb-2 block">
+            <span className="text-[#374e3b] dark:text-[#84a98c] font-bold tracking-[0.25em] uppercase text-xs mb-2 block">
               Pure Craftsmanship
             </span>
             <h2 className="text-3xl md:text-4xl font-display font-semibold text-zinc-900 dark:text-gray-100">
               Our Ingredients & Materials
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-xl mx-auto font-light leading-relaxed">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-xl mx-auto font-light leading-relaxed">
               We conscientiously source and meticulously blend every element to create clean-burning wellness rituals.
             </p>
           </div>
@@ -354,7 +354,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
                   className={`flex items-center space-x-2 px-4 md:px-8 lg:px-12 py-3.5 rounded-full text-xs md:text-sm font-semibold tracking-wider uppercase transition-all duration-300 cursor-pointer ${
                     isActive
                       ? "bg-[#607c64] text-white shadow-lg shadow-[#607c64]/20 scale-105"
-                      : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700/50 border border-gray-100 dark:border-gray-800"
+                      : "bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700/50 border border-gray-100 dark:border-gray-800"
                   }`}
                 >
                   <IconComponent size={16} />
@@ -385,7 +385,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
                           {tab.tagline}
                         </span>
                         <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                        <span className="text-xs font-semibold tracking-wider text-[#607c64] dark:text-[#84a98c]">
+                        <span className="text-xs font-semibold tracking-wider text-[#374e3b] dark:text-[#84a98c]">
                           {tab.stat}
                         </span>
                       </div>
@@ -394,19 +394,19 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
                         <h3 className="text-2xl md:text-3xl font-display font-semibold text-zinc-900 dark:text-gray-100 mb-2">
                           {tab.title}
                         </h3>
-                        <h4 className="text-sm font-medium text-zinc-500 dark:text-zinc-400 tracking-wide">
+                        <h4 className="text-sm font-medium text-zinc-600 dark:text-zinc-400 tracking-wide">
                           {tab.subtitle}
                         </h4>
                       </div>
 
-                      <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 leading-relaxed font-light">
+                      <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed font-light">
                         {tab.description}
                       </p>
 
                       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                         {tab.benefits.map((benefit, i) => (
-                          <li key={i} className="flex items-start space-x-3 text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                            <span className="text-[#607c64] dark:text-[#84a98c] mt-0.5 font-bold">✓</span>
+                          <li key={i} className="flex items-start space-x-3 text-xs md:text-sm text-gray-700 dark:text-gray-300">
+                            <span className="text-[#374e3b] dark:text-[#84a98c] mt-0.5 font-bold">✓</span>
                             <span>{benefit}</span>
                           </li>
                         ))}
@@ -415,17 +415,17 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
 
                     <div className="lg:col-span-5 flex justify-center">
                       <div className="relative w-full aspect-square max-w-[280px] rounded-3xl bg-gradient-to-tr from-[#607c64]/5 to-[#607c64]/20 dark:from-zinc-800 dark:to-zinc-700/30 border border-gray-100 dark:border-zinc-800 flex flex-col items-center justify-center p-6 md:p-8 text-center shadow-inner group">
-                        <div className="w-20 h-20 rounded-2xl bg-white dark:bg-zinc-800 text-[#607c64] dark:text-[#84a98c] flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-500">
+                        <div className="w-20 h-20 rounded-2xl bg-white dark:bg-zinc-800 text-[#374e3b] dark:text-[#84a98c] flex items-center justify-center mb-6 shadow-md group-hover:scale-110 transition-transform duration-500">
                           <IconComponent size={36} />
                         </div>
-                        <span className="text-xs tracking-[0.2em] uppercase text-gray-400 dark:text-gray-500 font-bold mb-1">
+                        <span className="text-xs tracking-[0.2em] uppercase text-gray-600 dark:text-gray-400 font-bold mb-1">
                           Craft Standard
                         </span>
                         <div className="text-xl font-display font-semibold text-zinc-800 dark:text-zinc-200">
                           {tab.stat}
                         </div>
                         <div className="absolute inset-x-8 bottom-6 border-t border-gray-100 dark:border-zinc-800/50 pt-4">
-                          <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-normal">
+                          <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-normal">
                             Zero animal testing, non-toxic formulations, consciously handcrafted.
                           </p>
                         </div>
@@ -451,7 +451,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
         <div className="border-t border-gray-100 dark:border-gray-800/50 py-16 bg-background-light dark:bg-background-dark transition-colors duration-300">
           <div className="text-center mb-8 px-4 md:px-8 lg:px-12">
             <h2 className="text-3xl font-display dark:text-gray-100 font-semibold">Our Community</h2>
-            <p className="text-sm text-gray-500 mt-2 font-light">Tag us @izzan_moment to share your moment of calm.</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 font-light">Tag us @izzan_moment to share your moment of calm.</p>
           </div>
           <Community images={communityImages} />
         </div>

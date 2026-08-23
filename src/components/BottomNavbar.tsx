@@ -62,7 +62,7 @@ export function BottomNavbar() {
                   className={`transition-colors duration-200 ${
                     isActive
                       ? "text-[#607c64] dark:text-[#84a98c]"
-                      : "text-gray-400 dark:text-gray-500"
+                      : "text-gray-600 dark:text-gray-400"
                   }`}
                 />
                 
@@ -79,7 +79,7 @@ export function BottomNavbar() {
                 className={`text-xs tracking-wider uppercase mt-1 font-bold transition-colors duration-200 ${
                   isActive
                     ? "text-[#607c64] dark:text-[#84a98c]"
-                    : "text-gray-400 dark:text-gray-500"
+                    : "text-gray-600 dark:text-gray-400"
                 }`}
               >
                 {item.label}

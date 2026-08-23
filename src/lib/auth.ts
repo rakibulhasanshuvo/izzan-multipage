@@ -7,7 +7,8 @@ import {
   getClientIp,
   rateLimitMap,
   RATE_LIMIT_WINDOW,
-  MAX_REQUESTS
+  MAX_REQUESTS,
+  MAX_LOGIN_ATTEMPTS
 } from "./rate-limit";
 
 export {
@@ -15,29 +16,39 @@ export {
   getClientIp,
   rateLimitMap,
   RATE_LIMIT_WINDOW,
-  MAX_REQUESTS
+  MAX_REQUESTS,
+  MAX_LOGIN_ATTEMPTS
 };
 
 /**
+ * Static ADMIN_TOKEN authentication is disabled by default.
+ * It must be explicitly opted into with ALLOW_ADMIN_TOKEN=true
+ * (e.g. for CI or server-to-server tooling). Session auth is always available.
+ */
+function adminTokenAuthEnabled(): boolean {
+  return process.env.ALLOW_ADMIN_TOKEN === "true" && !!process.env.ADMIN_TOKEN;
+}
+
+/**
  * Basic authentication check for admin routes.
- * Supports both NextAuth session and ADMIN_TOKEN.
+ * Supports NextAuth session and (optionally) ADMIN_TOKEN.
  */
 export async function checkAdminAuth(req?: NextRequest): Promise<boolean> {
   // 1. Check for valid NextAuth session
   const session = await getServerSession(authOptions);
   if (session) return true;
 
-  // 2. Check for ADMIN_TOKEN via Authorization header or cookies
-  if (req) {
+  // 2. Check for ADMIN_TOKEN via Authorization header or cookies (opt-in only)
+  if (req && adminTokenAuthEnabled()) {
     const authHeader = req.headers.get("authorization");
     const tokenCookie = req.cookies.get("admin_token")?.value;
-    const token = (authHeader && authHeader.startsWith("Bearer ")) 
-      ? authHeader.split(" ")[1] 
+    const token = (authHeader && authHeader.startsWith("Bearer "))
+      ? authHeader.split(" ")[1]
       : tokenCookie;
-    
-    if (token && process.env.ADMIN_TOKEN) {
+
+    if (token) {
       const tokenBuffer = Buffer.from(token);
-      const expectedBuffer = Buffer.from(process.env.ADMIN_TOKEN);
+      const expectedBuffer = Buffer.from(process.env.ADMIN_TOKEN as string);
 
       if (tokenBuffer.byteLength === expectedBuffer.byteLength) {
         if (crypto.timingSafeEqual(tokenBuffer, expectedBuffer)) {
@@ -75,12 +86,12 @@ export function withAuth(handler: (req: NextRequest, ...args: unknown[]) => Prom
  * Verifies a token against the expected admin token.
  */
 export function verifyToken(token?: string): boolean {
-  if (!token) return false;
-  const expectedToken = process.env.ADMIN_TOKEN;
-  if (!expectedToken) {
-    console.error("ADMIN_TOKEN is not configured");
+  if (!adminTokenAuthEnabled()) {
     return false;
   }
+  if (!token) return false;
+
+  const expectedToken = process.env.ADMIN_TOKEN as string;
 
   const tokenBuffer = Buffer.from(token);
   const expectedBuffer = Buffer.from(expectedToken);

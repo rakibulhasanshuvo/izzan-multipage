@@ -11,6 +11,7 @@ export default async function AdminOverview() {
   const customersCount = await prisma.customer.count();
   
   const revenueObj = await prisma.order.aggregate({
+    where: { status: { not: "Cancelled" } },
     _sum: { totalAmount: true },
   });
   const totalRevenue = revenueObj._sum.totalAmount || 0;

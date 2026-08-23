@@ -53,7 +53,8 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
 
   if (validatedData.name !== undefined) updateFields.name = validatedData.name;
   if (validatedData.phone !== undefined) updateFields.phone = validatedData.phone;
-  if (validatedData.email !== undefined) updateFields.email = validatedData.email;
+  // Normalize empty string to null so the unique constraint never collides
+  if (validatedData.email !== undefined) updateFields.email = validatedData.email || null;
   if (validatedData.zila !== undefined) updateFields.zila = validatedData.zila;
   if (validatedData.upozila !== undefined) updateFields.upozila = validatedData.upozila;
   if (validatedData.location !== undefined) updateFields.location = validatedData.location;

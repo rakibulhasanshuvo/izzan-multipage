@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Playfair_Display, Lato, Inter, Noto_Serif, Parisienne } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import Script from "next/script";
@@ -64,18 +65,25 @@ const jsonLd = {
 };
 
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Nonce is generated per-request in middleware; required for the inline
+  // JSON-LD script under the production CSP (no 'unsafe-inline').
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="en" suppressHydrationWarning className="overflow-x-hidden relative" data-scroll-behavior="smooth">
       <head>
         <Script
           id="json-ld"
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+          }}
         />
       </head>
       <body 

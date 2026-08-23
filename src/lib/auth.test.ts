@@ -1,6 +1,6 @@
-import { describe, it, vi, beforeEach, expect } from "vitest";
+import { describe, it, vi, beforeEach, afterEach, expect } from "vitest";
 import { NextRequest, NextResponse } from "next/server";
-import { withAuth, rateLimitMap, checkRateLimit, getClientIp } from "./auth";
+import { withAuth, rateLimitMap, checkRateLimit, getClientIp, MAX_LOGIN_ATTEMPTS } from "./auth";
 
 // Mock getServerSession to bypass headers() issue outside Next.js request scope
 vi.mock("next-auth/next", () => ({
@@ -15,24 +15,45 @@ vi.mock("./auth-options", () => ({
 describe("auth limits and checks", () => {
   beforeEach(() => {
     rateLimitMap.clear();
+    // Tests exercise proxy-header-based IP resolution; enable trust explicitly.
+    process.env.TRUST_PROXY = "true";
+  });
+
+  afterEach(() => {
+    delete process.env.TRUST_PROXY;
   });
 
   describe("getClientIp", () => {
-    it("should extract first IP from x-forwarded-for header", () => {
+    afterEach(() => {
+      process.env.TRUST_PROXY = "true";
+    });
+
+    it("should extract first IP from x-forwarded-for header when proxy is trusted", () => {
       const req = new NextRequest("http://localhost", {
         headers: { "x-forwarded-for": "203.0.113.195, 70.41.3.18, 150.172.238.178" },
       });
       expect(getClientIp(req)).toBe("203.0.113.195");
     });
 
-    it("should fall back to x-real-ip when x-forwarded-for is missing", () => {
+    it("should fall back to x-real-ip when x-forwarded-for is missing and proxy is trusted", () => {
       const req = new NextRequest("http://localhost", {
         headers: { "x-real-ip": "198.51.100.1" },
       });
       expect(getClientIp(req)).toBe("198.51.100.1");
     });
 
-    it("should fall back to req.ip when headers are missing", () => {
+    it("should ignore spoofable headers when proxy is NOT trusted", () => {
+      delete process.env.TRUST_PROXY;
+      const req = new NextRequest("http://localhost", {
+        headers: {
+          "x-forwarded-for": "203.0.113.195",
+          "x-real-ip": "198.51.100.1",
+        },
+      });
+      expect(getClientIp(req)).toBe("unknown_ip");
+    });
+
+    it("should fall back to req.ip when headers are missing or untrusted", () => {
       const req = new NextRequest("http://localhost");
       Object.defineProperty(req, "ip", { value: "192.0.2.1", writable: true });
       expect(getClientIp(req)).toBe("192.0.2.1");
@@ -55,6 +76,16 @@ describe("auth limits and checks", () => {
       await checkRateLimit("2.2.2.2");
       expect(await checkRateLimit("2.2.2.2")).toBe(true);
       expect(rateLimitMap.get("2.2.2.2")?.count).toBe(2);
+    });
+
+    it("should enforce a stricter custom limit for login attempts", async () => {
+      expect(MAX_LOGIN_ATTEMPTS).toBeLessThan(100);
+      for (let i = 0; i < MAX_LOGIN_ATTEMPTS; i++) {
+        expect(await checkRateLimit("login:3.3.3.3", MAX_LOGIN_ATTEMPTS)).toBe(true);
+      }
+      expect(await checkRateLimit("login:3.3.3.3", MAX_LOGIN_ATTEMPTS)).toBe(false);
+      // Other buckets are unaffected by the exhausted login bucket
+      expect(await checkRateLimit("login:4.4.4.4", MAX_LOGIN_ATTEMPTS)).toBe(true);
     });
   });
 

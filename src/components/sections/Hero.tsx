@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { motion, Variants, useScroll, useTransform } from "framer-motion";
-import { useRef, useEffect } from "react";
-import { preload } from "react-dom";
+import { useRef } from "react";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -32,12 +31,10 @@ const revealContainer: Variants = {
 };
 
 
+import Image from "next/image";
+
 export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string, subtitle?: string, videoUrl?: string, posterUrl?: string }) {
   const finalPoster = posterUrl || "/images/hero-poster.png";
-  
-  useEffect(() => {
-    preload(finalPoster, { as: "image", fetchPriority: "high" });
-  }, [finalPoster]);
 
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -51,18 +48,24 @@ export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string,
   return (
     <section ref={ref} className="relative w-full min-h-[90vh] flex items-center justify-start overflow-hidden">
       <motion.div style={{ y }} className="absolute inset-0 z-0">
+        <Image
+          src={finalPoster}
+          alt="Izzan Artisanal Aromatics"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center w-full h-full"
+        />
         <video
           autoPlay
           loop
           muted
           playsInline
-          preload="auto"
+          preload="metadata"
           className="object-cover object-center w-full h-full absolute inset-0"
-          poster={finalPoster}
         >
           <track kind="captions" srcLang="en" label="English" />
           {videoUrl && <source src={videoUrl} type="video/mp4" />}
-          {/* Add your short video source here, e.g., <source src="/video.mp4" type="video/mp4" /> */}
         </video>
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/30 md:to-transparent dark:from-black/95 dark:via-black/70"></div>
       </motion.div>

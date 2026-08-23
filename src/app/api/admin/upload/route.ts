@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/auth";
 import { apiHandler } from "@/lib/api";
+import { getClientIp, checkRateLimit } from "@/lib/rate-limit";
 import { promises as fs } from "fs";
 import path from "path";
 import { put } from "@vercel/blob";
@@ -24,7 +25,32 @@ function isValidFileType(buffer: Buffer): boolean {
   return false;
 }
 
+// Extensions are enforced independently of MIME/magic checks so that a
+// crafted file can never be stored as an executable type (e.g. .html)
+const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".webm"];
+
+// Per-IP daily upload quota to prevent disk exhaustion
+const MAX_DAILY_UPLOAD_BYTES = 500 * 1024 * 1024; // 500 MB / day / IP
+const uploadQuotaMap = new Map<string, { date: string; bytes: number }>();
+
+function trackUploadBytes(ip: string, bytes: number): void {
+  const today = new Date().toISOString().slice(0, 10);
+  const record = uploadQuotaMap.get(ip);
+  if (!record || record.date !== today) {
+    uploadQuotaMap.set(ip, { date: today, bytes });
+    return;
+  }
+  record.bytes += bytes;
+}
+
 export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
+  // Rate limit uploads separately from general admin traffic
+  const ip = getClientIp(req);
+  const allowed = await checkRateLimit(`upload:${ip}`, 20);
+  if (!allowed) {
+    return NextResponse.json({ error: "Too many upload requests. Please try again later." }, { status: 429 });
+  }
+
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
 
@@ -41,11 +67,26 @@ export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unsupported file type. Please upload an image or video." }, { status: 400 });
   }
 
+  const originalExt = path.extname(file.name).toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(originalExt)) {
+    return NextResponse.json(
+      { error: `Invalid file extension. Allowed: ${ALLOWED_EXTENSIONS.join(", ")}` },
+      { status: 400 }
+    );
+  }
+
   const isVideo = file.type.startsWith("video/");
   const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
   if (file.size > maxSize) {
     const maxMB = Math.round(maxSize / (1024 * 1024));
     return NextResponse.json({ error: `File too large. Maximum size is ${maxMB} MB.` }, { status: 400 });
+  }
+
+  // Daily aggregate quota per client IP
+  const today = new Date().toISOString().slice(0, 10);
+  const quota = uploadQuotaMap.get(ip);
+  if (quota && quota.date === today && quota.bytes + file.size > MAX_DAILY_UPLOAD_BYTES) {
+    return NextResponse.json({ error: "Daily upload quota exceeded. Please try again tomorrow." }, { status: 429 });
   }
 
   const arrayBuffer = await file.arrayBuffer();
@@ -65,11 +106,11 @@ export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
   }
 
   const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-  let ext = path.extname(file.name);
+  let ext = originalExt;
   if (file.type.startsWith("image/") && file.type !== "image/gif") {
     ext = ".webp";
   }
-  const cleanName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9]/g, "_");
+  const cleanName = path.basename(file.name, originalExt).replace(/[^a-zA-Z0-9]/g, "_");
   const filename = `${cleanName}_${uniqueSuffix}${ext}`;
 
   if (process.env.STORAGE_PROVIDER === "vercel") {
@@ -78,13 +119,15 @@ export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
       access: 'public',
       contentType: file.type.startsWith("image/") && file.type !== "image/gif" ? "image/webp" : file.type,
     });
+    trackUploadBytes(ip, buffer.byteLength);
     return NextResponse.json({ success: true, url: blob.url });
   } else {
     // Local File System Upload
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
     await fs.mkdir(uploadsDir, { recursive: true });
     const filePath = path.join(uploadsDir, filename);
-    await fs.writeFile(filePath, buffer);
+    await fs.writeFile(filePath, buffer, { mode: 0o644 });
+    trackUploadBytes(ip, buffer.byteLength);
     const fileUrl = `/uploads/${filename}`;
     return NextResponse.json({ success: true, url: fileUrl });
   }

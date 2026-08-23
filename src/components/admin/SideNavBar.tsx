@@ -44,7 +44,7 @@ export default function SideNavBar() {
               <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-on-primary font-serif italic font-bold shadow-lg shadow-primary/20">
                 A
               </div>
-              <h1 className="font-serif italic text-2xl text-zinc-900 dark:text-zinc-100 tracking-tight">Izzan Admin</h1>
+              <span className="font-serif italic text-2xl text-zinc-900 dark:text-zinc-100 tracking-tight font-bold">Izzan Admin</span>
             </div>
             <p className="font-body-sm text-[12px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest pl-[52px]">Luxe Studio</p>
           </div>

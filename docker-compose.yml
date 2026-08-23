@@ -16,10 +16,15 @@ services:
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?Set NEXTAUTH_SECRET in .env}
       # Provide a strong secure token for admin API access
       - ADMIN_TOKEN=${ADMIN_TOKEN:?Set ADMIN_TOKEN in .env}
+      # Static token auth is opt-in; keep false unless you need it
+      - ALLOW_ADMIN_TOKEN=${ALLOW_ADMIN_TOKEN:-false}
+      # Set to true ONLY when behind a trusted reverse proxy, otherwise
+      # x-forwarded-for is attacker-controlled and rate limits can be bypassed
+      - TRUST_PROXY=${TRUST_PROXY:-false}
       # Use local storage provider for VPS persistent disk storage
       - STORAGE_PROVIDER=local
       # Connect to local Redis for rate-limiting (with auth)
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379
     volumes:
       # Mount the SQLite database to persist across container restarts
       - ./prisma/dev.db:/app/prisma/dev.db
@@ -32,8 +37,8 @@ services:
     image: redis:7-alpine
     container_name: izzan-redis
     restart: unless-stopped
-    # Redis auth — set REDIS_PASSWORD in .env (no port exposed to host for security)
-    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
+    # Redis auth — REDIS_PASSWORD is required in .env (no default, no host port exposed)
+    command: redis-server --requirepass ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
     volumes:
       - redis_data:/data
 

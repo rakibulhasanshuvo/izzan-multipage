@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+// --- Shared Order Status Whitelist ---
+export const ORDER_STATUSES = ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
 // --- Checkout Order Validation ---
 export const checkoutItemSchema = z.object({
   id: z.string().min(1, "Item ID is required"),
