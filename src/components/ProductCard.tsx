@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Product } from "@/generated/client";
-import { useCart } from "@/context/CartContext";
+import type { ProductView as Product } from "@/lib/serialize";
+import { useCart } from "@/store/cart-store";
 import { useState } from "react";
 import { Check } from "lucide-react";
 

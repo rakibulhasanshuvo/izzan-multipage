@@ -1,14 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { withAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { apiHandler } from "@/lib/api";
+import { apiHandler, parsePageParams, paginatedResponse } from "@/lib/api";
+import { serializeProduct } from "@/lib/serialize";
 import { createProductSchema, updateProductSchema } from "@/lib/validation";
 
-export const GET = withAuth(apiHandler(async function GET() {
-  const products = await prisma.product.findMany({
-    orderBy: { updatedAt: "desc" },
-  });
-  return NextResponse.json(products);
+// Mirrors actions.ts: an explicitly submitted empty string clears the optional
+// column (null); undefined means "leave unchanged". 0 is preserved.
+function emptyToNull(value: string | null | undefined): string | null | undefined {
+  return value === undefined ? undefined : value === "" ? null : value;
+}
+
+function revalidateStorefront() {
+  revalidatePath("/admin/products");
+  revalidatePath("/");
+  revalidatePath("/shop");
+}
+
+export const GET = withAuth(apiHandler(async function GET(req: NextRequest) {
+  const { page, limit, skip } = parsePageParams(new URL(req.url));
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      orderBy: { updatedAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.product.count(),
+  ]);
+
+  return paginatedResponse(products.map(serializeProduct), total, page, limit);
 }, "Failed to fetch products"));
 
 export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
@@ -21,17 +43,18 @@ export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
   const product = await prisma.product.create({
     data: {
       name: validatedData.name,
-      description: validatedData.description,
+      description: emptyToNull(validatedData.description) ?? null,
       price: validatedData.price,
-      originalPrice: validatedData.originalPrice,
+      originalPrice: validatedData.originalPrice ?? null,
       img: validatedData.img,
-      hoverImg: validatedData.hoverImg,
+      hoverImg: emptyToNull(validatedData.hoverImg) ?? null,
       categories: validatedData.categories,
-      badge: validatedData.badge,
+      badge: emptyToNull(validatedData.badge) ?? null,
       stock: validatedData.stock,
     },
   });
-  return NextResponse.json(product);
+  revalidateStorefront();
+  return NextResponse.json(serializeProduct(product));
 }, "Failed to create product"));
 
 export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) {
@@ -56,13 +79,13 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
   const updateFields: Record<string, unknown> = {};
 
   if (validatedData.name !== undefined) updateFields.name = validatedData.name;
-  if (validatedData.description !== undefined) updateFields.description = validatedData.description;
+  if (validatedData.description !== undefined) updateFields.description = emptyToNull(validatedData.description);
   if (validatedData.price !== undefined) updateFields.price = validatedData.price;
   if (validatedData.originalPrice !== undefined) updateFields.originalPrice = validatedData.originalPrice;
   if (validatedData.img !== undefined) updateFields.img = validatedData.img;
-  if (validatedData.hoverImg !== undefined) updateFields.hoverImg = validatedData.hoverImg;
+  if (validatedData.hoverImg !== undefined) updateFields.hoverImg = emptyToNull(validatedData.hoverImg);
   if (validatedData.categories !== undefined) updateFields.categories = validatedData.categories;
-  if (validatedData.badge !== undefined) updateFields.badge = validatedData.badge;
+  if (validatedData.badge !== undefined) updateFields.badge = emptyToNull(validatedData.badge);
   if (validatedData.stock !== undefined) updateFields.stock = validatedData.stock;
 
   // Prevent IDOR or update of non-existent record gracefully
@@ -78,7 +101,8 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
     where: { id: validatedData.id },
     data: updateFields,
   });
-  return NextResponse.json(product);
+  revalidateStorefront();
+  return NextResponse.json(serializeProduct(product));
 }, "Failed to update product"));
 
 export const DELETE = withAuth(apiHandler(async function DELETE(req: NextRequest) {
@@ -90,5 +114,6 @@ export const DELETE = withAuth(apiHandler(async function DELETE(req: NextRequest
   await prisma.product.delete({
     where: { id },
   });
+  revalidateStorefront();
   return NextResponse.json({ success: true });
 }, "Failed to delete product"));

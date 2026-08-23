@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
+import { serializeProduct, serializeProductList } from "@/lib/serialize";
 import ProductDetailClient from "@/components/shop/ProductDetailClient";
 
 export const dynamic = "force-dynamic";
@@ -30,5 +31,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
     take: 4,
   });
 
-  return <ProductDetailClient product={product} relatedProducts={relatedProducts} />;
+  return (
+    <ProductDetailClient
+      product={serializeProduct(product)}
+      relatedProducts={serializeProductList(relatedProducts)}
+    />
+  );
 }

@@ -8,13 +8,15 @@ import ProductEditorModal from "./ProductEditorModal";
 import { toast } from "sonner";
 import { createProduct, updateProduct, deleteProduct } from "@/app/(admin)/admin/actions";
 
-import { Product } from "@/generated/client";
+import type { ProductView as Product } from "@/lib/serialize";
+import type { ProductFormOutput } from "@/lib/validation";
 
 interface ProductManagementProps {
   initialProducts: Product[];
+  totalProducts: number;
 }
 
-export default function ProductManagement({ initialProducts }: ProductManagementProps) {
+export default function ProductManagement({ initialProducts, totalProducts }: ProductManagementProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -45,8 +47,8 @@ export default function ProductManagement({ initialProducts }: ProductManagement
     setIsModalOpen(true);
   };
 
-  const handleSaveWrapper = async (formData: Partial<Product>) => {
-    await handleSave(formData as Product);
+  const handleSaveWrapper = async (formData: ProductFormOutput & { id?: string }) => {
+    await handleSave(formData as unknown as Product);
   };
 
   const handleSave = async (formData: Product) => {
@@ -223,9 +225,9 @@ export default function ProductManagement({ initialProducts }: ProductManagement
                     </div>
                   </td>
                   <td className="py-4 px-6 text-right font-medium text-zinc-900 dark:text-zinc-100">
-                    ${product.price}
+                    ${Number(product.price).toFixed(2)}
                     {product.originalPrice && product.originalPrice > 0 && (
-                      <span className="text-[13px] text-zinc-400 dark:text-zinc-500 line-through ml-2 font-normal">${product.originalPrice}</span>
+                      <span className="text-[13px] text-zinc-400 dark:text-zinc-500 line-through ml-2 font-normal">${Number(product.originalPrice).toFixed(2)}</span>
                     )}
                   </td>
                   <td className="py-4 px-6 text-center">
@@ -268,6 +270,11 @@ export default function ProductManagement({ initialProducts }: ProductManagement
             </div>
             <h3 className="font-serif text-2xl text-zinc-900 dark:text-zinc-100 mb-2">No products found</h3>
             <p className="text-zinc-500 dark:text-zinc-400 max-w-sm">We couldn&apos;t find any products matching your search criteria. Try adjusting your filters.</p>
+          </div>
+        )}
+        {totalProducts > initialProducts.length && (
+          <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50">
+            <span className="text-[13px] text-zinc-500 dark:text-zinc-400 font-medium">Showing first {initialProducts.length} of {totalProducts} products</span>
           </div>
         )}
       </div>

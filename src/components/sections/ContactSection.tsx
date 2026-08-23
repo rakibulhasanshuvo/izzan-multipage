@@ -2,7 +2,10 @@
 
 import { motion, Variants } from "framer-motion";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { contactFormSchema, type ContactFormValues } from "@/lib/validation";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -20,12 +23,26 @@ const staggerContainer: Variants = {
 };
 
 export function ContactSection() {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ContactFormValues>({
+    resolver: zodResolver(contactFormSchema),
+    defaultValues: {
+      fullName: "",
+      contactEmail: "",
+      subject: "General Inquiry",
+      message: "",
+    },
+  });
+
+  const onSubmit = async () => {
     toast.success("Message sent!", {
       description: "We’ll get back to you within 24 hours.",
     });
-    e.currentTarget.reset();
+    reset();
   };
 
   return (
@@ -86,35 +103,47 @@ export function ContactSection() {
             transition={{ duration: 0.8 }}
             className="bg-gray-50 dark:bg-gray-800/50 p-8 md:p-12 rounded-3xl border border-gray-100 dark:border-gray-800"
           >
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label htmlFor="fullName" className="text-xs uppercase tracking-widest font-bold text-gray-700 dark:text-gray-300">Full Name</label>
-                  <input 
-                    id="fullName" 
-                    type="text" 
-                    placeholder="Your Name…" 
-                    required 
+                  <input
+                    id="fullName"
+                    type="text"
+                    placeholder="Your Name…"
                     autoComplete="name"
-                    className="w-full px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all dark:text-white" 
+                    aria-invalid={!!errors.fullName}
+                    {...register("fullName")}
+                    className="w-full px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all dark:text-white"
                   />
+                  {errors.fullName && (
+                    <p className="text-xs text-red-600 dark:text-red-400">{errors.fullName.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="contactEmail" className="text-xs uppercase tracking-widest font-bold text-gray-700 dark:text-gray-300">Email Address</label>
-                  <input 
-                    id="contactEmail" 
-                    type="email" 
-                    placeholder="Email Address…" 
-                    required 
+                  <input
+                    id="contactEmail"
+                    type="email"
+                    placeholder="Email Address…"
                     autoComplete="email"
                     spellCheck={false}
-                    className="w-full px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all dark:text-white" 
+                    aria-invalid={!!errors.contactEmail}
+                    {...register("contactEmail")}
+                    className="w-full px-6 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all dark:text-white"
                   />
+                  {errors.contactEmail && (
+                    <p className="text-xs text-red-600 dark:text-red-400">{errors.contactEmail.message}</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
                 <label htmlFor="subject" className="text-xs uppercase tracking-widest font-bold text-gray-700 dark:text-gray-300">Subject</label>
-                <select id="subject" className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all dark:text-gray-100">
+                <select
+                  id="subject"
+                  {...register("subject")}
+                  className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 transition-all dark:text-gray-100"
+                >
                   <option>General Inquiry</option>
                   <option>Wholesale</option>
                   <option>Shipping Question</option>
@@ -123,19 +152,24 @@ export function ContactSection() {
               </div>
               <div className="space-y-2">
                 <label htmlFor="message" className="text-xs uppercase tracking-widest font-bold text-gray-700 dark:text-gray-300">Message</label>
-                <textarea 
-                  id="message" 
-                  rows={4} 
-                  required 
+                <textarea
+                  id="message"
+                  rows={4}
                   placeholder="Your message…"
+                  aria-invalid={!!errors.message}
+                  {...register("message")}
                   className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all dark:text-gray-100 resize-none"
                 />
+                {errors.message && (
+                  <p className="text-xs text-red-600 dark:text-red-400">{errors.message.message}</p>
+                )}
               </div>
-              <button 
-                type="submit" 
-                className="w-full bg-primary text-white py-4 rounded-xl font-bold uppercase tracking-[0.2em] text-sm hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-primary text-white py-4 rounded-xl font-bold uppercase tracking-[0.2em] text-sm hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                <span>Send Message</span>
+                <span>{isSubmitting ? "Sending…" : "Send Message"}</span>
                 <Send size={16} />
               </button>
             </form>

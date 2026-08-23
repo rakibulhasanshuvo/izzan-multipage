@@ -1,10 +1,11 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { serializeProductList } from "@/lib/serialize";
 
 export async function fetchStorefrontProducts() {
   try {
-    return await prisma.product.findMany({
+    const products = await prisma.product.findMany({
       select: {
         id: true,
         name: true,
@@ -15,6 +16,7 @@ export async function fetchStorefrontProducts() {
       },
       orderBy: { name: "asc" },
     });
+    return serializeProductList(products);
   } catch (error) {
     console.error("Failed to fetch products for search:", error);
     return [];

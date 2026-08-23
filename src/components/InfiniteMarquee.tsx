@@ -1,6 +1,6 @@
 "use client";
 
-import { Product } from "@/generated/client";
+import type { ProductView as Product } from "@/lib/serialize";
 import { ProductCard } from "./ProductCard";
 
 interface InfiniteMarqueeProps {

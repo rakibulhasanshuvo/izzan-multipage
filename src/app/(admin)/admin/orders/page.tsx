@@ -1,13 +1,30 @@
 import React from "react";
 import { prisma } from "@/lib/db";
+import { serializeOrderList } from "@/lib/serialize";
+import { findFlaggedPhones } from "@/lib/fraud-flags";
 import OrdersTableClient from "@/components/admin/OrdersTableClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function OrdersPage() {
+const PAGE_SIZE = 20;
+
+export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const params = await searchParams;
+  const requestedPage = Number.parseInt(params.page ?? "", 10) || 1;
+
+  const total = await prisma.order.count();
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(Math.max(requestedPage, 1), totalPages);
+
   const orders = await prisma.order.findMany({
     orderBy: { createdAt: "desc" },
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
   });
+
+  // Phones with several recent active orders get a fraud-review badge in
+  // the table.
+  const flaggedPhones = await findFlaggedPhones();
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -20,7 +37,13 @@ export default async function OrdersPage() {
       </div>
 
       {/* Data Table */}
-      <OrdersTableClient initialOrders={orders} />
+      <OrdersTableClient
+        initialOrders={serializeOrderList(orders)}
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        flaggedPhones={flaggedPhones}
+      />
     </div>
   );
 }

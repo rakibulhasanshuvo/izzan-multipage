@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@prisma/client", "better-sqlite3"],
+  serverExternalPackages: ["@prisma/client"],
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000,

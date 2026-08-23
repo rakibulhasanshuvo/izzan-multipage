@@ -18,21 +18,7 @@ export default function OverviewChart({ data }: OverviewChartProps) {
   const [activeTab, setActiveTab] = useState<"revenue" | "orders">("revenue");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  // Fallback data if no database records exist
-  const hasData = data.some((d) => d.revenue > 0 || d.orders > 0);
-  const chartData = hasData
-    ? data
-    : [
-        { label: "Mon", revenue: 120, orders: 3, dateStr: "Projected" },
-        { label: "Tue", revenue: 150, orders: 4, dateStr: "Projected" },
-        { label: "Wed", revenue: 220, orders: 5, dateStr: "Projected" },
-        { label: "Thu", revenue: 180, orders: 4, dateStr: "Projected" },
-        { label: "Fri", revenue: 300, orders: 8, dateStr: "Projected" },
-        { label: "Sat", revenue: 450, orders: 12, dateStr: "Projected" },
-        { label: "Sun", revenue: 380, orders: 9, dateStr: "Projected" },
-      ];
-
-  const values = chartData.map((d) => (activeTab === "revenue" ? d.revenue : d.orders));
+  const values = data.map((d) => (activeTab === "revenue" ? d.revenue : d.orders));
   const maxVal = Math.max(...values, 10); // Avoid division by zero, set minimum scale limit
 
   // SVG dimensions
@@ -47,9 +33,9 @@ export default function OverviewChart({ data }: OverviewChartProps) {
   const chartHeight = svgHeight - paddingTop - paddingBottom;
 
   // Calculate coordinates
-  const points = chartData.map((d, i) => {
+  const points = data.map((d, i) => {
     const val = activeTab === "revenue" ? d.revenue : d.orders;
-    const x = paddingLeft + (i / (chartData.length - 1)) * chartWidth;
+    const x = paddingLeft + (i / (data.length - 1)) * chartWidth;
     const y = paddingTop + chartHeight - (val / maxVal) * chartHeight;
     return { x, y, val, label: d.label, dateStr: d.dateStr };
   });
@@ -81,7 +67,7 @@ export default function OverviewChart({ data }: OverviewChartProps) {
             Performance Trend
           </h3>
           <p className="text-[13px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-            {!hasData ? "Displaying projected target projections" : "Recent boutique activity"}
+            Recent boutique activity
           </p>
         </div>
         <div className="flex bg-zinc-100/80 dark:bg-zinc-800/80 p-1 rounded-xl border border-zinc-200/20 dark:border-zinc-700/30">
@@ -148,16 +134,6 @@ export default function OverviewChart({ data }: OverviewChartProps) {
               </g>
             );
           })}
-
-          {/* Dotted target projection background line (when there is no data) */}
-          {!hasData && (
-            <path
-              d={points.map((p, i) => (i === 0 ? `M ${p.x} ${p.y + 10}` : `L ${p.x} ${p.y + 10}`)).join(" ")}
-              className="fill-none stroke-zinc-300 dark:stroke-zinc-700"
-              strokeWidth="1.5"
-              strokeDasharray="6 6"
-            />
-          )}
 
           {/* Main Chart Path Area */}
           <AnimatePresence mode="popLayout">
@@ -265,7 +241,7 @@ export default function OverviewChart({ data }: OverviewChartProps) {
               </div>
               <div className="text-[14px] font-bold mt-0.5 font-mono">
                 {activeTab === "revenue"
-                  ? `$${points[hoveredIndex].val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  ? `$${points[hoveredIndex].val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                   : `${points[hoveredIndex].val} order${points[hoveredIndex].val === 1 ? "" : "s"}`}
               </div>
             </motion.div>

@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   description: "Handcrafted, Natural Candles & Essential Oils. Elevate Your Space.",
 };
 
-import { CartProvider } from "@/context/CartContext";
+import Providers from "@/components/Providers";
 
 import { Toaster } from "sonner";
 
@@ -98,10 +98,10 @@ export default async function RootLayout({
             disableTransitionOnChange
             nonce={nonce}
           >
-            <CartProvider>
+            <Providers>
               {children}
               <Toaster position="bottom-right" richColors />
-            </CartProvider>
+            </Providers>
           </ThemeProvider>
         </AuthProvider>
       </body>

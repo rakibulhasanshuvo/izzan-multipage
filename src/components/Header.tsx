@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ShoppingCart, Sun, Moon, ArrowRight, Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/store/cart-store";
 import { CartDrawer } from "./CartDrawer";
 import { Search } from "./Search";
 import { useMounted } from "@/hooks/useMounted";

@@ -2,57 +2,76 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Phone, User, Home, Mail } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import FocusTrap from "focus-trap-react";
 import { IMaskInput } from "react-imask";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useCart } from "@/context/CartContext";
+import { checkoutFormSchema, type CheckoutFormValues } from "@/lib/validation";
+import { useCart } from "@/store/cart-store";
 
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const FieldError = ({ message }: { message?: string }) =>
+  message ? <p className="text-xs text-red-600 dark:text-red-400 mt-1">{message}</p> : null;
+
 export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
-  const { cartItems, cartTotal, clearCart, toggleCart } = useCart();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { cartItems, cartTotal, clearCart, setCartOpen } = useCart();
   const idempotencyKeyRef = useRef("");
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    zila: "",
-    upozila: "",
-    shippingAddress: "",
+  // Anti-bot: records when the modal opened so instant submits (bots) are rejected
+  const openedAtRef = useRef(0);
+  const honeypotRef = useRef<HTMLInputElement>(null);
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<CheckoutFormValues>({
+    resolver: zodResolver(checkoutFormSchema),
+    defaultValues: {
+      name: "",
+      phone: "",
+      email: "",
+      zila: "",
+      upozila: "",
+      shippingAddress: "",
+    },
   });
 
   useEffect(() => {
     if (isOpen) {
       idempotencyKeyRef.current = crypto.randomUUID();
+      openedAtRef.current = Date.now();
     }
   }, [isOpen]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+  // Minimum realistic fill time; scripted submissions are near-instant.
+  const MIN_FILL_MS = 3000;
 
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  const placeOrder = useMutation({
+    mutationFn: async (values: CheckoutFormValues) => {
+      // Minimum realistic fill time; scripted submissions are near-instant.
+      if (Date.now() - openedAtRef.current < MIN_FILL_MS) {
+        throw new Error("Please take a moment to review your details before placing the order.");
+      }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...formData,
-          items: cartItems.map(item => ({ id: item.id, name: item.name, price: item.price, quantity: item.quantity })),
+          ...values,
+          items: cartItems.map(item => ({ id: item.id, name: item.name, variant: item.variant, price: item.price, quantity: item.quantity })),
           totalAmount: cartTotal,
           idempotencyKey: idempotencyKeyRef.current,
+          companyWebsite: honeypotRef.current?.value ?? "",
         }),
       });
 
@@ -61,18 +80,23 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       if (!response.ok) {
         throw new Error(data.error || "Failed to submit order");
       }
-
+      return data;
+    },
+    onSuccess: () => {
       toast.success("Order placed successfully! We will contact you soon.");
+      reset();
       clearCart();
       onClose();
-      // Also close the cart drawer if it's open
-      toggleCart();
-    } catch (error: unknown) {
+      // Explicitly close (not toggle) the cart drawer behind this modal.
+      setCartOpen(false);
+    },
+    onError: (error: unknown) => {
       toast.error(error instanceof Error ? error.message : "Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+  });
+
+  const inputClassName =
+    "w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all";
 
   return (
     <AnimatePresence>
@@ -111,7 +135,17 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 min-h-0">
-                  <form onSubmit={handleSubmit} className="space-y-4" id="checkout-form">
+                  <form onSubmit={handleSubmit((values) => placeOrder.mutate(values))} className="space-y-4" id="checkout-form">
+                    {/* Honeypot: invisible to humans; bots that autofill it are rejected server-side */}
+                    <input
+                      ref={honeypotRef}
+                      type="text"
+                      name="companyWebsite"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      className="hidden"
+                    />
                     <div className="space-y-1">
                       <label htmlFor="name" className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Full Name *</label>
                       <div className="relative">
@@ -121,15 +155,14 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                         <input
                           type="text"
                           id="name"
-                          name="name"
-                          required
                           autoComplete="name"
-                          value={formData.name}
-                          onChange={handleChange}
-                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
+                          aria-invalid={!!errors.name}
+                          {...register("name")}
+                          className={inputClassName}
                           placeholder="Your full name…"
                         />
                       </div>
+                      <FieldError message={errors.name?.message} />
                     </div>
 
                     <div className="space-y-1">
@@ -138,22 +171,26 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <Phone size={16} className="text-gray-400" />
                         </div>
-                        <IMaskInput
-                          mask="000-0000-0000"
-                          id="phone"
+                        <Controller
+                          control={control}
                           name="phone"
-                          required
-                          autoComplete="tel"
-                          inputMode="tel"
-                          value={formData.phone}
-                          unmask={true} // true|false|'typed'
-                          onAccept={(value: string) => {
-                            setFormData((prev) => ({ ...prev, phone: value }));
-                          }}
-                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
-                          placeholder="017-1234-5678…"
+                          render={({ field }) => (
+                            <IMaskInput
+                              mask="000-0000-0000"
+                              id="phone"
+                              autoComplete="tel"
+                              inputMode="tel"
+                              unmask={true} // true|false|'typed'
+                              value={field.value}
+                              onAccept={(value: string) => field.onChange(value)}
+                              onBlur={field.onBlur}
+                              className={inputClassName}
+                              placeholder="017-1234-5678…"
+                            />
+                          )}
                         />
                       </div>
+                      <FieldError message={errors.phone?.message} />
                     </div>
 
                     <div className="space-y-1">
@@ -165,15 +202,15 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                         <input
                           type="email"
                           id="email"
-                          name="email"
                           autoComplete="email"
                           spellCheck={false}
-                          value={formData.email}
-                          onChange={handleChange}
-                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
+                          aria-invalid={!!errors.email}
+                          {...register("email")}
+                          className={inputClassName}
                           placeholder="your@email.com…"
                         />
                       </div>
+                      <FieldError message={errors.email?.message} />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -186,15 +223,14 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                           <input
                             type="text"
                             id="zila"
-                            name="zila"
-                            required
                             autoComplete="address-level2"
-                            value={formData.zila}
-                            onChange={handleChange}
-                            className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
+                            aria-invalid={!!errors.zila}
+                            {...register("zila")}
+                            className={inputClassName}
                             placeholder="e.g. Dhaka…"
                           />
                         </div>
+                        <FieldError message={errors.zila?.message} />
                       </div>
 
                       <div className="space-y-1">
@@ -206,15 +242,14 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                           <input
                             type="text"
                             id="upozila"
-                            name="upozila"
-                            required
                             autoComplete="address-level3"
-                            value={formData.upozila}
-                            onChange={handleChange}
-                            className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all"
+                            aria-invalid={!!errors.upozila}
+                            {...register("upozila")}
+                            className={inputClassName}
                             placeholder="e.g. Mirpur…"
                           />
                         </div>
+                        <FieldError message={errors.upozila?.message} />
                       </div>
                     </div>
 
@@ -226,16 +261,15 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                         </div>
                         <textarea
                           id="shippingAddress"
-                          name="shippingAddress"
-                          required
                           autoComplete="street-address"
-                          value={formData.shippingAddress}
-                          onChange={handleChange}
                           rows={3}
-                          className="w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:bg-gray-800 dark:text-gray-100 text-sm transition-all resize-none"
+                          aria-invalid={!!errors.shippingAddress}
+                          {...register("shippingAddress")}
+                          className={`${inputClassName} resize-none`}
                           placeholder="House No, Road No, Area…"
                         />
                       </div>
+                      <FieldError message={errors.shippingAddress?.message} />
                     </div>
                   </form>
                 </div>
@@ -248,10 +282,10 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                   <button
                     type="submit"
                     form="checkout-form"
-                    disabled={isSubmitting}
+                    disabled={placeOrder.isPending}
                     className="w-full bg-primary text-white py-3.5 rounded-lg text-sm font-bold uppercase tracking-widest hover:bg-opacity-90 transition-all shadow-md active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
                   >
-                    {isSubmitting ? (
+                    {placeOrder.isPending ? (
                       <span className="flex items-center gap-2">
                         <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -272,3 +306,4 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     </AnimatePresence>
   );
 }
+

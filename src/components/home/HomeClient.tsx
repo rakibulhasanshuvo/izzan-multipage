@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { Product } from "@/generated/client";
+import type { ProductView as Product } from "@/lib/serialize";
 import { ProductCard } from "@/components/ProductCard";
 import { Search as SearchIcon, SlidersHorizontal, ArrowUpDown, ArrowRight, Leaf, Droplet, Flame, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";

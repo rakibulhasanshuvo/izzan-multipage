@@ -5,7 +5,7 @@ import { motion, AnimatePresence, Variants } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
 
-import { Product } from "@/generated/client";
+import type { ProductView as Product } from "@/lib/serialize";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },

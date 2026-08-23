@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { Product } from "@/generated/client";
-import { useCart } from "@/context/CartContext";
+import type { ProductView as Product } from "@/lib/serialize";
+import { useCart } from "@/store/cart-store";
 import { getProductMetadata } from "@/lib/productDetails";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { X, Plus, Minus, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -18,12 +19,22 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
   const { addToCart } = useCart();
   const metadata = useMemo(() => getProductMetadata(product.name), [product.name]);
 
-  const [selectedVolume, setSelectedVolume] = useState(() => 
-    metadata.volumeOptions && metadata.volumeOptions.length > 0 
-      ? metadata.volumeOptions[0] 
+  const [selectedVolume, setSelectedVolume] = useState(() =>
+    metadata.volumeOptions && metadata.volumeOptions.length > 0
+      ? metadata.volumeOptions[0]
       : ""
   );
   const [quantity, setQuantity] = useState(1);
+
+  useBodyScrollLock(true);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -31,7 +42,9 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
 
     const itemWithOption = {
       ...product,
-      name: selectedVolume ? `${product.name} (${selectedVolume})` : product.name
+      id: product.id,
+      name: product.name,
+      variant: selectedVolume || undefined
     };
 
     for (let i = 0; i < quantity; i++) {

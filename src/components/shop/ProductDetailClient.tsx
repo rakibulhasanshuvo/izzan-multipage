@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Product } from "@/generated/client";
-import { useCart } from "@/context/CartContext";
+import type { ProductView as Product } from "@/lib/serialize";
+import { useCart } from "@/store/cart-store";
 import { getProductMetadata } from "@/lib/productDetails";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { ProductCard } from "@/components/ProductCard";
 import { Plus, Minus, ShoppingBag, ArrowLeft, ChevronDown, ChevronUp, Star, Leaf, CheckCircle, ShieldCheck, Award, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,36 +40,8 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
   const [quantity, setQuantity] = useState(1);
   const [activeAccordion, setActiveAccordion] = useState<string | null>("ingredients");
 
-  // Interactive reviews state
-  const [reviews, setReviews] = useState<UserReview[]>([
-    {
-      id: 1,
-      name: "Sarah L.",
-      rating: 5,
-      date: "May 24, 2026",
-      title: "Absolutely divine scent",
-      comment: "The amber wood notes make my master bedroom feel like a luxury spa retreat. The burn is incredibly clean and slow.",
-      verified: true,
-    },
-    {
-      id: 2,
-      name: "Marcus K.",
-      rating: 4,
-      date: "June 02, 2026",
-      title: "Delicate and refreshing",
-      comment: "The bergamot is wonderfully clean. I use this mist diffuser oil in my office and it aids my focus significantly.",
-      verified: true,
-    },
-    {
-      id: 3,
-      name: "Elena R.",
-      rating: 5,
-      date: "June 09, 2026",
-      title: "Top-tier quality",
-      comment: "Truly natural and slow-burning candle. Most other candles trigger my allergies, but Izzan is clean and botanical.",
-      verified: true,
-    }
-  ]);
+  // Interactive reviews state (session-only until a review backend exists)
+  const [reviews, setReviews] = useState<UserReview[]>([]);
 
   const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false);
 
@@ -78,26 +51,17 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
   const [newTitle, setNewTitle] = useState("");
   const [newComment, setNewComment] = useState("");
 
-  // Prevent body scroll when review drawer is open
-  useEffect(() => {
-    if (isWriteReviewOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isWriteReviewOpen]);
+  // Prevent body scroll when review drawer is open (ref-counted shared lock)
+  useBodyScrollLock(isWriteReviewOpen);
 
   const handleAddToCart = () => {
-    const variantSlug = selectedVolume ? selectedVolume.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "";
     const itemWithOption = {
       ...product,
-      id: variantSlug ? `${product.id}-${variantSlug}` : product.id,
-      name: selectedVolume ? `${product.name} (${selectedVolume})` : product.name
+      id: product.id,
+      name: product.name,
+      variant: selectedVolume || undefined
     };
-    
+
     for (let i = 0; i < quantity; i++) {
       addToCart(itemWithOption);
     }
@@ -129,7 +93,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
       }),
       title: newTitle,
       comment: newComment,
-      verified: true
+      verified: false
     };
 
     setReviews(prev => [newReview, ...prev]);
@@ -147,6 +111,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
 
   // Stats calculation
   const statsAverage = useMemo(() => {
+    if (reviews.length === 0) return "—";
     const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
     return (sum / reviews.length).toFixed(1);
   }, [reviews]);
@@ -219,9 +184,9 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
               </div>
               <span className="font-semibold text-gray-700 dark:text-gray-300">{statsAverage}</span>
               <span className="text-gray-300">|</span>
-              <a href="#reviews" className="hover:underline hover:text-[#607c64] dark:hover:text-[#84a98c]">
-                {reviews.length} Verified Review{reviews.length === 1 ? "" : "s"}
-              </a>
+                <a href="#reviews" className="hover:underline hover:text-[#607c64] dark:hover:text-[#84a98c]">
+                  {reviews.length} Review{reviews.length === 1 ? "" : "s"}
+                </a>
             </div>
           </div>
 
@@ -441,7 +406,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
             <div className="space-y-2 pt-2">
               {[5, 4, 3, 2, 1].map((stars) => {
                 const count = reviews.filter(r => r.rating === stars).length;
-                const percentage = ((count / reviews.length) * 100).toFixed(0);
+                const percentage = reviews.length > 0 ? ((count / reviews.length) * 100).toFixed(0) : "0";
                 return (
                   <div key={stars} className="flex items-center text-xs text-gray-500 dark:text-gray-400 space-x-3">
                     <span className="w-12 text-right">{stars} star</span>
@@ -466,10 +431,16 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
           {/* Reviews list */}
           <div className="lg:col-span-8 space-y-6">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-4">
-              <span className="text-xs uppercase tracking-widest font-bold text-gray-400">Verified Reviews List</span>
+              <span className="text-xs uppercase tracking-widest font-bold text-gray-400">Reviews</span>
               <span className="text-xs text-gray-400">{reviews.length} Review{reviews.length === 1 ? "" : "s"}</span>
             </div>
 
+            {reviews.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">No reviews yet.</p>
+                <p className="text-xs text-gray-400 mt-2">Be the first to share your experience with this product.</p>
+              </div>
+            ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-800/40 space-y-6">
               {reviews.map((rev) => (
                 <div key={rev.id} className="pt-6 first:pt-0 space-y-2">
@@ -501,6 +472,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                 </div>
               ))}
             </div>
+            )}
           </div>
 
         </div>

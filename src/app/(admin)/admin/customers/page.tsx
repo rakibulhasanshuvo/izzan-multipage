@@ -1,12 +1,24 @@
 import React from "react";
 import { prisma } from "@/lib/db";
+import { serializeCustomerList } from "@/lib/serialize";
 import CustomersTableClient from "@/components/admin/CustomersTableClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function CustomersPage() {
+const PAGE_SIZE = 25;
+
+export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const params = await searchParams;
+  const requestedPage = Number.parseInt(params.page ?? "", 10) || 1;
+
+  const total = await prisma.customer.count();
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(Math.max(requestedPage, 1), totalPages);
+
   const customers = await prisma.customer.findMany({
     orderBy: { createdAt: "desc" },
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
   });
 
   return (
@@ -29,7 +41,7 @@ export default async function CustomersPage() {
         </div>
       </div>
 
-      <CustomersTableClient initialCustomers={customers} />
+      <CustomersTableClient initialCustomers={serializeCustomerList(customers)} page={page} totalPages={totalPages} total={total} />
     </div>
   );
 }

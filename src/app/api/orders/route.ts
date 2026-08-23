@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { apiHandler } from "@/lib/api";
 import { logger } from "@/lib/logger";
-import { getClientIp, checkRateLimit } from "@/lib/rate-limit";
+import {
+  checkRateLimit,
+  getClientIp,
+  MAX_PHONE_ORDERS_PER_HOUR,
+  PHONE_ORDER_WINDOW_MS,
+} from "@/lib/rate-limit";
 import { checkoutSchema } from "@/lib/validation";
 
 export const POST = apiHandler(async function POST(req: NextRequest) {
@@ -48,7 +53,33 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields or empty cart" }, { status: 400 });
   }
 
-  const { name, phone, email, zila, upozila, shippingAddress, items, idempotencyKey } = validationResult.data;
+  const { name, phone, email, zila, upozila, shippingAddress, items, idempotencyKey, companyWebsite } = validationResult.data;
+
+  // Honeypot: the hidden "companyWebsite" field is never filled by humans.
+  // A non-empty value means an automated client submitted the form.
+  if (companyWebsite && companyWebsite.trim() !== "") {
+    logger.warn("Checkout honeypot triggered", { ip });
+    return NextResponse.json({ error: "Failed to process order. Please try again." }, { status: 400 });
+  }
+
+  // Per-phone velocity limit: fake-order scams rotate IPs but reuse (or
+  // flood) target phone numbers. Runs before any DB work so abuse is cheap
+  // to reject. Retries of a legitimately failed checkout still fit in budget.
+  const phoneDigits = phone.replace(/\D/g, "");
+  if (phoneDigits.length > 0) {
+    const phoneAllowed = await checkRateLimit(
+      `order-phone:${phoneDigits}`,
+      MAX_PHONE_ORDERS_PER_HOUR,
+      PHONE_ORDER_WINDOW_MS
+    );
+    if (!phoneAllowed) {
+      logger.warn("Checkout phone velocity limit hit", { ip });
+      return NextResponse.json(
+        { error: "Too many orders from this phone number. Please contact us or try again later." },
+        { status: 429 }
+      );
+    }
+  }
 
   // Idempotency check to prevent duplicate orders
   if (idempotencyKey) {
@@ -89,6 +120,11 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
 
   const locationStr = `${shippingAddress}, ${upozila}, ${zila}`;
 
+  // Strips a trailing variant label like " (8 oz (220g) - Single Wick)" so
+  // legacy carts that stored suffixed names still resolve to the base product.
+  const baseName = (value: string): string =>
+    value.replace(/\s*\([^()]*\)\s*$/, "").trim();
+
   try {
     const orderResult = await prisma.$transaction(async (tx) => {
       // 1. Price verification & Stock validation
@@ -103,7 +139,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
       // Consolidate stock updates to reduce DB calls
       const stockUpdates = new Map<string, number>();
 
-      let calculatedTotal = 0;
+      let calculatedTotalCents = 0;
       for (const item of items) {
         if (!item.id || !item.quantity || item.quantity <= 0) {
            throw new Error(`Invalid item structure for ${item.name || 'unknown item'}`);
@@ -112,19 +148,25 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         let dbProduct = dbProducts.get(item.id);
 
         if (!dbProduct && item.name) {
-          // Fallback to name-based lookup if ID changed across DB resets
-          // Look up in our pre-fetched map
-          dbProduct = Array.from(dbProducts.values()).find(p => p.name === item.name);
+          // Fallback to name-based lookup if ID changed across DB resets.
+          // Compare against the base name (variant suffix stripped).
+          const lookupName = baseName(item.name);
+          dbProduct = Array.from(dbProducts.values()).find(p => p.name === lookupName);
 
-          if (!dbProduct) {
+          if (!dbProduct && lookupName !== item.name.trim()) {
              // Fallback to DB query only if not pre-fetched
              dbProduct = (await tx.product.findFirst({
-               where: { name: item.name }
+               where: { name: lookupName }
              })) || undefined;
-             if (dbProduct) {
-                dbProducts.set(dbProduct.id, dbProduct);
-                stockTracker.set(dbProduct.id, dbProduct.stock);
-             }
+          }
+          if (!dbProduct) {
+            dbProduct = (await tx.product.findFirst({
+              where: { name: item.name.trim() }
+            })) || undefined;
+          }
+          if (dbProduct) {
+             dbProducts.set(dbProduct.id, dbProduct);
+             stockTracker.set(dbProduct.id, dbProduct.stock);
           }
         }
 
@@ -134,12 +176,13 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
 
         // Ensure we're using the correct current ID from the DB
         item.id = dbProduct.id;
-        item.price = dbProduct.price; // Update price from DB to avoid mismatched data
+        // Store money as a plain number inside the serialized items JSON
+        item.price = Number(dbProduct.price);
 
         const currentStock = stockTracker.get(dbProduct.id) ?? dbProduct.stock;
-        
+
         if (currentStock < item.quantity) {
-          throw new Error(`Insufficient stock for ${dbProduct.name}. Only ${currentStock} left.`);
+          throw new Error(`Insufficient stock for ${dbProduct.name}.`);
         }
 
         // Update in-memory tracker
@@ -148,8 +191,18 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         // Accumulate stock updates
         stockUpdates.set(item.id, (stockUpdates.get(item.id) || 0) + item.quantity);
 
-        // Calculate total securely from DB prices
-        calculatedTotal += dbProduct.price * item.quantity;
+        // Calculate total securely from DB prices, accumulated in integer
+        // cents to avoid binary floating-point drift.
+        calculatedTotalCents += Math.round(Number(dbProduct.price) * 100) * item.quantity;
+      }
+
+      const calculatedTotal = calculatedTotalCents / 100;
+
+      // Sanity ceiling against bulk fake orders / client bugs. The real
+      // defense is DB-side pricing; this only blocks absurd aggregate totals.
+      const maxOrderTotal = Number(process.env.MAX_ORDER_TOTAL ?? "");
+      if (Number.isFinite(maxOrderTotal) && maxOrderTotal > 0 && calculatedTotal > maxOrderTotal) {
+        throw new Error("Order total exceeds the maximum allowed for a single order.");
       }
 
       // Perform consolidated stock updates and verify stock limits inside the write transaction
@@ -160,7 +213,7 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
         });
 
         if (updatedProduct.stock < 0) {
-          throw new Error(`Insufficient stock for ${updatedProduct.name}. Only ${updatedProduct.stock + quantity} left.`);
+          throw new Error(`Insufficient stock for ${updatedProduct.name}.`);
         }
       }
 
@@ -215,11 +268,33 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, orderId: orderResult.id });
 
   } catch (error: unknown) {
-    const err = error as Error;
+    const err = error as { message?: string; code?: string };
+
+    // Idempotency race: a concurrent request with the same key already
+    // created the order (unique violation). Report success with the
+    // original order instead of a misleading failure.
+    if (idempotencyKey && err?.code === "P2002") {
+      try {
+        const existingOrder = await prisma.order.findUnique({
+          where: { idempotencyKey }
+        });
+        if (existingOrder) {
+          return NextResponse.json({ success: true, orderId: existingOrder.id, message: "Order already processed" });
+        }
+      } catch {
+        // fall through to generic handling below
+      }
+    }
+
     // Only forward whitelisted, user-facing business messages; anything else
     // (e.g. Prisma internals) is logged server-side and returned generically.
     const message = err?.message || "";
-    const SAFE_MESSAGES = ["Insufficient stock", "Product not found:", "Invalid item structure"];
+    const SAFE_MESSAGES = [
+      "Insufficient stock",
+      "Product not found:",
+      "Invalid item structure",
+      "Order total exceeds the maximum allowed",
+    ];
     if (SAFE_MESSAGES.some((prefix) => message.startsWith(prefix))) {
       return NextResponse.json({ error: message }, { status: 400 });
     }

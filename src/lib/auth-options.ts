@@ -33,6 +33,16 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Too many login attempts. Please try again later.");
         }
 
+        // Per-account throttle: stops distributed brute-force attacks that
+        // rotate IPs but target a single username.
+        const usernameAllowed = await checkRateLimit(
+          `login:user:${credentials.username.trim().toLowerCase()}`,
+          MAX_LOGIN_ATTEMPTS
+        );
+        if (!usernameAllowed) {
+          throw new Error("Too many login attempts for this account. Please try again later.");
+        }
+
         const admin = await prisma.admin.findUnique({
           where: { username: credentials.username }
         });

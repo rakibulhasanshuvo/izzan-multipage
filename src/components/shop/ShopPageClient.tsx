@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Product } from "@/generated/client";
+import type { ProductView as Product } from "@/lib/serialize";
 import { ProductCard } from "@/components/ProductCard";
 import ScentQuiz from "@/components/shop/ScentQuiz";
 import QuickViewModal from "@/components/shop/QuickViewModal";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { Search as SearchIcon, SlidersHorizontal, ArrowUpDown, X, Tag, Percent, Mail } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import FocusTrap from "focus-trap-react";
@@ -53,26 +54,33 @@ export default function ShopPageClient({ initialProducts }: ShopPageClientProps)
   const [showQuiz, setShowQuiz] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState("");
-  const [isNewsletterSubmitted, setIsNewsletterSubmitted] = useState(false);
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (newsletterEmail.trim() === "") return;
-    setIsNewsletterSubmitted(true);
-    toast.success("Successfully subscribed to our newsletter!");
+    toast.info("Newsletter coming soon — thanks for your interest!");
   };
 
   // Prevent body scroll when mobile drawer is open
-  useEffect(() => {
-    if (isMobileFilterOpen) {
-      document.body.style.overflow = "hidden";
+  useBodyScrollLock(isMobileFilterOpen);
+
+  // Stable handlers for URL param syncing (stable identities keep the
+  // SearchParamsHandler effect from re-firing on every render)
+  const handleParamCategory = useCallback((cat: string) => {
+    if (["Best Sellers", "New Arrivals", "Sale"].includes(cat)) {
+      setSelectedCollections(prev =>
+        prev.length === 1 && prev[0] === cat ? prev : [cat]
+      );
     } else {
-      document.body.style.overflow = "unset";
+      setSelectedTypes(prev =>
+        prev.length === 1 && prev[0] === cat ? prev : [cat]
+      );
     }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isMobileFilterOpen]);
+  }, []);
+
+  const handleParamSearch = useCallback((q: string) => {
+    setSearchQuery(prev => (prev === q ? prev : q));
+  }, []);
 
   // Helper: Get Scent Family programmatically
   const getScentFamily = (name: string): string => {
@@ -699,65 +707,39 @@ export default function ShopPageClient({ initialProducts }: ShopPageClientProps)
               <Mail size={20} />
             </div>
             
-            <AnimatePresence mode="wait">
-              {!isNewsletterSubmitted ? (
-                <motion.div
-                  key="form"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-4"
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              <h2 className="text-2xl font-display font-semibold text-zinc-900 dark:text-gray-100">
+                Join The Quiet Ritual
+              </h2>
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-light leading-relaxed max-w-md mx-auto">
+                Subscribe to receive notes on small-batch drops, botanical sourcing journeys, and get 15% off your first addition.
+              </p>
+
+              <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 pt-2 max-w-md mx-auto">
+                <input
+                  type="email"
+                  id="newsletter-email"
+                  name="newsletter-email"
+                  required
+                  autoComplete="email"
+                  spellCheck={false}
+                  placeholder="Enter your email address…"
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  className="flex-grow px-5 py-3.5 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[#607c64] transition-all text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                />
+                <button
+                  type="submit"
+                  className="bg-[#607c64] hover:bg-[#4d6350] text-white px-8 py-3.5 rounded-full text-xs font-bold uppercase tracking-[0.1em] transition-all cursor-pointer shadow-md shadow-[#607c64]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#607c64]"
                 >
-                  <h2 className="text-2xl font-display font-semibold text-zinc-900 dark:text-gray-100">
-                    Join The Quiet Ritual
-                  </h2>
-                  <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-light leading-relaxed max-w-md mx-auto">
-                    Subscribe to receive notes on small-batch drops, botanical sourcing journeys, and get 15% off your first addition.
-                  </p>
-                  
-                  <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 pt-2 max-w-md mx-auto">
-                    <input
-                      type="email"
-                      id="newsletter-email"
-                      name="newsletter-email"
-                      required
-                      autoComplete="email"
-                      spellCheck={false}
-                      placeholder="Enter your email address…"
-                      value={newsletterEmail}
-                      onChange={(e) => setNewsletterEmail(e.target.value)}
-                      className="flex-grow px-5 py-3.5 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[#607c64] transition-all text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                    />
-                    <button
-                      type="submit"
-                      className="bg-[#607c64] hover:bg-[#4d6350] text-white px-8 py-3.5 rounded-full text-xs font-bold uppercase tracking-[0.1em] transition-all cursor-pointer shadow-md shadow-[#607c64]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#607c64]"
-                    >
-                      Subscribe
-                    </button>
-                  </form>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="space-y-4 py-4"
-                >
-                  <h3 className="text-2xl font-display font-semibold text-[#607c64] dark:text-[#84a98c]">
-                    Welcome to the Circle
-                  </h3>
-                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-light leading-relaxed max-w-md mx-auto">
-                    Thank you for subscribing! As promised, here is your 15% off coupon code for your first sanctuary addition:
-                  </p>
-                  <div className="inline-block px-6 py-2 border border-dashed border-[#607c64] dark:border-[#84a98c] bg-[#607c64]/5 rounded-xl font-bold tracking-[0.2em] text-[#607c64] dark:text-[#84a98c] text-sm md:text-base animate-pulse">
-                    CALM15
-                  </div>
-                  <p className="text-[10px] text-gray-400">
-                    Check your inbox for a confirmation and details on our next release.
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  Subscribe
+                </button>
+              </form>
+            </motion.div>
           </div>
         </div>
       </div>
@@ -775,14 +757,8 @@ export default function ShopPageClient({ initialProducts }: ShopPageClientProps)
       {/* Suspense listener for URL parameters */}
       <Suspense fallback={null}>
         <SearchParamsHandler
-          onCategoryChange={(cat) => {
-            if (["Best Sellers", "New Arrivals", "Sale"].includes(cat)) {
-              setSelectedCollections([cat]);
-            } else {
-              setSelectedTypes([cat]);
-            }
-          }}
-          onSearchChange={(q) => setSearchQuery(q)}
+          onCategoryChange={handleParamCategory}
+          onSearchChange={handleParamSearch}
         />
       </Suspense>
     </div>

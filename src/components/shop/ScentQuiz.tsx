@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Product } from "@/generated/client";
-import { useCart } from "@/context/CartContext";
+import type { ProductView as Product } from "@/lib/serialize";
+import { useCart } from "@/store/cart-store";
 import { Sparkles, RefreshCw, Check, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -64,9 +64,25 @@ export default function ScentQuiz({ products, onFilterMatch }: ScentQuizProps) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [added, setAdded] = useState(false);
 
+  // Timer handle for the step transition; cleared on new selects and unmount
+  const transitionTimerRef = useRef<number | null>(null);
+
+  const clearTransitionTimer = () => {
+    if (transitionTimerRef.current !== null) {
+      window.clearTimeout(transitionTimerRef.current);
+      transitionTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => clearTransitionTimer();
+  }, []);
+
   const handleSelect = (questionId: number, value: string) => {
+    if (transitionTimerRef.current !== null) return;
     setAnswers(prev => ({ ...prev, [questionId]: value }));
-    setTimeout(() => {
+    transitionTimerRef.current = window.setTimeout(() => {
+      transitionTimerRef.current = null;
       setStep(prev => prev + 1);
     }, 350);
   };

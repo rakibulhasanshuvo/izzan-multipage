@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Order } from "@/generated/client";
+import type { OrderView as Order } from "@/lib/serialize";
 import OrderDetailModal from "./OrderDetailModal";
 
 export default function RecentOrdersTableClient({ recentOrders }: { recentOrders: Order[] }) {
@@ -41,7 +41,7 @@ export default function RecentOrdersTableClient({ recentOrders }: { recentOrders
             {recentOrders.map((order, i) => {
               const dateStr = new Date(order.createdAt).toLocaleDateString(
                 "en-US",
-                { month: "short", day: "numeric", year: "numeric" },
+                { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" },
               );
               return (
                 <tr

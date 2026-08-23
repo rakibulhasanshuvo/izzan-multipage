@@ -28,11 +28,18 @@ describe("auth limits and checks", () => {
       process.env.TRUST_PROXY = "true";
     });
 
-    it("should extract first IP from x-forwarded-for header when proxy is trusted", () => {
+    it("should extract the right-most (proxy-appended) IP from x-forwarded-for when proxy is trusted", () => {
       const req = new NextRequest("http://localhost", {
         headers: { "x-forwarded-for": "203.0.113.195, 70.41.3.18, 150.172.238.178" },
       });
-      expect(getClientIp(req)).toBe("203.0.113.195");
+      expect(getClientIp(req)).toBe("150.172.238.178");
+    });
+
+    it("should not let a spoofed left-most XFF entry shadow the proxy-appended IP", () => {
+      const req = new NextRequest("http://localhost", {
+        headers: { "x-forwarded-for": "6.6.6.6, 150.172.238.178" },
+      });
+      expect(getClientIp(req)).toBe("150.172.238.178");
     });
 
     it("should fall back to x-real-ip when x-forwarded-for is missing and proxy is trusted", () => {

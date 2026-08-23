@@ -96,8 +96,29 @@ const productsMetadata: Record<string, Partial<ProductMetadata>> = {
   }
 };
 
+function findProductMetadata(name: string): Partial<ProductMetadata> | undefined {
+  const exact = productsMetadata[name];
+  if (exact) return exact;
+
+  const normalized = name.trim().toLowerCase();
+  const normalizedKey = (key: string) => key.trim().toLowerCase();
+
+  for (const key of Object.keys(productsMetadata)) {
+    if (normalizedKey(key) === normalized) {
+      return productsMetadata[key];
+    }
+  }
+
+  // Partial match only when exactly one custom entry corresponds to the name
+  const matches = Object.keys(productsMetadata).filter((key) => {
+    const candidate = normalizedKey(key);
+    return candidate.includes(normalized) || normalized.includes(candidate);
+  });
+  return matches.length === 1 ? productsMetadata[matches[0]] : undefined;
+}
+
 export function getProductMetadata(name: string): ProductMetadata {
-  const custom = productsMetadata[name] || {};
+  const custom = findProductMetadata(name) || {};
   const isOil = name.toLowerCase().includes("oil") || name.toLowerCase().includes("essence");
   const isDiffuser = name.toLowerCase().includes("diffuser") || name.toLowerCase().includes("salt");
   

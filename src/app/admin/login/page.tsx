@@ -4,23 +4,28 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginFormSchema, type LoginFormValues } from "@/lib/validation";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: { username: "", password: "" },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const onSubmit = async (values: LoginFormValues) => {
     setError("");
 
     try {
       const res = await signIn("credentials", {
-        username,
-        password,
+        ...values,
         redirect: false,
       });
 
@@ -40,8 +45,6 @@ export default function LoginPage() {
     } catch (error: unknown) {
       console.error("Login error:", error);
       setError("An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -57,7 +60,7 @@ export default function LoginPage() {
           <p className="text-[15px] text-zinc-600">Sign in to the admin dashboard.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {error && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
@@ -75,12 +78,15 @@ export default function LoginPage() {
             <input
               id="username"
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
+              autoComplete="username"
+              aria-invalid={!!errors.username}
+              {...register("username")}
               className="w-full bg-zinc-50 border border-zinc-200/50 rounded-xl px-4 py-3 text-[15px] text-zinc-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="Enter your username"
             />
+            {errors.username && (
+              <p className="text-xs text-red-600">{errors.username.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -90,20 +96,23 @@ export default function LoginPage() {
             <input
               id="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              autoComplete="current-password"
+              aria-invalid={!!errors.password}
+              {...register("password")}
               className="w-full bg-zinc-50 border border-zinc-200/50 rounded-xl px-4 py-3 text-[15px] text-zinc-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="Enter your password"
             />
+            {errors.password && (
+              <p className="text-xs text-red-600">{errors.password.message}</p>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="w-full bg-primary hover:bg-primary-dark text-white rounded-xl px-6 py-4 text-[15px] font-medium transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none mt-4"
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
         </form>
       </div>

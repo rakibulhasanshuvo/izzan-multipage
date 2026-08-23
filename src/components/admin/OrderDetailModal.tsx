@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { updateOrderStatus, updateOrderTracking } from "@/app/(admin)/admin/actions";
-import { Order } from "@/generated/client";
+import type { OrderView as Order } from "@/lib/serialize";
 
 interface OrderDetailModalProps {
   isOpen: boolean;
@@ -29,12 +29,23 @@ export default function OrderDetailModal({ isOpen, onClose, order }: OrderDetail
   if (!isOpen || !order) return null;
 
   // Parse items safely
-  let items: ParsedItem[] = [];
-  try {
-    items = JSON.parse(order.items) as ParsedItem[];
-  } catch (e) {
-    console.error("Failed to parse order items JSON:", e);
-  }
+  const items: ParsedItem[] = (() => {
+    try {
+      const parsed: unknown = JSON.parse(order.items);
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .filter((entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null)
+        .map((entry, index) => ({
+          id: typeof entry.id === "string" && entry.id ? entry.id : `item-${index}`,
+          name: String(entry.name ?? ""),
+          price: typeof entry.price === "number" && Number.isFinite(entry.price) ? entry.price : 0,
+          quantity: typeof entry.quantity === "number" && Number.isFinite(entry.quantity) ? entry.quantity : 0,
+        }));
+    } catch (e) {
+      console.error("Failed to parse order items JSON:", e);
+      return [];
+    }
+  })();
 
   const handleStatusChangeInModal = async (newStatus: string) => {
     setIsUpdatingStatus(true);
@@ -71,6 +82,7 @@ export default function OrderDetailModal({ isOpen, onClose, order }: OrderDetail
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "UTC",
   });
 
   return (

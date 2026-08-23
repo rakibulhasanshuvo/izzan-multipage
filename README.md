@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# izzan
+
+Next.js e-commerce storefront (Next.js 16, Prisma + PostgreSQL, NextAuth admin, Redis rate limiting).
+
+## Requirements
+
+- Node.js >= 20 (Next.js 16 / Prisma 6)
+- PostgreSQL 16
+- (Optional) Redis for shared rate limiting; falls back to in-memory per instance
 
 ## Getting Started
 
-First, run the development server:
+1. Copy `.env.example` to `.env` and fill in real values (secrets: `openssl rand -base64 32`).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. Start PostgreSQL.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+   **Option A — Docker Compose (recommended):**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+   ```bash
+   docker compose up -d postgres redis
+   # Postgres is exposed loopback-only on 127.0.0.1:5432
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   **Option B — native PostgreSQL:** install PostgreSQL locally and create a role/database matching `.env`:
 
-## Learn More
+   ```sql
+   CREATE ROLE izzan LOGIN PASSWORD '<POSTGRES_PASSWORD>' SUPERUSER;
+   CREATE DATABASE izzan OWNER izzan;
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. Apply migrations and seed:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   npx prisma migrate deploy   # applies prisma/migrations
+   npx prisma db seed          # products, CMS content, admin user (bcrypt from INITIAL_ADMIN_PASSWORD)
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. Run the app:
 
-## Deploy on Vercel
+   ```bash
+   npm run dev     # development
+   npm run build && npm run start  # production
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Health endpoint: `GET /api/health` returns `200 {"status":"ok","db":"ok"}` when the database is reachable.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Database notes
+
+- The Prisma migration history was **re-baselined** for PostgreSQL (`20260823000000_postgres_init`).
+  There is **no automatic data migration** from the legacy SQLite `dev.db` — moving old data requires a one-off ETL script.
+- `npm run db:push` exists for throwaway schema experiments only; never use it on an environment managed by migrations.
+- `prisma/seed.mjs` deletes existing products before seeding (`deleteMany`). Dev convenience only — do not point at production.
+- Backups: `scripts/backup.sh` / `backup.ps1` dump from the `docker compose` Postgres container when running,
+  otherwise fall back to a host-local `pg_dump`. Both require `BACKUP_PASSPHRASE` (output is AES-256-CBC encrypted).

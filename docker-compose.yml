@@ -25,13 +25,42 @@ services:
       - STORAGE_PROVIDER=local
       # Connect to local Redis for rate-limiting (with auth)
       - REDIS_URL=redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379
+      # PostgreSQL connection (internal compose network)
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-izzan}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-izzan}
     volumes:
-      # Mount the SQLite database to persist across container restarts
-      - ./prisma/dev.db:/app/prisma/dev.db
       # Mount the uploads directory to persist CMS media
       - ./public/uploads:/app/public/uploads
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: izzan-postgres
+    restart: unless-stopped
+    # Loopback-only exposure so the host can run `prisma migrate deploy` /
+    # `pg_dump` without exposing the database to the public internet.
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-izzan}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      - POSTGRES_DB=${POSTGRES_DB:-izzan}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-izzan} -d ${POSTGRES_DB:-izzan}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -43,4 +72,5 @@ services:
       - redis_data:/data
 
 volumes:
+  postgres_data:
   redis_data:

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { withAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { apiHandler } from "@/lib/api";
+import { serializeCustomer } from "@/lib/serialize";
 import { createCustomerSchema, updateCustomerSchema } from "@/lib/validation";
 
 export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
@@ -28,7 +30,10 @@ export const POST = withAuth(apiHandler(async function POST(req: NextRequest) {
       totalSpend: validatedData.totalSpend || 0,
     },
   });
-  return NextResponse.json(customer);
+
+  revalidatePath("/admin/customers");
+
+  return NextResponse.json(serializeCustomer(customer));
 }, "Failed to create customer"));
 
 export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) {
@@ -74,5 +79,7 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
     data: updateFields,
   });
 
-  return NextResponse.json(customer);
+  revalidatePath("/admin/customers");
+
+  return NextResponse.json(serializeCustomer(customer));
 }, "Failed to update customer"));

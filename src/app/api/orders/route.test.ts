@@ -225,7 +225,7 @@ describe('Orders API POST handler', () => {
     const req = createRequest({
       ...validPayload,
       items: [
-        { id: 'prod1', name: 'Product 1', quantity: 20, price: 100 },
+        { id: 'prod1', name: 'Product 1', quantity: 8, price: 100 },
       ],
     });
 
@@ -234,10 +234,10 @@ describe('Orders API POST handler', () => {
     prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
       const txMock = {
         product: {
-          // Mock stock 10 (less than 20 requested)
-          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
-          findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
-          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+          // Mock stock 5 (less than 8 requested)
+          findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 5 }]),
+          findUnique: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 5 }),
+          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 5 }),
         },
       };
 
@@ -250,7 +250,9 @@ describe('Orders API POST handler', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe('Insufficient stock for Product 1. Only 10 left.');
+    expect(data.error).toBe('Insufficient stock for Product 1.');
+    // Stock levels must not be disclosed to anonymous callers
+    expect(data.error).not.toContain('10');
   });
 
   it('should roll back and return 400 if database stock goes below zero post-update due to race conditions', async () => {
@@ -294,6 +296,68 @@ describe('Orders API POST handler', () => {
     expect(data.error).toContain('Too many checkout requests');
   });
 
+  it('should resolve legacy variant items via base-name fallback', async () => {
+    // Legacy carts stored suffixed names ("Product 1 (8 oz ...)"); these must
+    // still resolve to the base product instead of failing with 400.
+    const req = createRequest({
+      ...validPayload,
+      items: [
+        { id: 'prod1-8-oz-220g-single-wick', name: 'Product 1 (8 oz (220g) - Single Wick)', quantity: 1, price: 100 },
+      ],
+    });
+
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
+
+    prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
+      const txMock = {
+        product: {
+          findMany: vi.fn().mockResolvedValue([]),
+          findFirst: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }),
+          update: vi.fn().mockResolvedValue({ id: 'prod1', name: 'Product 1', stock: 9 }),
+        },
+        customer: {
+          create: vi.fn().mockResolvedValue({ id: 'cust1' }),
+        },
+        order: {
+          create: vi.fn().mockResolvedValue({ id: 'order3' }),
+        },
+      };
+
+      if (typeof callback === 'function') {
+        return callback(txMock);
+      }
+    });
+
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.orderId).toBe('order3');
+  });
+
+  it('should report success when a concurrent request already created the order (P2002 race)', async () => {
+    const req = createRequest({ ...validPayload, idempotencyKey: 'key-123' });
+
+    prismaMock.customer.findUnique.mockResolvedValue(null as any);
+
+    prismaMock.$transaction.mockImplementation(async () => {
+      const p2002 = Object.assign(new Error('Unique constraint failed'), { code: 'P2002' });
+      throw p2002;
+    });
+    // First call = idempotency precheck (miss); second = post-P2002 lookup
+    prismaMock.order.findUnique
+      .mockResolvedValueOnce(null as any)
+      .mockResolvedValueOnce({ id: 'order-original' } as any);
+
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.orderId).toBe('order-original');
+  });
+
   it('should return 400 if email has an invalid format', async () => {
     const req = createRequest({ ...validPayload, email: 'not-an-email' });
     const response = await POST(req);
@@ -301,6 +365,68 @@ describe('Orders API POST handler', () => {
 
     expect(response.status).toBe(400);
     expect(data.error).toBe('Missing required fields or empty cart');
+  });
+
+  // --- Fraud hardening ---
+
+  it('should reject submissions that filled the hidden honeypot field', async () => {
+    const req = createRequest({ ...validPayload, companyWebsite: 'http://spam.example' });
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Failed to process order. Please try again.');
+    // No DB work should have been attempted
+    expect(prismaMock.customer.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('should rate limit by phone number after repeated orders', async () => {
+    rateLimitMap.set('order-phone:01712345678', { count: 5, resetTime: Date.now() + 60_000 });
+
+    const req = createRequest(validPayload);
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(data.error).toContain('Too many orders from this phone number');
+  });
+
+  it('should enforce the per-item quantity cap', async () => {
+    const req = createRequest({
+      ...validPayload,
+      items: [{ id: 'prod1', name: 'Product 1', quantity: 11, price: 100 }],
+    });
+    const response = await POST(req);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Missing required fields or empty cart');
+  });
+
+  it('should reject orders whose DB-calculated total exceeds MAX_ORDER_TOTAL', async () => {
+    process.env.MAX_ORDER_TOTAL = '150';
+    try {
+      const req = createRequest(validPayload); // 100 × 2 = 200 > 150
+
+      prismaMock.customer.findUnique.mockResolvedValue(null as any);
+
+      prismaMock.$transaction.mockImplementation(async (callback: unknown) => {
+        const txMock = {
+          product: {
+            findMany: vi.fn().mockResolvedValue([{ id: 'prod1', name: 'Product 1', price: 100, stock: 10 }]),
+          },
+        };
+        if (typeof callback === 'function') return callback(txMock);
+      });
+
+      const response = await POST(req);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.error).toContain('Order total exceeds the maximum allowed');
+    } finally {
+      delete process.env.MAX_ORDER_TOTAL;
+    }
   });
 });
 

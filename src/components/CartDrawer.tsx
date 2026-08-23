@@ -3,8 +3,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import Image from "next/image";
-import { useCart } from "@/context/CartContext";
-import { useEffect, useState } from "react";
+import { useCart, cartLineKey } from "@/store/cart-store";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useState } from "react";
 import { CheckoutModal } from "./CheckoutModal";
 import FocusTrap from "focus-trap-react";
 
@@ -12,16 +13,7 @@ export function CartDrawer() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const { isCartOpen, toggleCart, cartItems, updateQuantity, removeFromCart, clearCart, cartTotal, cartCount } = useCart();
 
-  useEffect(() => {
-    if (isCartOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isCartOpen]);
+  useBodyScrollLock(isCartOpen);
 
   return (
     <AnimatePresence>
@@ -93,8 +85,8 @@ export function CartDrawer() {
                 </div>
               ) : (
                 cartItems.map((item) => (
-                  <motion.div 
-                    key={item.id} 
+                  <motion.div
+                    key={cartLineKey(item.id, item.variant)}
                     layout
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -105,9 +97,14 @@ export function CartDrawer() {
                     </div>
                     <div className="flex-1 flex flex-col">
                       <div className="flex justify-between items-start">
-                        <h4 className="text-sm font-display font-medium dark:text-gray-100">{item.name}</h4>
-                        <button 
-                          onClick={() => removeFromCart(item.id)}
+                        <div>
+                          <h4 className="text-sm font-display font-medium dark:text-gray-100">{item.name}</h4>
+                          {item.variant && (
+                            <p className="text-xs text-gray-400 mt-0.5">{item.variant}</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => removeFromCart(item.id, item.variant)}
                           className="text-gray-400 hover:text-red-500 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1"
                           aria-label="Remove item from cart"
                         >
@@ -115,19 +112,19 @@ export function CartDrawer() {
                         </button>
                       </div>
                       <p className="text-sm text-gray-500 mt-1">${item.price}</p>
-                      
+
                       <div className="mt-auto flex items-center justify-between">
                         <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-sm">
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1, item.variant)}
                             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
                             aria-label="Decrease quantity"
                           >
                             <Minus size={14} />
                           </button>
                           <span className="w-8 text-center text-xs font-semibold dark:text-gray-200">{item.quantity}</span>
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1, item.variant)}
                             className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors dark:text-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
                             aria-label="Increase quantity"
                           >

@@ -4,8 +4,18 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { checkAdminAuth } from "@/lib/auth";
-import { ORDER_STATUSES } from "@/lib/validation";
+import {
+  ORDER_STATUSES,
+  type OrderStatus,
+  createProductSchema,
+  updateProductSchema,
+} from "@/lib/validation";
+import {
+  updateOrderStatusWithLifecycle,
+  OrderLifecycleError,
+} from "@/lib/order-lifecycle";
 import { sanitizeCmsValue } from "@/lib/sanitize";
+import { serializeOrder, serializeProduct } from "@/lib/serialize";
 import bcrypt from "bcrypt";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
@@ -17,33 +27,35 @@ async function ensureAdmin() {
   }
 }
 
+// Optional string columns: an explicitly submitted empty value clears the
+// column (null) instead of storing "". Falsy values like 0 are preserved.
+function emptyToNull(value: string | null | undefined): string | null | undefined {
+  return value === undefined ? undefined : value === "" ? null : value;
+}
+
 export async function updateOrderStatus(id: string, status: string) {
   await ensureAdmin();
   if (
     !id ||
     !status ||
     typeof status !== "string" ||
-    !ORDER_STATUSES.includes(status.trim() as (typeof ORDER_STATUSES)[number])
+    !ORDER_STATUSES.includes(status.trim() as OrderStatus)
   ) {
     throw new Error(`Invalid input. Status must be one of: ${ORDER_STATUSES.join(", ")}`);
   }
 
-  const existingOrder = await prisma.order.findUnique({
-    where: { id }
-  });
+  try {
+    const order = await updateOrderStatusWithLifecycle(id, status.trim() as OrderStatus);
 
-  if (!existingOrder) {
-    throw new Error("Order not found");
+    revalidatePath("/admin/orders");
+    revalidatePath("/admin");
+    return serializeOrder(order);
+  } catch (error: unknown) {
+    if (error instanceof OrderLifecycleError) {
+      throw new Error(error.message);
+    }
+    throw error;
   }
-
-  const order = await prisma.order.update({
-    where: { id },
-    data: { status: status.trim() },
-  });
-
-  revalidatePath("/admin/orders");
-  revalidatePath("/admin");
-  return order;
 }
 
 export async function updateOrderTracking(
@@ -74,7 +86,7 @@ export async function updateOrderTracking(
 
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
-  return order;
+  return serializeOrder(order);
 }
 
 export async function deleteProduct(id: string) {
@@ -92,26 +104,9 @@ export async function deleteProduct(id: string) {
   return { success: true };
 }
 
-const ProductSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1, "Name must be a non-empty string"),
-  description: z.string().optional().nullable(),
-  price: z.coerce.number().min(0, "Invalid price"),
-  originalPrice: z.preprocess(val => val === '' ? null : val, z.coerce.number().nonnegative().nullable().optional()),
-  img: z.string().optional(),
-  hoverImg: z.string().optional().nullable(),
-  categories: z.string().optional(),
-  badge: z.string().optional().nullable(),
-  stock: z.coerce.number().int("Invalid stock").min(0, "Invalid stock"),
-});
-
-const ProductUpdateSchema = ProductSchema.partial().extend({
-  id: z.string().min(1, "Missing product ID")
-});
-
 export async function createProduct(data: unknown) {
   await ensureAdmin();
-  const parsed = ProductSchema.safeParse(data);
+  const parsed = createProductSchema.safeParse(data);
   if (!parsed.success) {
     throw new Error("Missing required fields or invalid data");
   }
@@ -119,27 +114,26 @@ export async function createProduct(data: unknown) {
   const product = await prisma.product.create({
     data: {
       name: parsed.data.name,
-      description: parsed.data.description || null,
+      description: emptyToNull(parsed.data.description) ?? null,
       price: parsed.data.price,
-      originalPrice: parsed.data.originalPrice || null,
-      img: parsed.data.img || "",
-      hoverImg: parsed.data.hoverImg || null,
-      categories: parsed.data.categories || "",
-      badge: parsed.data.badge || null,
+      originalPrice: parsed.data.originalPrice ?? null,
+      img: parsed.data.img,
+      hoverImg: emptyToNull(parsed.data.hoverImg) ?? null,
+      categories: parsed.data.categories,
+      badge: emptyToNull(parsed.data.badge) ?? null,
       stock: parsed.data.stock,
     },
   });
 
   revalidatePath("/admin/products");
-  // Keep the ISR storefront catalog in sync with inventory changes
   revalidatePath("/");
   revalidatePath("/shop");
-  return product;
+  return serializeProduct(product);
 }
 
 export async function updateProduct(data: unknown) {
   await ensureAdmin();
-  const parsed = ProductUpdateSchema.safeParse(data);
+  const parsed = updateProductSchema.safeParse(data);
   if (!parsed.success) {
     throw new Error("Missing product ID or invalid data");
   }
@@ -155,25 +149,30 @@ export async function updateProduct(data: unknown) {
   const product = await prisma.product.update({
     where: { id },
     data: {
-      ...updateFields,
-      description: updateFields.description !== undefined ? updateFields.description || null : undefined,
-      originalPrice: updateFields.originalPrice !== undefined ? updateFields.originalPrice || null : undefined,
-      hoverImg: updateFields.hoverImg !== undefined ? updateFields.hoverImg || null : undefined,
-      badge: updateFields.badge !== undefined ? updateFields.badge || null : undefined,
+      name: updateFields.name,
+      description: emptyToNull(updateFields.description),
+      price: updateFields.price,
+      // 0 is a legitimate sale-price value and must survive the update
+      originalPrice: updateFields.originalPrice,
+      img: updateFields.img,
+      hoverImg: emptyToNull(updateFields.hoverImg),
+      categories: updateFields.categories,
+      badge: emptyToNull(updateFields.badge),
+      stock: updateFields.stock,
     },
   });
 
   revalidatePath("/admin/products");
-  // Keep the ISR storefront catalog in sync with inventory changes
   revalidatePath("/");
   revalidatePath("/shop");
-  return product;
+  return serializeProduct(product);
 }
 
 const SettingsSchema = z.object({
   firstName: z.string().min(1, "First name must be a non-empty string").optional(),
   lastName: z.string().min(1, "Last name must be a non-empty string").optional(),
-  email: z.string().email("Valid email is required").optional(),
+  // Empty string = "no change" (the column is NOT NULL + unique in the DB)
+  email: z.string().email("Valid email is required").optional().or(z.literal("")),
   bio: z.string().optional(),
   emailAlerts: z.boolean().optional(),
   orderNotifs: z.boolean().optional(),
@@ -188,20 +187,28 @@ export async function updateSettings(data: unknown) {
     throw new Error("Invalid settings data");
   }
 
+  // "" means the field was cleared client-side; since AdminSettings.email is
+  // NOT NULL we treat that as "keep current value" rather than failing.
+  const { email, ...settingsFields } = parsed.data;
+  const updateData: typeof settingsFields & { email?: string } = { ...settingsFields };
+  if (email) {
+    updateData.email = email;
+  }
+
   let settings = await prisma.adminSettings.findFirst();
 
   try {
     if (settings) {
       settings = await prisma.adminSettings.update({
         where: { id: settings.id },
-        data: parsed.data,
+        data: updateData,
       });
     } else {
       settings = await prisma.adminSettings.create({
         data: {
           firstName: parsed.data.firstName || "Admin",
           lastName: parsed.data.lastName || "User",
-          email: parsed.data.email || "admin@example.com",
+          email: email || "admin@example.com",
           bio: parsed.data.bio || "",
           emailAlerts: parsed.data.emailAlerts ?? true,
           orderNotifs: parsed.data.orderNotifs ?? true,
@@ -289,7 +296,7 @@ export async function updateAdminCredentials(data: unknown) {
     if (newPassword.length < 8) {
       throw new Error("New password must be at least 8 characters long");
     }
-    updateData.password = await bcrypt.hash(newPassword, 10);
+    updateData.password = await bcrypt.hash(newPassword, 12);
   }
 
   if (Object.keys(updateData).length > 0) {

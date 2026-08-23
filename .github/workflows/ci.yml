@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: izzan
+          POSTGRES_PASSWORD: ci-password
+          POSTGRES_DB: izzan
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U izzan"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://izzan:ci-password@localhost:5432/izzan
+      ADMIN_TOKEN: ci-only-admin-token
+      ALLOW_ADMIN_TOKEN: "true"
+      NEXTAUTH_SECRET: ci-only-nextauth-secret
+      NEXTAUTH_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma validate & generate
+        run: npx prisma validate && npx prisma generate
+
+      - name: Apply migrations to clean PostgreSQL
+        run: npx prisma migrate deploy
+
+      - name: Typecheck (zero errors)
+        run: npx tsc --noEmit
+
+      - name: Audit (zero vulnerabilities)
+        run: npm audit --audit-level=low
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build

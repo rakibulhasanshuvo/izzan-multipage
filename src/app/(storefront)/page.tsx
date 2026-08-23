@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/db";
+import { serializeProductList } from "@/lib/serialize";
 import HomeClient from "@/components/home/HomeClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   // Fetch products
@@ -16,5 +17,5 @@ export default async function Home() {
     return acc;
   }, {});
 
-  return <HomeClient products={products} cms={cmsMap} />;
+  return <HomeClient products={serializeProductList(products)} cms={cmsMap} />;
 }

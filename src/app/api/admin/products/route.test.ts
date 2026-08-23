@@ -10,6 +10,8 @@ import { PATCH } from "./route";
 
 vi.mock("next-auth/next", () => ({ getServerSession: vi.fn().mockResolvedValue(true) }));
 
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+
 vi.mock('@/lib/db', async () => {
   const { mockDeep } = await import('vitest-mock-extended');
   return {

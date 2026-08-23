@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Search as SearchIcon, X, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchStorefrontProducts } from "@/app/actions/products";
-import { Product } from "@/generated/client";
+import type { ProductView as Product } from "@/lib/serialize";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -13,12 +13,16 @@ export function Search() {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const fetchedOnce = useRef(false);
 
   useEffect(() => {
-    if (isOpen && dbProducts.length === 0) {
+    if (isOpen && !fetchedOnce.current) {
+      // Flag set synchronously so exactly one attempt happens per mount,
+      // even if the action errors or returns an empty catalog.
+      fetchedOnce.current = true;
       fetchStorefrontProducts().then((data) => setDbProducts(data as unknown as Product[]));
     }
-  }, [isOpen, dbProducts.length]);
+  }, [isOpen]);
 
   const results = useMemo(() => {
     if (query.trim() === "") {

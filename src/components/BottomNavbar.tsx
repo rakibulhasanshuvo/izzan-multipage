@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ShoppingBag, ShoppingCart, BookOpen, Phone } from "lucide-react";
-import { useCart } from "@/context/CartContext";
+import { useCart } from "@/store/cart-store";
 import { motion } from "framer-motion";
 import { useMounted } from "@/hooks/useMounted";
 
@@ -47,7 +47,7 @@ export function BottomNavbar() {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/80 dark:bg-[#1a1f1b]/80 backdrop-blur-lg border-t border-black/5 dark:border-white/5 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-all duration-300">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[70] bg-white/80 dark:bg-[#1a1f1b]/80 backdrop-blur-lg border-t border-black/5 dark:border-white/5 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] transition-all duration-300">
       <nav aria-label="Mobile Navigation" className="flex justify-around items-center h-12 max-w-md mx-auto relative">
         {navItems.map((item) => {
           const Icon = item.icon;

@@ -1,12 +1,33 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-import { Customer } from "@/generated/client";
+import type { CustomerView as Customer } from "@/lib/serialize";
 
-export default function CustomersTableClient({ initialCustomers }: { initialCustomers: Customer[] }) {
-  const [customers] = useState<Customer[]>(initialCustomers);
+export default function CustomersTableClient({
+  initialCustomers,
+  page,
+  totalPages,
+  total,
+}: {
+  initialCustomers: Customer[];
+  page: number;
+  totalPages: number;
+  total: number;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const customers = initialCustomers;
+
+  const goToPage = (targetPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(targetPage));
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
   const activeGoldCount = customers.filter(c => c.tier === "Gold").length;
   const avgLTV = customers.length > 0 
@@ -71,7 +92,7 @@ export default function CustomersTableClient({ initialCustomers }: { initialCust
             </thead>
             <tbody className="text-[15px] text-zinc-800 dark:text-zinc-200">
               {customers.map((customer) => {
-                const joinDate = new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const joinDate = new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
                 const initials = customer.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
                 
                 return (
@@ -121,12 +142,22 @@ export default function CustomersTableClient({ initialCustomers }: { initialCust
         </div>
         {/* Pagination */}
         <div className="px-6 py-4 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50">
-          <span className="text-[13px] text-zinc-500 dark:text-zinc-400 font-medium">Showing {customers.length} entries</span>
+          <span className="text-[13px] text-zinc-500 dark:text-zinc-400 font-medium">Showing {customers.length} of {total} entries · Page {page} of {totalPages}</span>
           <div className="flex gap-2">
-            <button aria-label="Previous page" className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" disabled>
+            <button
+              aria-label="Previous page"
+              onClick={() => goToPage(page - 1)}
+              disabled={page <= 1}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
               <span className="material-symbols-outlined text-[18px]">chevron_left</span>
             </button>
-            <button aria-label="Next page" className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" disabled>
+            <button
+              aria-label="Next page"
+              onClick={() => goToPage(page + 1)}
+              disabled={page >= totalPages}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
               <span className="material-symbols-outlined text-[18px]">chevron_right</span>
             </button>
           </div>

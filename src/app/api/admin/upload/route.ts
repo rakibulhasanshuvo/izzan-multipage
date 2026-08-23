@@ -31,13 +31,25 @@ const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".
 
 // Per-IP daily upload quota to prevent disk exhaustion
 const MAX_DAILY_UPLOAD_BYTES = 500 * 1024 * 1024; // 500 MB / day / IP
+// Prune stale entries once the map grows past this size so it cannot grow unbounded
+const MAX_QUOTA_MAP_ENTRIES = 1000;
 const uploadQuotaMap = new Map<string, { date: string; bytes: number }>();
+
+function pruneStaleQuotas(today: string): void {
+  if (uploadQuotaMap.size <= MAX_QUOTA_MAP_ENTRIES) return;
+  for (const [ip, record] of uploadQuotaMap) {
+    if (record.date !== today) {
+      uploadQuotaMap.delete(ip);
+    }
+  }
+}
 
 function trackUploadBytes(ip: string, bytes: number): void {
   const today = new Date().toISOString().slice(0, 10);
   const record = uploadQuotaMap.get(ip);
   if (!record || record.date !== today) {
     uploadQuotaMap.set(ip, { date: today, bytes });
+    pruneStaleQuotas(today);
     return;
   }
   record.bytes += bytes;

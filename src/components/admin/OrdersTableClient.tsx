@@ -3,13 +3,28 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { updateOrderStatus } from "@/app/(admin)/admin/actions";
-import { Order } from "@/generated/client";
+import type { OrderView as Order } from "@/lib/serialize";
 import OrderDetailModal from "./OrderDetailModal";
 
-export default function OrdersTableClient({ initialOrders }: { initialOrders: Order[] }) {
+export default function OrdersTableClient({
+  initialOrders,
+  page,
+  totalPages,
+  total,
+  flaggedPhones = [],
+}: {
+  initialOrders: Order[];
+  page: number;
+  totalPages: number;
+  total: number;
+  /** Phones with several recent non-cancelled orders (possible fake-order scam) */
+  flaggedPhones?: string[];
+}) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   
   // Search & Filter state
@@ -18,9 +33,20 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
   const [dateFilter, setDateFilter] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
 
+  // Stable "now" anchor for the date filter, captured in the change handler
+  // (not during render). Null = no window filtering (SSR-safe first paint).
+  const [dateFilterNow, setDateFilterNow] = useState<number | null>(null);
+
+  const applyDateFilter = (value: string) => {
+    setDateFilter(value);
+    setDateFilterNow(value === "All" ? null : Date.now());
+  };
+
   // Modal State
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const selectedOrder = initialOrders.find((o) => o.id === selectedOrderId) ?? null;
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     setUpdatingId(id);
@@ -37,8 +63,14 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
   };
 
   const openOrderDetail = (order: Order) => {
-    setSelectedOrder(order);
+    setSelectedOrderId(order.id);
     setIsModalOpen(true);
+  };
+
+  const goToPage = (targetPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(targetPage));
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   // Filter logic
@@ -53,21 +85,12 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
     // Status filter
     const matchesStatus = statusFilter === "All" || order.status === statusFilter;
 
-    // Date filter
+    // Date filter (window anchored to a stable timestamp per filter selection)
     let matchesDate = true;
-    if (dateFilter !== "All") {
-      const orderDate = new Date(order.createdAt).getTime();
-      const now = new Date().getTime();
-      const diffTime = Math.abs(now - orderDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      if (dateFilter === "24h") {
-        matchesDate = diffTime <= 24 * 60 * 60 * 1000;
-      } else if (dateFilter === "7d") {
-        matchesDate = diffDays <= 7;
-      } else if (dateFilter === "30d") {
-        matchesDate = diffDays <= 30;
-      }
+    if (dateFilter !== "All" && dateFilterNow !== null) {
+      const days = dateFilter === "24h" ? 1 : dateFilter === "7d" ? 7 : 30;
+      const orderTime = new Date(order.createdAt).getTime();
+      matchesDate = orderTime <= dateFilterNow && orderTime >= dateFilterNow - days * 86400000;
     }
 
     return matchesSearch && matchesStatus && matchesDate;
@@ -131,7 +154,7 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
                   <select 
                     aria-label="Filter by date range"
                     value={dateFilter} 
-                    onChange={(e) => setDateFilter(e.target.value)}
+                    onChange={(e) => applyDateFilter(e.target.value)}
                     className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-[13px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
                   >
                     <option value="All">All Time</option>
@@ -142,7 +165,7 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
                 </div>
                 {(statusFilter !== "All" || dateFilter !== "All") && (
                   <button 
-                    onClick={() => { setStatusFilter("All"); setDateFilter("All"); }}
+                    onClick={() => { setStatusFilter("All"); applyDateFilter("All"); }}
                     className="w-full mt-4 text-[12px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 py-1 transition-colors"
                   >
                     Clear Filters
@@ -172,8 +195,9 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
             </thead>
             <tbody className="text-[15px] text-zinc-800 dark:text-zinc-200">
               {filteredOrders.map((order) => {
-                const dateStr = new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const dateStr = new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
                 const initials = order.customerName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+                const isFlagged = flaggedPhones.includes(order.customerPhone);
                 
                 return (
                   <tr 
@@ -191,7 +215,17 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
                         </div>
                         <div className="flex flex-col">
                           <span className="font-medium text-zinc-800 dark:text-zinc-100">{order.customerName}</span>
-                          <span className="text-[12px] text-zinc-500 dark:text-zinc-400">{order.customerPhone || order.customerEmail || 'No contact info'}</span>
+                          <span className="text-[12px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
+                            {order.customerPhone || order.customerEmail || 'No contact info'}
+                            {isFlagged && (
+                              <span
+                                title="Multiple orders from this number in the last 24 hours — review for fake/duplicate orders"
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-red-50 text-red-700 border border-red-200/60 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50"
+                              >
+                                Check
+                              </span>
+                            )}
+                          </span>
                         </div>
                       </div>
                     </td>
@@ -240,12 +274,22 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
         </div>
         {/* Pagination Footer */}
         <div className="px-6 py-4 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50">
-          <span className="text-[13px] text-zinc-500 dark:text-zinc-400 font-medium">Showing {filteredOrders.length} orders</span>
+          <span className="text-[13px] text-zinc-500 dark:text-zinc-400 font-medium">Showing {filteredOrders.length} of {total} orders · Page {page} of {totalPages}</span>
           <div className="flex gap-2">
-            <button aria-label="Previous page" className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors disabled:opacity-50" disabled>
+            <button
+              aria-label="Previous page"
+              onClick={() => goToPage(page - 1)}
+              disabled={page <= 1}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors disabled:opacity-50"
+            >
               <span className="material-symbols-outlined text-[18px]">chevron_left</span>
             </button>
-            <button aria-label="Next page" className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors disabled:opacity-50" disabled>
+            <button
+              aria-label="Next page"
+              onClick={() => goToPage(page + 1)}
+              disabled={page >= totalPages}
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors disabled:opacity-50"
+            >
               <span className="material-symbols-outlined text-[18px]">chevron_right</span>
             </button>
           </div>
@@ -257,7 +301,7 @@ export default function OrdersTableClient({ initialOrders }: { initialOrders: Or
         isOpen={isModalOpen} 
         onClose={() => {
           setIsModalOpen(false);
-          setSelectedOrder(null);
+          setSelectedOrderId(null);
         }} 
         order={selectedOrder} 
       />

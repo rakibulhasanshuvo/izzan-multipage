@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { withAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { apiHandler } from "@/lib/api";
@@ -27,6 +28,9 @@ export const PATCH = withAuth(apiHandler(async function PATCH(req: NextRequest) 
     where: { id },
     data: { value: sanitizedValue },
   });
+
+  revalidatePath("/admin/cms");
+  revalidatePath("/");
 
   return NextResponse.json(content);
 }, "Failed to update CMS content"));

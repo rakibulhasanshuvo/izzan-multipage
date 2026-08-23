@@ -5,49 +5,77 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { updateSettings, updateAdminCredentials } from "@/app/(admin)/admin/actions";
 import { signOut } from "next-auth/react";
 
 import { AdminSettings } from "@/generated/client";
+import {
+  settingsProfileFormSchema,
+  securityFormSchema,
+  type SettingsProfileFormValues,
+  type SecurityFormValues,
+} from "@/lib/validation";
+
+const inputClassName =
+  "w-full bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl px-4 py-3.5 text-[15px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all";
+
+const FieldError = ({ message }: { message?: string }) =>
+  message ? <p className="text-xs text-red-600 dark:text-red-400 mt-1">{message}</p> : null;
 
 export default function SettingsFormClient({ initialSettings, adminUsername }: { initialSettings: AdminSettings, adminUsername: string }) {
   const router = useRouter();
-
-  const [firstName, setFirstName] = useState(initialSettings?.firstName || "");
-  const [lastName, setLastName] = useState(initialSettings?.lastName || "");
-  const [email, setEmail] = useState(initialSettings?.email || "");
-  const [bio, setBio] = useState(initialSettings?.bio || "");
-
-  const [emailAlerts, setEmailAlerts] = useState(initialSettings?.emailAlerts ?? true);
-  const [orderNotifs, setOrderNotifs] = useState(initialSettings?.orderNotifs ?? true);
-  const [marketingUpdates, setMarketingUpdates] = useState(initialSettings?.marketingUpdates ?? false);
-  const [avatarUrl, setAvatarUrl] = useState(initialSettings?.avatarUrl || "");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [savingSecurity, setSavingSecurity] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    getValues,
+    formState: { errors: profileErrors, isSubmitting: savingProfile },
+  } = useForm<SettingsProfileFormValues>({
+    resolver: zodResolver(settingsProfileFormSchema),
+    defaultValues: {
+      firstName: initialSettings?.firstName || "",
+      lastName: initialSettings?.lastName || "",
+      email: initialSettings?.email || "",
+      bio: initialSettings?.bio || "",
+      emailAlerts: initialSettings?.emailAlerts ?? true,
+      orderNotifs: initialSettings?.orderNotifs ?? true,
+      marketingUpdates: initialSettings?.marketingUpdates ?? false,
+      avatarUrl: initialSettings?.avatarUrl || "",
+    },
+  });
 
-  const [username, setUsername] = useState(adminUsername);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const avatarUrl = watch("avatarUrl");
+  const emailAlerts = watch("emailAlerts");
+  const orderNotifs = watch("orderNotifs");
+  const marketingUpdates = watch("marketingUpdates");
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavingProfile(true);
+  const {
+    register: registerSecurity,
+    handleSubmit: handleSecuritySubmit,
+    formState: { errors: securityErrors, isSubmitting: savingSecurity },
+  } = useForm<SecurityFormValues>({
+    resolver: zodResolver(securityFormSchema),
+    defaultValues: {
+      username: adminUsername,
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
 
+  const onSaveProfile = async (values: SettingsProfileFormValues) => {
     try {
-      await updateSettings({
-        firstName, lastName, email, bio, emailAlerts, orderNotifs, marketingUpdates, avatarUrl
-      });
-
+      await updateSettings(values);
       toast.success("Settings saved successfully.");
       router.refresh();
     } catch (error) {
       console.error("Error updating settings:", error);
       toast.error(error instanceof Error ? error.message : "Error saving settings");
-    } finally {
-      setSavingProfile(false);
     }
   };
 
@@ -72,12 +100,11 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
       }
 
       await updateSettings({
-        firstName, lastName, email, bio,
-        emailAlerts, orderNotifs, marketingUpdates,
+        ...getValues(),
         avatarUrl: data.url,
       });
 
-      setAvatarUrl(data.url);
+      setValue("avatarUrl", data.url);
       toast.success("Avatar updated successfully!");
       router.refresh();
     } catch (error) {
@@ -88,21 +115,12 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
     }
   };
 
-  const handleSaveSecurity = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newPassword && newPassword !== confirmPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
-
-    setSavingSecurity(true);
-
+  const onSaveSecurity = async (values: SecurityFormValues) => {
     try {
       await updateAdminCredentials({
-        currentPassword,
-        newUsername: username,
-        newPassword
+        currentPassword: values.currentPassword,
+        newUsername: values.username,
+        newPassword: values.newPassword
       });
 
       toast.success("Security credentials updated. Please log in again.");
@@ -112,14 +130,12 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
     } catch (error: unknown) {
       console.error("Error updating security:", error);
       toast.error(error instanceof Error ? error.message : "Error updating security credentials");
-    } finally {
-      setSavingSecurity(false);
     }
   };
 
   return (
     <div className="space-y-8">
-      <form onSubmit={handleSaveProfile} className="space-y-8">
+      <form onSubmit={handleSubmit(onSaveProfile)} className="space-y-8">
         {/* Profile Section */}
         <section id="profile" className="bg-white/80 dark:bg-zinc-900/50 backdrop-blur-3xl rounded-3xl p-8 md:p-10 border border-white dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-colors duration-300">
           <div className="mb-8">
@@ -156,20 +172,21 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label htmlFor="firstName" className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-widest pl-1">First Name</label>
-                <input id="firstName" name="firstName" aria-label="First Name" type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl px-4 py-3.5 text-[15px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all" />
+                <input id="firstName" aria-label="First Name" type="text" {...register("firstName")} className={inputClassName} />
               </div>
               <div className="space-y-2">
                 <label htmlFor="lastName" className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-widest pl-1">Last Name</label>
-                <input id="lastName" name="lastName" aria-label="Last Name" type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl px-4 py-3.5 text-[15px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all" />
+                <input id="lastName" aria-label="Last Name" type="text" {...register("lastName")} className={inputClassName} />
               </div>
             </div>
             <div className="space-y-2">
               <label htmlFor="email" className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-widest pl-1">Email Address</label>
-              <input id="email" name="email" aria-label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl px-4 py-3.5 text-[15px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all" />
+              <input id="email" aria-label="Email" type="email" {...register("email")} className={inputClassName} />
+              <FieldError message={profileErrors.email?.message} />
             </div>
             <div className="space-y-2">
               <label htmlFor="bio" className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-widest pl-1">Bio</label>
-              <textarea id="bio" name="bio" aria-label="Bio" value={bio} onChange={e => setBio(e.target.value)} rows={4} className="w-full bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl px-4 py-3.5 text-[15px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all resize-none" />
+              <textarea id="bio" aria-label="Bio" rows={4} {...register("bio")} className={`${inputClassName} resize-none`} />
             </div>
           </div>
         </section>
@@ -189,7 +206,7 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
               </div>
               <button
                 type="button"
-                onClick={() => setEmailAlerts(!emailAlerts)}
+                onClick={() => setValue("emailAlerts", !emailAlerts, { shouldDirty: true })}
                 className={cn(
                   "w-12 h-6 rounded-full transition-colors relative",
                   emailAlerts ? "bg-zinc-900 dark:bg-primary" : "bg-zinc-200 dark:bg-zinc-700"
@@ -209,7 +226,7 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
               </div>
               <button
                 type="button"
-                onClick={() => setOrderNotifs(!orderNotifs)}
+                onClick={() => setValue("orderNotifs", !orderNotifs, { shouldDirty: true })}
                 className={cn(
                   "w-12 h-6 rounded-full transition-colors relative",
                   orderNotifs ? "bg-zinc-900 dark:bg-primary" : "bg-zinc-200 dark:bg-zinc-700"
@@ -229,7 +246,7 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
               </div>
               <button
                 type="button"
-                onClick={() => setMarketingUpdates(!marketingUpdates)}
+                onClick={() => setValue("marketingUpdates", !marketingUpdates, { shouldDirty: true })}
                 className={cn(
                   "w-12 h-6 rounded-full transition-colors relative",
                   marketingUpdates ? "bg-zinc-900 dark:bg-primary" : "bg-zinc-200 dark:bg-zinc-700"
@@ -253,7 +270,7 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
       </form>
 
       {/* Security Section */}
-      <form onSubmit={handleSaveSecurity} className="space-y-8">
+      <form onSubmit={handleSecuritySubmit(onSaveSecurity)} className="space-y-8">
         <section id="security" className="bg-white/80 dark:bg-zinc-900/50 backdrop-blur-3xl rounded-3xl p-8 md:p-10 border border-white dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-colors duration-300">
           <div className="mb-8">
             <h3 className="font-serif text-[28px] text-zinc-900 dark:text-zinc-100 leading-tight mb-1">Security</h3>
@@ -263,22 +280,25 @@ export default function SettingsFormClient({ initialSettings, adminUsername }: {
           <div className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="username" className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-widest pl-1">Admin Username</label>
-              <input id="username" name="username" aria-label="Admin Username" type="text" value={username} onChange={e => setUsername(e.target.value)} required className="w-full bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl px-4 py-3.5 text-[15px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all" />
+              <input id="username" autoComplete="username" aria-label="Admin Username" type="text" {...registerSecurity("username")} className={inputClassName} />
+              <FieldError message={securityErrors.username?.message} />
             </div>
 
             <div className="space-y-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
               <label htmlFor="currentPassword" className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-widest pl-1">Current Password (Required)</label>
-              <input id="currentPassword" name="currentPassword" aria-label="Current Password" type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required className="w-full bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl px-4 py-3.5 text-[15px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all" />
+              <input id="currentPassword" autoComplete="current-password" aria-label="Current Password" type="password" {...registerSecurity("currentPassword")} className={inputClassName} />
+              <FieldError message={securityErrors.currentPassword?.message} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label htmlFor="newPassword" className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-widest pl-1">New Password (Optional)</label>
-                <input id="newPassword" name="newPassword" aria-label="New Password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl px-4 py-3.5 text-[15px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all" />
+                <input id="newPassword" autoComplete="new-password" aria-label="New Password" type="password" {...registerSecurity("newPassword")} className={inputClassName} />
               </div>
               <div className="space-y-2">
                 <label htmlFor="confirmPassword" className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300 uppercase tracking-widest pl-1">Confirm New Password</label>
-                <input id="confirmPassword" name="confirmPassword" aria-label="Confirm Password" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full bg-zinc-50/50 dark:bg-zinc-950/50 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl px-4 py-3.5 text-[15px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all" />
+                <input id="confirmPassword" autoComplete="new-password" aria-label="Confirm Password" type="password" {...registerSecurity("confirmPassword")} className={inputClassName} />
+                <FieldError message={securityErrors.confirmPassword?.message} />
               </div>
             </div>
           </div>

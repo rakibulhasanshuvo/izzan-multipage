@@ -2,14 +2,15 @@ import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
-import Database from 'better-sqlite3';
-
 let sampleProductId = 'cmt59dhtx0000jm7oedi29zod';
 try {
-  const db = new Database('./prisma/dev.db');
-  const row = db.prepare('SELECT id FROM Product LIMIT 1').get();
+  process.env.DATABASE_URL ||= (await import('dotenv')).config().parsed?.DATABASE_URL;
+  const { PrismaClient } = await import('../src/generated/client/index.js');
+  const prisma = new PrismaClient();
+  const row = await prisma.product.findFirst({ select: { id: true } });
+  await prisma.$disconnect();
   if (row?.id) sampleProductId = row.id;
-} catch (e) {
+} catch {
   // fallback
 }
 

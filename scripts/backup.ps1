@@ -1,4 +1,5 @@
 # Encrypted backup script for Windows (PowerShell)
+# Backs up the PostgreSQL database (via docker exec) and the uploads volume.
 # Requires BACKUP_PASSPHRASE environment variable (backups contain customer PII)
 if (-not $env:BACKUP_PASSPHRASE) {
     Write-Host "Error: BACKUP_PASSPHRASE environment variable is not set." -ForegroundColor Red
@@ -6,9 +7,13 @@ if (-not $env:BACKUP_PASSPHRASE) {
 }
 
 $BackupDir = ".\backups"
-$PrismaDB = ".\prisma\dev.db"
 $UploadsDir = ".\public\uploads"
 $RetentionDays = 7
+$PostgresContainer = if ($env:POSTGRES_CONTAINER) { $env:POSTGRES_CONTAINER } else { "izzan-postgres" }
+$PostgresUser = if ($env:POSTGRES_USER) { $env:POSTGRES_USER } else { "izzan" }
+$PostgresDb = if ($env:POSTGRES_DB) { $env:POSTGRES_DB } else { "izzan" }
+$PostgresHost = if ($env:POSTGRES_HOST) { $env:POSTGRES_HOST } else { "127.0.0.1" }
+$PostgresPort = if ($env:POSTGRES_PORT) { $env:POSTGRES_PORT } else { "5432" }
 
 # Create backup directory if it doesn't exist
 if (-not (Test-Path -Path $BackupDir)) {
@@ -18,69 +23,122 @@ if (-not (Test-Path -Path $BackupDir)) {
 # Generate timestamp
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 
-# Archive filenames
-$ArchiveName = "izzan_backup_$Timestamp.tar.gz"
+# Filenames
+$DumpName = "izzan_db_$Timestamp.sql.gz"
+$DumpPath = Join-Path -Path $BackupDir -ChildPath $DumpName
+$DumpEncryptedPath = "$DumpPath.enc"
+$ArchiveName = "izzan_uploads_$Timestamp.tar.gz"
 $ArchivePath = Join-Path -Path $BackupDir -ChildPath $ArchiveName
-$EncryptedPath = "$ArchivePath.enc"
+$ArchiveEncryptedPath = "$ArchivePath.enc"
 
 Write-Host "Starting encrypted backup of izzan application volumes..."
 Write-Host "Timestamp: $Timestamp"
-
-# Check if source files/directories exist
-if (-not (Test-Path -Path $PrismaDB)) {
-    Write-Host "Warning: Database file $PrismaDB not found." -ForegroundColor Yellow
-}
 
 if (-not (Test-Path -Path $UploadsDir)) {
     Write-Host "Warning: Uploads directory $UploadsDir not found." -ForegroundColor Yellow
 }
 
-# Create compressed archive
-tar -czf $ArchivePath $PrismaDB $UploadsDir
+# Shared PBKDF2 + AES-CBC OpenSSL-compatible encryption helper
+function Encrypt-File {
+    param([string]$InPath, [string]$OutPath)
+    $passbytes = [Text.Encoding]::UTF8.GetBytes($env:BACKUP_PASSPHRASE)
+    $salt = New-Object byte[] 16
+    [Security.Cryptography.RandomNumberGenerator]::Fill($salt)
 
-# Check if archive creation was successful, then encrypt in place (AES-256-CBC + PBKDF2)
-if ($LASTEXITCODE -eq 0) {
-    try {
-        $passbytes = [Text.Encoding]::UTF8.GetBytes($env:BACKUP_PASSPHRASE)
-        $salt = New-Object byte[] 16
-        [Security.Cryptography.RandomNumberGenerator]::Fill($salt)
+    # Derive a 32-byte key + 16-byte IV via PBKDF2 (matches openssl defaults for digest)
+    $derive = New-Object Security.Cryptography.Rfc2898DeriveBytes($passbytes, $salt, 200000)
+    $key = $derive.GetBytes(32)
+    $iv  = $derive.GetBytes(16)
 
-        # Derive a 32-byte key + 16-byte IV via PBKDF2 (matches openssl defaults for digest)
-        $derive = New-Object Security.Cryptography.Rfc2898DeriveBytes($passbytes, $salt, 200000)
-        $key = $derive.GetBytes(32)
-        $iv  = $derive.GetBytes(16)
+    $aes = [Security.Cryptography.Aes]::Create()
+    $aes.Mode = [Security.Cryptography.CipherMode]::CBC
+    $aes.Padding = [Security.Cryptography.PaddingMode]::PKCS7
+    $aes.Key = $key
+    $aes.IV = $iv
 
-        $aes = [Security.Cryptography.Aes]::Create()
-        $aes.Mode = [Security.Cryptography.CipherMode]::CBC
-        $aes.Padding = [Security.Cryptography.PaddingMode]::PKCS7
-        $aes.Key = $key
-        $aes.IV = $iv
+    $inStream  = [IO.File]::OpenRead($InPath)
+    $outStream = [IO.File]::Create($OutPath)
+    # OpenSSL "Salted__" header + salt so `openssl enc -d` can decrypt this file
+    $outStream.Write([Text.Encoding]::ASCII.GetBytes("Salted__"), 0, 8)
+    $outStream.Write($salt, 0, $salt.Length)
 
-        $inStream  = [IO.File]::OpenRead($ArchivePath)
-        $outStream = [IO.File]::Create($EncryptedPath)
-        # OpenSSL "Salted__" header + salt so `openssl enc -d` can decrypt this file
-        $outStream.Write([Text.Encoding]::ASCII.GetBytes("Salted__"), 0, 8)
-        $outStream.Write($salt, 0, $salt.Length)
+    $encryptor = $aes.CreateEncryptor()
+    $cryptoStream = New-Object Security.Cryptography.CryptoStream($outStream, $encryptor, [Security.Cryptography.CryptoStreamMode]::Write)
+    $inStream.CopyTo($cryptoStream)
+    $cryptoStream.FlushFinalBlock()
 
-        $encryptor = $aes.CreateEncryptor()
-        $cryptoStream = New-Object Security.Cryptography.CryptoStream($outStream, $encryptor, [Security.Cryptography.CryptoStreamMode]::Write)
-        $inStream.CopyTo($cryptoStream)
-        $cryptoStream.FlushFinalBlock()
+    $cryptoStream.Dispose(); $inStream.Dispose(); $outStream.Dispose(); $aes.Dispose()
+}
 
-        $cryptoStream.Dispose(); $inStream.Dispose(); $outStream.Dispose(); $aes.Dispose()
-        Remove-Item -Path $ArchivePath -Force
-        Write-Host "Encrypted backup successfully created: $EncryptedPath" -ForegroundColor Green
-    } catch {
-        Write-Host "Error: Encryption failed: $_" -ForegroundColor Red
-        Remove-Item -Path $ArchivePath, $EncryptedPath -Force -ErrorAction SilentlyContinue
+# Database: pg_dump into a local gzip file.
+# Source: the Docker container when it is running, else a host-local pg_dump.
+$containerRunning = $false
+try {
+    docker ps --format '{{.Names}}' 2>$null | ForEach-Object {
+        if ($_ -eq $PostgresContainer) { $containerRunning = $true }
+    }
+} catch { }
+
+if ($containerRunning) {
+    Write-Host "Dump source: Docker container '$PostgresContainer'"
+    docker exec $PostgresContainer pg_dump -U $PostgresUser $PostgresDb | gzip > $DumpPath
+} elseif (Get-Command pg_dump -ErrorAction SilentlyContinue) {
+    Write-Host "Docker container not found — using host pg_dump at ${PostgresHost}:${PostgresPort}"
+    if (-not $env:POSTGRES_PASSWORD) {
+        Write-Host "Error: POSTGRES_PASSWORD environment variable is not set." -ForegroundColor Red
         exit 1
     }
-
-    # Keep only the last 7 backups and delete older ones
-    Get-ChildItem -Path $BackupDir -Filter "izzan_backup_*.tar.gz.enc" |
-        Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$RetentionDays) } |
-        Remove-Item -Force
+    $env:PGPASSWORD = $env:POSTGRES_PASSWORD
+    & pg_dump "-h$PostgresHost" "-p$PostgresPort" "-U$PostgresUser" $PostgresDb | gzip > $DumpPath
 } else {
-    Write-Host "Error: Backup failed!" -ForegroundColor Red
+    Write-Host "Error: Docker container '$PostgresContainer' not running and no host pg_dump found." -ForegroundColor Red
     exit 1
 }
+if ($LASTEXITCODE -eq 0 -and (Test-Path $DumpPath)) {
+    try {
+        Encrypt-File -InPath $DumpPath -OutPath $DumpEncryptedPath
+        Remove-Item -Path $DumpPath -Force
+        Write-Host "Encrypted database dump created: $DumpEncryptedPath" -ForegroundColor Green
+    } catch {
+        Write-Host "Error: Database dump encryption failed: $_" -ForegroundColor Red
+        Remove-Item -Path $DumpPath, $DumpEncryptedPath -Force -ErrorAction SilentlyContinue
+        exit 1
+    }
+} else {
+    Write-Host "Error: Database backup failed!" -ForegroundColor Red
+    Remove-Item -Path $DumpPath -Force -ErrorAction SilentlyContinue
+    exit 1
+}
+
+# Uploads: compressed archive, then encrypt in place (AES-256-CBC + PBKDF2)
+tar -czf $ArchivePath $UploadsDir
+
+if ($LASTEXITCODE -eq 0) {
+    try {
+        Encrypt-File -InPath $ArchivePath -OutPath $ArchiveEncryptedPath
+        Remove-Item -Path $ArchivePath -Force
+        Write-Host "Encrypted uploads archive created: $ArchiveEncryptedPath" -ForegroundColor Green
+    } catch {
+        Write-Host "Error: Encryption failed: $_" -ForegroundColor Red
+        Remove-Item -Path $ArchivePath, $ArchiveEncryptedPath -Force -ErrorAction SilentlyContinue
+        exit 1
+    }
+} else {
+    Write-Host "Error: Uploads backup failed!" -ForegroundColor Red
+    Remove-Item -Path $ArchivePath -Force -ErrorAction SilentlyContinue
+    exit 1
+}
+
+# Keep only the last 7 of each kind and delete older ones
+Get-ChildItem -Path $BackupDir -Include "izzan_db_*.sql.gz.enc", "izzan_uploads_*.tar.gz.enc" -Recurse |
+    Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$RetentionDays) } |
+    Remove-Item -Force
+
+# Restore database with:
+# openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_PASSPHRASE `
+#   -in <dump>.sql.gz.enc | gunzip | docker exec -i izzan-postgres psql -U izzan -d izzan
+# (host-mode: pipe the same output into `psql -h 127.0.0.1 -U izzan -d izzan` instead)
+#
+# Restore uploads with:
+# openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_PASSPHRASE `
+#   -in <archive>.tar.gz.enc | tar -xzf -

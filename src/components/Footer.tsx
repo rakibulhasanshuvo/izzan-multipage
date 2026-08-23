@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Camera, MessageCircle, Share2 } from "lucide-react";
+import { Camera } from "lucide-react";
 import { toast } from "sonner";
 
 export function Footer() {
@@ -11,9 +11,7 @@ export function Footer() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      toast.success("Subscribed!", {
-        description: "Welcome to the Izzan family. Check your inbox for your 15% OFF code.",
-      });
+      toast.info("Newsletter coming soon — thanks for your interest!");
       setEmail("");
     }
   };
@@ -55,14 +53,8 @@ export function Footer() {
           </div>
           <div className="flex flex-col items-center md:items-end space-y-4">
             <div className="flex space-x-4">
-              <Link className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1" href="#" aria-label="Instagram">
+              <Link className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1" href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
                 <Camera size={20} />
-              </Link>
-              <Link className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1" href="#" aria-label="Chat">
-                <MessageCircle size={20} />
-              </Link>
-              <Link className="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1" href="#" aria-label="Share">
-                <Share2 size={20} />
               </Link>
             </div>
             <div className="flex flex-col items-center md:items-end">
@@ -78,8 +70,6 @@ export function Footer() {
       </div>
       <div className="w-full bg-primary mt-12 py-3 text-center text-white text-xs flex justify-center items-center gap-4">
         <span>www.izzan.com</span>
-        <span className="opacity-30">|</span>
-        <Link href="/admin" className="text-white hover:underline">Admin Dashboard</Link>
       </div>
     </footer>
   );

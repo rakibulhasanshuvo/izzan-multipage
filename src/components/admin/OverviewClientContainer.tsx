@@ -6,7 +6,7 @@ import OverviewChart from "./OverviewChart";
 import SalesTargetTracker from "./SalesTargetTracker";
 import RecentOrdersTableClient from "./RecentOrdersTableClient";
 import Image from "next/image";
-import { Order, Product } from "@/generated/client";
+import type { OrderView as Order, ProductView as Product } from "@/lib/serialize";
 
 interface ChartDataPoint {
   label: string;
@@ -77,7 +77,7 @@ export default function OverviewClientContainer({
         {/* Revenue Card */}
         <InteractiveStatCard
           title="Total Revenue"
-          value={`$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={`$${totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           isActive={activeMetric === "revenue"}
           onClick={() => setActiveMetric("revenue")}
           icon="account_balance_wallet"

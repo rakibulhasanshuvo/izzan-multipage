@@ -117,3 +117,89 @@ git log --all -- .env prisma/dev.db   # no history → never committed
 grep dangerouslySetInnerHTML src/**      # 2 uses, both sanitized
 grep -E "(sk-...|AKIA...)" src/**        # no hardcoded secrets
 ```
+
+---
+
+## Remediation Log — 2026-08-23
+
+All findings addressed. Post-fix verification: `npm audit` → **0 vulnerabilities**; **42/42 unit tests pass** (5 new); production build green; live smoke tests confirm each fix.
+
+| ID | Fix applied | Verified by |
+|----|-------------|-------------|
+| C1 | `next-auth` bumped to patched 4.24.15 | `npm audit` 0 vulns |
+| H1 | Upload extension allowlist (`.jpg/.jpeg/.png/.webp/.gif/.mp4/.webm`) independent of MIME/magic checks; per-IP daily quota (500 MB) + upload rate bucket (20/15 min); `/uploads/*` served with `Content-Security-Policy: sandbox` | Live: `.html` file w/ valid MP4 magic rejected 400 |
+| H2 | `sharp` upgraded to 0.35.3; resize/webp pipeline re-tested | node pipeline smoke test |
+| H3 | New `TRUST_PROXY` env gates all `x-forwarded-for`/`x-real-ip` parsing (`getClientIpFromHeaders`); headers ignored unless proxy explicitly trusted | New unit tests: spoof ignored when untrusted |
+| H4 | Static `ADMIN_TOKEN` bearer auth now opt-in via `ALLOW_ADMIN_TOKEN=true`; default off in prod & compose | Live: no token → 401 even with ADMIN_TOKEN set |
+| M1 | `REDIS_PASSWORD` now required (`${REDIS_PASSWORD:?}`) in both app and redis services | compose config review |
+| M2 | All dev secrets rotated (`openssl rand`): ADMIN_TOKEN, NEXTAUTH_SECRET, INITIAL_ADMIN_PASSWORD, REDIS_PASSWORD (+BACKUP_PASSPHRASE); new admin password bcrypt-synced into `dev.db` | Live login: new password ✓, old rejected ✓ |
+| M3 | Nonce-based CSP via middleware: `script-src 'nonce-…' 'strict-dynamic'`, `'unsafe-inline'` removed in production (kept for styles); JSON-LD + next-themes scripts carry the nonce; dev keeps relaxed CSP for HMR | Live: header nonce present; 21/21 scripts nonced; 0 un-nonced |
+| M4 | `apiHandler` returns generic `Bad Request`; orders route whitelists only user-facing stock/product messages, logs internals server-side | Updated unit assertions |
+| M5 | CSRF origin check fail-closed: missing/mismatched Origin AND Referer → 403; host falls back to req.url parsing | Live: no-origin 403, evil-origin 403, same-origin passes |
+| M6 | Login bucket limited to 10 attempts / 15 min (`MAX_LOGIN_ATTEMPTS`), separate from general 100 | New unit test |
+| M7 | `updateOrderStatus` action enforces shared `ORDER_STATUSES` whitelist from `validation.ts` | Code + typecheck |
+| M8 | `build` no longer runs `db push --accept-data-loss`; added `db:migrate` / `db:seed` scripts | package.json |
+| M9 | Daily per-IP byte quota + dedicated upload rate limit | upload route |
+| L1 | Removed unused typo-package `playright` | npm ls |
+| L2 | Transitive vulns fixed: nanoid 3.3.18, postcss 8.5.26, undici 6.28.0; deepmerge-ts forced to ^8.0.0 via overrides (Prisma CLI verified working) | npm audit 0 vulns; prisma validate/generate OK |
+| L3 | robots/sitemap derive URL from `NEXT_PUBLIC_SITE_URL` | robots.ts |
+| L4 | `next` moved to dependencies | package.json |
+| L5 | Backups encrypted (AES-256-CBC PBKDF2 200k iters) with required `BACKUP_PASSPHRASE`; retention enabled; 600 perms; restore command documented; PowerShell variant uses .NET AES with openssl-compatible format | backup.sh / backup.ps1 |
+| L6 | HSTS `preload` directive removed until domain verified | header check |
+
+**Additional hardening:** global `object-src 'none'`, `base-uri 'self'`, `worker-src` added to CSP; `next-themes` FOUC script nonced; JSON-LD `<` escaped; uploads written `0644`; vitest setup wired into config (`setupFiles`).
+
+**Coordination note (updated 2026-08-23, Postgres migration merged):** the parallel DB-layer migration
+to PostgreSQL has been completed on top of these security fixes and **no security fix regressed**.
+Full verification block re-run against the merged result:
+
+- `npx prisma validate && npx prisma generate` — clean
+- `npx tsc --noEmit` — 0 errors (Decimal→number handled via `src/lib/serialize.ts` mappers at server→client boundaries)
+- `npm audit` — 0 vulnerabilities
+- `npm test` — 59/59 pass (42 baseline + 17 new covering serialize mappers and cart store)
+- `npm run build` — succeeds
+
+Live smoke tests against `npm run start` (native PostgreSQL 16 on 127.0.0.1:5432, migration
+`20260823000000_postgres_init` deployed + seeded):
+
+| Check | Result |
+|---|---|
+| CSP nonce + strict-dynamic; un-nonced `<script>` tags | ✅ 23 scripts, all nonced, 0 without matching nonce |
+| `/uploads/*` served with `Content-Security-Policy: sandbox` | ✅ |
+| `GET /admin` unauthenticated | ✅ 307 → `/admin/login` |
+| Login: correct password / wrong password | ✅ valid session JSON vs `{}` (401) |
+| Upload: `evil.html` w/ MP4 magic + Bearer (`ALLOW_ADMIN_TOKEN=true`) | ✅ 400 invalid extension |
+| Upload: legit PNG with Bearer / without token | ✅ 200 success / 401 |
+| CSRF origin check on `POST /api/orders` | ✅ no Origin → 403, evil Origin → 403, same-origin passes gate |
+
+Database story is now uniformly PostgreSQL: schema datasource, `migration_lock.toml`,
+`prisma.config.ts`, `.env`, `.env.example`, `docker-compose.yml` (postgres service, loopback-only),
+and `prisma/seed.mjs`. Backup scripts additionally support host-mode `pg_dump` when Docker is not running.
+
+---
+
+## Fraud Hardening Round — 2026-08-23 (fake orders / scammers)
+
+Follow-up audit focused specifically on fake-order and scammer vectors (the original round
+targeted technical compromise: XSS, auth bypass, dependencies). All findings fixed;
+post-fix verification: **75/75 tests pass**, `tsc --noEmit` clean, lint 0 errors
+(2 pre-existing warnings), `npm audit` 0 vulnerabilities, production build green.
+
+| ID | Finding | Fix applied | Verified by |
+|----|---------|-------------|-------------|
+| F1 | Cancelled orders never restored stock nor reversed customer `totalSpend` — scammers could zero out inventory with fake orders that stay drained even after admin cancels them | New shared `src/lib/order-lifecycle.ts`: cancel → restores stock + decrements spend in one transaction (double-cancel guarded); reopen from Cancelled → re-reserves stock with insufficient-stock post-check + re-applies spend. Wired into both the API route and the server action so they cannot drift; deleted-product fallback via name lookup; malformed items JSON handled defensively | 9 new unit tests (`order-lifecycle.test.ts`): restore, double-cancel no-op, plain transitions skip tx, reopen decrement, insufficient-stock abort before status change |
+| F2 | Per-item quantity cap of 999 × 50 items allowed a single request to drain any product's inventory | Cap lowered to 10/item (`MAX_QUANTITY_PER_ITEM` in `validation.ts`) | Unit test: qty 11 rejected |
+| F3 | No per-phone order velocity limit — IP-only limiting is bypassed by rotating mobile IPs | Orders route adds `order-phone:<digits>` bucket: 5 orders/hour/phone (`MAX_PHONE_ORDERS_PER_HOUR`, custom-window capable limiter) | Unit test: seeded phone bucket → 429 |
+| F4 | No bot mitigation on checkout | Server-enforced honeypot (`companyWebsite`, hidden client-side, non-empty ⇒ generic 400) + client-side minimum fill-time check (3 s) | Unit test: honeypot payload rejected before any DB call |
+| F5 | No duplicate/fake-order signal for admins; absurd order totals accepted | `findFlaggedPhones()` groups ≥3 non-cancelled orders per phone in 24 h → "Check" badge in admin orders table; configurable `MAX_ORDER_TOTAL` sanity ceiling checked against the DB-verified total inside the transaction | Build + page compile; unit test: total > MAX_ORDER_TOTAL rejected with safe message |
+| F6 | bcrypt cost inconsistent (10 in credential update vs 12 at seed) | Unified to cost 12 | Code review |
+| F7 | `TRUST_PROXY=false` behind a real proxy collapses all clients into one shared bucket; `true` direct-to-origin allows XFF spoofing | Deployment guidance added to `.env.example`; `checkRateLimit` now accepts a custom window (enables the hourly phone bucket) | Docs review |
+
+**Deferred by product decision:** SMS OTP phone verification (strongest anti-fake-order measure)
+requires an SMS gateway account and per-message cost; revisit when volume justifies it.
+The checkout flow keeps a server-validated field shape ready to extend without breaking clients.
+
+**Known residual risks (accepted):** honeypot/timing checks stop naive bots only; determined
+attackers can still place small volumes of fake orders within rate limits — mitigated by the
+admin "Check" badge for manual confirmation calls, which is standard practice for COD storefronts.
+

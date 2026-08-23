@@ -9,7 +9,7 @@ interface SalesTargetTrackerProps {
 }
 
 export default function SalesTargetTracker({ currentSales, target = 1000 }: SalesTargetTrackerProps) {
-  const percentage = Math.min(Math.round((currentSales / target) * 100), 100);
+  const percentage = target > 0 ? Math.min(Math.round((currentSales / target) * 100), 100) : 0;
 
   // SVG parameters for the circular ring
   const radius = 50;
@@ -79,7 +79,7 @@ export default function SalesTargetTracker({ currentSales, target = 1000 }: Sale
                 Current Sales
               </span>
               <span className="text-[22px] font-bold text-zinc-800 dark:text-zinc-100 font-mono">
-                ${currentSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${currentSales.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
             <div>
@@ -87,7 +87,7 @@ export default function SalesTargetTracker({ currentSales, target = 1000 }: Sale
                 Monthly Target
               </span>
               <span className="text-[15px] font-medium text-zinc-500 dark:text-zinc-400 font-mono">
-                ${target.toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                ${target.toLocaleString("en-US", { minimumFractionDigits: 0 })}
               </span>
             </div>
           </div>
