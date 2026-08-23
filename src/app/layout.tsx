@@ -91,7 +91,13 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <AuthProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+            nonce={nonce}
+          >
             <CartProvider>
               {children}
               <Toaster position="bottom-right" richColors />
