@@ -3,6 +3,19 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+// `prisma generate` runs in environments WITHOUT a database (Vercel/CI
+// postinstall), so a missing URL must warn rather than hard-fail here.
+// Connection-requiring commands (migrate deploy / db seed) will surface
+// their own clear connection error immediately after this warning prints.
+const datasourceUrl = process.env.DATABASE_URL ?? "";
+
+if (!datasourceUrl) {
+  console.warn(
+    "⚠️  DATABASE_URL is not set. Schema-only commands (generate) work, " +
+      "but migrate/seed need a PostgreSQL connection string from .env"
+  );
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -10,10 +23,6 @@ export default defineConfig({
     seed: "node ./prisma/seed.mjs",
   },
   datasource: {
-    url: process.env.DATABASE_URL ?? (() => {
-      throw new Error(
-        "DATABASE_URL is not set. Copy .env.example to .env and configure a PostgreSQL connection string."
-      );
-    })(),
+    url: datasourceUrl,
   },
 });
