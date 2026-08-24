@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Required by the Dockerfile runner stage (COPY .next/standalone); ignored
-  // by Vercel, which handles its own output.
-  output: "standalone",
+  // Required by the Dockerfile runner stage (COPY .next/standalone).
+  // MUST stay disabled on Vercel: its post-build step expects the default
+  // output's file-tracing artifacts (*.nft.json) and fails with ENOENT
+  // otherwise. Vercel sets VERCEL=1 in every build.
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
   serverExternalPackages: ["@prisma/client"],
   images: {
     formats: ['image/avif', 'image/webp'],
