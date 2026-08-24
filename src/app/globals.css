@@ -3,9 +3,10 @@
 /* noinspection CssUnknownAtRule */
 /* css-disable-next-line */
 @import "tailwindcss";
-/* Tailwind v4 port of tailwindcss-animate: provides animate-in, fade-in,
-   zoom-in-95, slide-in-from-bottom-* utilities used across the app. */
-@plugin "tw-animate-css";
+/* Tailwind v4 port of tailwindcss-animate (CSS-file package → @import, not
+   @plugin): provides animate-in, fade-in, zoom-in-95, slide-in-from-bottom-*
+   utilities used across the app. */
+@import "tw-animate-css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
