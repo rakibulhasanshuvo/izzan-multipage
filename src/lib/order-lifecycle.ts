@@ -146,6 +146,20 @@ export async function updateOrderStatusWithLifecycle(id: string, nextStatus: Ord
   }
 
   return prisma.$transaction(async (tx) => {
+    // Claim the transition atomically BEFORE touching stock/spend so two
+    // concurrent updates (e.g. two admins, or admin + API) can never both
+    // apply side effects for the same source status (double stock restore,
+    // double spend decrement). The guard matches on the status we observed.
+    const claimed = await tx.order.updateMany({
+      where: { id, status: existing.status },
+      data: { status: nextStatus },
+    });
+    if (claimed.count === 0) {
+      throw new OrderLifecycleError(
+        "Order was already updated by someone else. Refresh and try again."
+      );
+    }
+
     if (willBeCancelled) {
       await restoreOrderStock(tx, existing.id, existing.items);
       if (existing.customerId) {
@@ -164,9 +178,6 @@ export async function updateOrderStatusWithLifecycle(id: string, nextStatus: Ord
       }
     }
 
-    return tx.order.update({
-      where: { id },
-      data: { status: nextStatus },
-    });
+    return tx.order.findUniqueOrThrow({ where: { id } });
   });
 }

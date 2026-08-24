@@ -7,12 +7,28 @@ import { toast } from "sonner";
 
 export function Footer() {
   const [email, setEmail] = useState("");
+  const [isPending, setIsPending] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      toast.info("Newsletter coming soon — thanks for your interest!");
+    if (!email || isPending) return;
+    setIsPending(true);
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || "Failed to subscribe. Please try again.");
+      }
+      toast.success("You're on the list! Your 15% off code is on its way.");
       setEmail("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to subscribe. Please try again.");
+    } finally {
+      setIsPending(false);
     }
   };
 
@@ -35,10 +51,11 @@ export function Footer() {
               aria-label="Email address for newsletter"
             />
             <button
-              className="bg-primary text-white px-6 py-2 text-sm font-semibold tracking-wider rounded-r-full hover:bg-opacity-90 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="bg-primary text-white px-6 py-2 text-sm font-semibold tracking-wider rounded-r-full hover:bg-primary/90 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-70 disabled:cursor-not-allowed"
               type="submit"
+              disabled={isPending}
             >
-              SIGN UP
+              {isPending ? "…" : "SIGN UP"}
             </button>
           </form>
         </div>

@@ -54,7 +54,7 @@ export const createProductSchema = z
     if (data.originalPrice != null && data.originalPrice <= data.price) {
       ctx.addIssue({
         code: "custom",
-        message: "Sale price must be greater than the current price",
+        message: "Compare-at price must be greater than the regular price",
         path: ["originalPrice"],
       });
     }
@@ -77,7 +77,7 @@ export const updateProductSchema = z
     if (data.originalPrice != null && data.price != null && data.originalPrice <= data.price) {
       ctx.addIssue({
         code: "custom",
-        message: "Sale price must be greater than the current price",
+        message: "Compare-at price must be greater than the regular price",
         path: ["originalPrice"],
       });
     }
@@ -100,8 +100,18 @@ export const contactFormSchema = z.object({
   contactEmail: z.string().trim().email("Invalid email address"),
   subject: z.enum(["General Inquiry", "Wholesale", "Shipping Question", "Other"]),
   message: z.string().trim().min(1, "Message is required").max(2000, "Message must be under 2000 characters"),
+  // Honeypot: hidden client-side field that only bots fill in.
+  companyWebsite: z.string().max(200).optional().nullable(),
 });
 export type ContactFormValues = z.infer<typeof contactFormSchema>;
+
+// --- Newsletter Signup ---
+export const newsletterSchema = z.object({
+  email: z.string().trim().email("Invalid email address").max(254),
+  // Honeypot: hidden client-side field that only bots fill in.
+  companyWebsite: z.string().max(200).optional().nullable(),
+});
+export type NewsletterValues = z.infer<typeof newsletterSchema>;
 
 // --- Admin Login Form ---
 export const loginFormSchema = z.object({
@@ -117,8 +127,10 @@ export type ProductFormOutput = z.output<typeof productFormSchema>;
 
 // --- Admin Settings Forms ---
 export const settingsProfileFormSchema = z.object({
-  firstName: z.string().trim(),
-  lastName: z.string().trim(),
+  // Mirrors the server schema (actions.ts) so clearing a name surfaces a
+  // field-level error here instead of a generic server rejection.
+  firstName: z.string().trim().min(1, "First name must be a non-empty string"),
+  lastName: z.string().trim().min(1, "Last name must be a non-empty string"),
   email: z.string().trim().email("Invalid email address").or(z.literal("")),
   bio: z.string(),
   emailAlerts: z.boolean(),

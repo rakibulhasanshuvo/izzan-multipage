@@ -38,11 +38,24 @@ export function ContactSection() {
     },
   });
 
-  const onSubmit = async () => {
-    toast.success("Message sent!", {
-      description: "We’ll get back to you within 24 hours.",
-    });
-    reset();
+  const onSubmit = async (values: ContactFormValues) => {
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || "Failed to send message. Please try again.");
+      }
+      toast.success("Message sent!", {
+        description: "We’ll get back to you within 24 hours.",
+      });
+      reset();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to send message. Please try again.");
+    }
   };
 
   return (
@@ -164,10 +177,21 @@ export function ContactSection() {
                   <p className="text-xs text-red-600 dark:text-red-400">{errors.message.message}</p>
                 )}
               </div>
+              {/* Honeypot: hidden from humans, catches naive bots */}
+              <div className="hidden" aria-hidden="true">
+                <label htmlFor="companyWebsite-contact">Company website</label>
+                <input
+                  id="companyWebsite-contact"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  {...register("companyWebsite")}
+                />
+              </div>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-primary text-white py-4 rounded-xl font-bold uppercase tracking-[0.2em] text-sm hover:bg-opacity-90 transition-all shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full bg-primary text-white py-4 rounded-xl font-bold uppercase tracking-[0.2em] text-sm hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 <span>{isSubmitting ? "Sending…" : "Send Message"}</span>
                 <Send size={16} />

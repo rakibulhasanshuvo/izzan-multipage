@@ -3,17 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ProductView as Product } from "@/lib/serialize";
-import { useCart } from "@/store/cart-store";
+import { useCart, lineCapFor } from "@/store/cart-store";
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { formatMoney } from "@/lib/utils";
 
 export function ProductCard({ item, onQuickView, priority = false }: { item: Product; onQuickView?: (product: Product) => void; priority?: boolean }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
+  const outOfStock = lineCapFor(item.stock) < 1;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (outOfStock) return;
     addToCart(item);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
@@ -68,10 +70,10 @@ export function ProductCard({ item, onQuickView, priority = false }: { item: Pro
           )}
           <button
             onClick={handleAddToCart}
-            className={`w-full py-2.5 rounded-xl text-[10px] tracking-[0.2em] uppercase font-bold transition-all duration-500 translate-y-2 group-hover:translate-y-0 shadow-md flex items-center justify-center space-x-2 cursor-pointer hover:scale-[1.02] ${added ? 'bg-green-600 text-white' : 'bg-[#607c64] text-white hover:bg-[#4d6350]'}`}
+            disabled={outOfStock}
+            className={`w-full py-2.5 rounded-xl text-[10px] tracking-[0.2em] uppercase font-bold transition-all duration-500 translate-y-2 group-hover:translate-y-0 shadow-md flex items-center justify-center space-x-2 hover:scale-[1.02] ${outOfStock ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : added ? 'bg-green-600 text-white' : 'bg-[#607c64] text-white hover:bg-[#4d6350] cursor-pointer'}`}
           >
-            <span>{added ? 'Added' : 'Quick Add'}</span>
-            {added ? <Check size={14} /> : <span className="text-lg leading-none">+</span>}
+            <span>{outOfStock ? 'Out of Stock' : added ? 'Added' : 'Quick Add'}</span>
           </button>
         </div>
       </div>
@@ -83,9 +85,9 @@ export function ProductCard({ item, onQuickView, priority = false }: { item: Pro
             <h3 className="text-sm md:text-base font-display font-semibold mb-1 text-gray-900 dark:text-gray-100 group-hover:text-primary transition-colors duration-300">{item.name}</h3>
             <div className="flex items-center justify-center space-x-2 mb-4">
               {item.originalPrice && (
-                <span className="text-gray-600 dark:text-gray-400 line-through text-xs md:text-sm font-light">${typeof item.originalPrice === 'number' ? item.originalPrice.toFixed(2) : item.originalPrice}</span>
+                <span className="text-gray-600 dark:text-gray-400 line-through text-xs md:text-sm font-light">{formatMoney(item.originalPrice)}</span>
               )}
-              <span className="text-xs md:text-sm text-gray-800 dark:text-gray-300 font-bold">${item.price.toFixed(2)}</span>
+              <span className="text-xs md:text-sm text-gray-800 dark:text-gray-300 font-bold">{formatMoney(item.price)}</span>
             </div>
           </div>
         </div>
@@ -95,9 +97,10 @@ export function ProductCard({ item, onQuickView, priority = false }: { item: Pro
       <div className="px-1 mt-2 md:hidden">
         <button
           onClick={handleAddToCart}
-          className={`w-full py-2.5 rounded-xl text-[10px] tracking-widest uppercase font-bold transition-all duration-300 flex items-center justify-center space-x-2 ${added ? 'bg-green-600 text-white' : 'bg-primary text-white'}`}
+          disabled={outOfStock}
+          className={`w-full py-2.5 rounded-xl text-[10px] tracking-widest uppercase font-bold transition-all duration-300 flex items-center justify-center space-x-2 ${outOfStock ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : added ? 'bg-green-600 text-white' : 'bg-primary text-white'}`}
         >
-          <span>{added ? 'Added' : 'Add to Cart'}</span>
+          <span>{outOfStock ? 'Out of Stock' : added ? 'Added' : 'Add to Cart'}</span>
         </button>
       </div>
     </div>

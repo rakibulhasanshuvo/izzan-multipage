@@ -7,6 +7,28 @@ import { prisma } from "./db";
 import { checkRateLimit, getClientIpFromHeaders, MAX_LOGIN_ATTEMPTS } from "./rate-limit";
 import { headers } from "next/headers";
 
+/**
+ * Resolved lazily (via the getter on authOptions) so that builds never
+ * require secrets: page-data collection imports this module, and CI/Vercel
+ * build environments legitimately have no NEXTAUTH_SECRET. At request time
+ * a missing secret in production still fails fast.
+ */
+const BUILD_PLACEHOLDER_SECRET = "nextauth-build-placeholder-not-used-at-runtime";
+
+function resolveSecret(): string {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (secret) return secret;
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    console.warn("⚠️ NEXTAUTH_SECRET is not set during build; using a placeholder. Configure it in your deployment environment.");
+    return BUILD_PLACEHOLDER_SECRET;
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Fatal: NEXTAUTH_SECRET is required in production. Generate one with: openssl rand -base64 32");
+  }
+  console.warn("⚠️ NEXTAUTH_SECRET is not set. Using insecure dev-only fallback. Do NOT deploy like this.");
+  return "insecure-dev-only-do-not-deploy";
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -70,17 +92,9 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/admin/login",
   },
-  secret: (() => {
-    const secret = process.env.NEXTAUTH_SECRET;
-    if (!secret && process.env.NODE_ENV === "production") {
-      throw new Error("Fatal: NEXTAUTH_SECRET is required in production. Generate one with: openssl rand -base64 32");
-    }
-    if (!secret) {
-      console.warn("⚠️ NEXTAUTH_SECRET is not set. Using insecure dev-only fallback. Do NOT deploy like this.");
-      return "insecure-dev-only-do-not-deploy";
-    }
-    return secret;
-  })(),
+  get secret() {
+    return resolveSecret();
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {

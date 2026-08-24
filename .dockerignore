@@ -1,0 +1,30 @@
+# Dependencies (installed fresh inside the image)
+node_modules
+
+# Next.js build output
+.next
+out
+
+# Git
+.git
+.gitignore
+
+# Environment files must never enter the builder layer
+.env
+.env.local
+.env.*.local
+
+# Runtime data & machine-generated artifacts
+public/uploads
+backups
+audits
+coverage
+*.log
+
+# Editor / OS noise
+.vscode
+.idea
+.DS_Store
+
+# TypeScript build info
+tsconfig.tsbuildinfo

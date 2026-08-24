@@ -23,12 +23,18 @@ services:
       - TRUST_PROXY=${TRUST_PROXY:-false}
       # Use local storage provider for VPS persistent disk storage
       - STORAGE_PROVIDER=local
+      # Public site URL — used by robots.txt/sitemap/metadata. Must be set at
+      # BUILD time too for robots.txt (prerendered); pass as a build arg if needed.
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
       # Connect to local Redis for rate-limiting (with auth)
       - REDIS_URL=redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}@redis:6379
       # PostgreSQL connection (internal compose network)
       - DATABASE_URL=postgresql://${POSTGRES_USER:-izzan}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-izzan}
     volumes:
-      # Mount the uploads directory to persist CMS media
+      # Mount the uploads directory to persist CMS media.
+      # NOTE: the container runs as UID 1001 (nextjs). On the host run:
+      #   sudo chown -R 1001:1001 ./public/uploads
+      # or uploads will fail with EACCES.
       - ./public/uploads:/app/public/uploads
     depends_on:
       postgres:

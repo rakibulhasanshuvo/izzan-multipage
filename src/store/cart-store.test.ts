@@ -96,4 +96,34 @@ describe('cart-store', () => {
     expect(total).toBeCloseTo(17.5);
     expect(count).toBe(4);
   });
+
+  it('refuses to add an out-of-stock product', () => {
+    const p = makeProduct('oos', 10);
+    (p as unknown as { stock: number }).stock = 0;
+    useCartStore.getState().addToCart(p);
+
+    expect(useCartStore.getState().cartItems).toHaveLength(0);
+  });
+
+  it('caps add-to-cart increments at the per-item limit of 10', () => {
+    const p = makeProduct('cap', 10);
+    for (let i = 0; i < 15; i++) {
+      useCartStore.getState().addToCart(p);
+    }
+
+    const line = useCartStore.getState().cartItems[0] as CartItem;
+    expect(line.quantity).toBe(10);
+    expect(line.maxQuantity).toBe(10);
+  });
+
+  it('clamps updateQuantity to the stored stock snapshot', () => {
+    const p = makeProduct('low', 10);
+    (p as unknown as { stock: number }).stock = 3;
+    useCartStore.getState().addToCart(p);
+    useCartStore.getState().updateQuantity('low', 99);
+
+    const line = useCartStore.getState().cartItems[0] as CartItem;
+    expect(line.quantity).toBe(3);
+    expect(line.maxQuantity).toBe(3);
+  });
 });

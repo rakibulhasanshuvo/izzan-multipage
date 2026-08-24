@@ -213,6 +213,9 @@ export async function updateSettings(data: unknown) {
           emailAlerts: parsed.data.emailAlerts ?? true,
           orderNotifs: parsed.data.orderNotifs ?? true,
           marketingUpdates: parsed.data.marketingUpdates ?? false,
+          // Without this, a first-save on a fresh install silently drops the
+          // avatar that was just uploaded.
+          avatarUrl: parsed.data.avatarUrl || null,
         },
       });
     }

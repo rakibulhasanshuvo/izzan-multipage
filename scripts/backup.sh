@@ -83,7 +83,8 @@ else
     exit 1
 fi
 
-# Keep only the last 7 of each kind and delete older ones
+# Delete archives older than RETENTION_DAYS days (-mtime +N means strictly
+# older than N days, i.e. age > N+1 in some edge cases — kept for simplicity)
 find "$BACKUP_DIR" \( -name "izzan_db_*.sql.gz.enc" -o -name "izzan_uploads_*.tar.gz.enc" \) \
   -type f -mtime +"$RETENTION_DAYS" -delete
 echo "Cleaned up backups older than $RETENTION_DAYS days."

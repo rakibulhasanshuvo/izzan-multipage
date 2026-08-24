@@ -98,7 +98,9 @@ describe('Orders API POST handler', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe('Missing required fields or empty cart');
+    // Route now surfaces the first field-level validation message
+    expect(typeof data.error).toBe('string');
+    expect(data.error.length).toBeGreaterThan(0);
   });
 
   it('should return 400 if items array is empty', async () => {
@@ -107,7 +109,7 @@ describe('Orders API POST handler', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe('Missing required fields or empty cart');
+    expect(data.error).toBe('Cart cannot be empty');
   });
 
   it('should successfully process a valid order for a new customer', async () => {
@@ -364,7 +366,7 @@ describe('Orders API POST handler', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe('Missing required fields or empty cart');
+    expect(data.error).toBe('Invalid email address');
   });
 
   // --- Fraud hardening ---
@@ -400,7 +402,8 @@ describe('Orders API POST handler', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe('Missing required fields or empty cart');
+    // Truthful per-item cap message (was a generic string before)
+    expect(data.error).toBe('Quantity cannot exceed 10 per item');
   });
 
   it('should reject orders whose DB-calculated total exceeds MAX_ORDER_TOTAL', async () => {

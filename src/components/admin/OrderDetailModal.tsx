@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { formatMoney } from "@/lib/utils";
+
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { updateOrderStatus, updateOrderTracking } from "@/app/(admin)/admin/actions";
@@ -25,6 +27,16 @@ export default function OrderDetailModal({ isOpen, onClose, order }: OrderDetail
   const [isUpdatingTracking, setIsUpdatingTracking] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState(order?.trackingNumber || "");
   const [trackingCarrier, setTrackingCarrier] = useState(order?.trackingCarrier || "");
+
+  // Track whether the admin has typed into the tracking fields since the
+  // modal opened; external updates (e.g. router.refresh after another admin
+  // edits) only sync into untouched fields.
+  const trackingTouchedRef = React.useRef(false);
+  useEffect(() => {
+    if (trackingTouchedRef.current) return;
+    setTrackingNumber(order?.trackingNumber || "");
+    setTrackingCarrier(order?.trackingCarrier || "");
+  }, [order]);
 
   if (!isOpen || !order) return null;
 
@@ -239,7 +251,7 @@ export default function OrderDetailModal({ isOpen, onClose, order }: OrderDetail
                             {item.name}
                           </td>
                           <td className="py-3.5 px-4 text-center font-mono">
-                            ${item.price.toFixed(2)}
+                            {formatMoney(item.price)}
                           </td>
                           <td className="py-3.5 px-4 text-center font-semibold text-zinc-500 dark:text-zinc-400">
                             {item.quantity}
@@ -258,7 +270,7 @@ export default function OrderDetailModal({ isOpen, onClose, order }: OrderDetail
                     Grand Total
                   </span>
                   <span className="text-[20px] font-bold text-zinc-900 dark:text-zinc-100 font-mono">
-                    ${order.totalAmount.toFixed(2)}
+                    {formatMoney(order.totalAmount)}
                   </span>
                 </div>
               </div>
@@ -277,9 +289,13 @@ export default function OrderDetailModal({ isOpen, onClose, order }: OrderDetail
                       <input
                         id="tracking-carrier"
                         type="text"
+                        maxLength={100}
                         placeholder="e.g. RedX, Pathao, FedEx"
                         value={trackingCarrier}
-                        onChange={(e) => setTrackingCarrier(e.target.value)}
+                        onChange={(e) => {
+                          trackingTouchedRef.current = true;
+                          setTrackingCarrier(e.target.value);
+                        }}
                         className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-[14px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
                       />
                     </div>
@@ -290,9 +306,13 @@ export default function OrderDetailModal({ isOpen, onClose, order }: OrderDetail
                       <input
                         id="tracking-number"
                         type="text"
+                        maxLength={200}
                         placeholder="e.g. RX-9876543"
                         value={trackingNumber}
-                        onChange={(e) => setTrackingNumber(e.target.value)}
+                        onChange={(e) => {
+                          trackingTouchedRef.current = true;
+                          setTrackingNumber(e.target.value);
+                        }}
                         className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2.5 text-[14px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all"
                       />
                     </div>

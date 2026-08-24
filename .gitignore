@@ -59,3 +59,6 @@ next-env.d.ts
 # uploads and backups
 /public/uploads
 /backups
+
+# lighthouse output (scripts/audit.mjs)
+/audits

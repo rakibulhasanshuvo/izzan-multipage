@@ -24,7 +24,10 @@ if (-not (Test-Path -Path $BackupDir)) {
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 
 # Filenames
-$DumpName = "izzan_db_$Timestamp.sql.gz"
+# Note: dumps are stored uncompressed (pg_dump writes its own file); encryption
+# happens afterwards. Avoids piping binary through PowerShell's text pipeline,
+# which silently corrupts SQL dumps on Windows PowerShell 5.1.
+$DumpName = "izzan_db_$Timestamp.sql"
 $DumpPath = Join-Path -Path $BackupDir -ChildPath $DumpName
 $DumpEncryptedPath = "$DumpPath.enc"
 $ArchiveName = "izzan_uploads_$Timestamp.tar.gz"
@@ -45,8 +48,11 @@ function Encrypt-File {
     $salt = New-Object byte[] 16
     [Security.Cryptography.RandomNumberGenerator]::Fill($salt)
 
-    # Derive a 32-byte key + 16-byte IV via PBKDF2 (matches openssl defaults for digest)
-    $derive = New-Object Security.Cryptography.Rfc2898DeriveBytes($passbytes, $salt, 200000)
+    # Derive a 32-byte key + 16-byte IV via PBKDF2-SHA256 (200k iterations).
+    # SHA-256 matches `openssl enc -pbkdf2` (its default digest), so archives
+    # encrypted here decrypt with the documented openssl restore command and
+    # vice versa. The 3-arg ctor would default to SHA-1 and break that.
+    $derive = New-Object Security.Cryptography.Rfc2898DeriveBytes($passbytes, $salt, 200000, [Security.Cryptography.HashAlgorithmName]::SHA256)
     $key = $derive.GetBytes(32)
     $iv  = $derive.GetBytes(16)
 
@@ -70,7 +76,8 @@ function Encrypt-File {
     $cryptoStream.Dispose(); $inStream.Dispose(); $outStream.Dispose(); $aes.Dispose()
 }
 
-# Database: pg_dump into a local gzip file.
+# Database: pg_dump writes straight to a file (never through PowerShell's
+# text pipeline, which corrupts binary streams on Windows PowerShell 5.1).
 # Source: the Docker container when it is running, else a host-local pg_dump.
 $containerRunning = $false
 try {
@@ -81,7 +88,18 @@ try {
 
 if ($containerRunning) {
     Write-Host "Dump source: Docker container '$PostgresContainer'"
-    docker exec $PostgresContainer pg_dump -U $PostgresUser $PostgresDb | gzip > $DumpPath
+    docker exec $PostgresContainer pg_dump -U $PostgresUser -f /tmp/izzan_backup.sql $PostgresDb
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Error: pg_dump failed inside the container." -ForegroundColor Red
+        exit 1
+    }
+    docker cp "${PostgresContainer}:/tmp/izzan_backup.sql" (Resolve-Path $BackupDir).Path
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Error: could not copy dump out of the container." -ForegroundColor Red
+        exit 1
+    }
+    Move-Item -Path (Join-Path $BackupDir "izzan_backup.sql") -Destination $DumpPath -Force
+    docker exec $PostgresContainer rm /tmp/izzan_backup.sql | Out-Null
 } elseif (Get-Command pg_dump -ErrorAction SilentlyContinue) {
     Write-Host "Docker container not found — using host pg_dump at ${PostgresHost}:${PostgresPort}"
     if (-not $env:POSTGRES_PASSWORD) {
@@ -89,7 +107,7 @@ if ($containerRunning) {
         exit 1
     }
     $env:PGPASSWORD = $env:POSTGRES_PASSWORD
-    & pg_dump "-h$PostgresHost" "-p$PostgresPort" "-U$PostgresUser" $PostgresDb | gzip > $DumpPath
+    & pg_dump "-h$PostgresHost" "-p$PostgresPort" "-U$PostgresUser" "-f$DumpPath" $PostgresDb
 } else {
     Write-Host "Error: Docker container '$PostgresContainer' not running and no host pg_dump found." -ForegroundColor Red
     exit 1
@@ -129,14 +147,14 @@ if ($LASTEXITCODE -eq 0) {
     exit 1
 }
 
-# Keep only the last 7 of each kind and delete older ones
-Get-ChildItem -Path $BackupDir -Include "izzan_db_*.sql.gz.enc", "izzan_uploads_*.tar.gz.enc" -Recurse |
+# Delete archives older than $RetentionDays days
+Get-ChildItem -Path $BackupDir -Include "izzan_db_*.sql.enc", "izzan_uploads_*.tar.gz.enc" -Recurse |
     Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$RetentionDays) } |
     Remove-Item -Force
 
-# Restore database with:
+# Restore database with (note: no gunzip — dumps are plain SQL):
 # openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:BACKUP_PASSPHRASE `
-#   -in <dump>.sql.gz.enc | gunzip | docker exec -i izzan-postgres psql -U izzan -d izzan
+#   -in <dump>.sql.enc | docker exec -i izzan-postgres psql -U izzan -d izzan
 # (host-mode: pipe the same output into `psql -h 127.0.0.1 -U izzan -d izzan` instead)
 #
 # Restore uploads with:

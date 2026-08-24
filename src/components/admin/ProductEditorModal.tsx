@@ -150,13 +150,24 @@ export default function ProductEditorModal({
                   <div className="space-y-5">
                     <div className="aspect-square rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed border-zinc-200 dark:border-zinc-700 flex flex-col items-center justify-center overflow-hidden relative group transition-colors hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-600">
                       {watch("img") ? (
-                        <Image
-                          src={watch("img")}
-                          alt="Preview"
-                          fill
-                          sizes="(max-width: 768px) 100vw, 400px"
-                          className="object-cover group-hover:scale-105 transition-transform duration-700"
-                        />
+                        /\.(mp4|webm)(\?.*)?$/i.test(watch("img")) ? (
+                          <video
+                            src={watch("img")}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            muted
+                            loop
+                            autoPlay
+                            playsInline
+                          />
+                        ) : (
+                          <Image
+                            src={watch("img")}
+                            alt="Preview"
+                            fill
+                            sizes="(max-width: 768px) 100vw, 400px"
+                            className="object-cover group-hover:scale-105 transition-transform duration-700"
+                          />
+                        )
                       ) : (
                         <>
                           <div className="w-16 h-16 bg-white dark:bg-zinc-800 rounded-full shadow-sm border border-zinc-100 dark:border-zinc-700 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-500">
@@ -184,7 +195,7 @@ export default function ProductEditorModal({
                             <span className="material-symbols-outlined text-[14px]">upload</span>
                           )}
                           Upload
-                          <input type="file" className="hidden" accept="image/*,video/*" onChange={(e) => handleFileUpload(e, "img")} disabled={isUploadingImg} />
+                          <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(e) => handleFileUpload(e, "img")} disabled={isUploadingImg} />
                         </label>
                       </div>
                     </div>
@@ -204,7 +215,7 @@ export default function ProductEditorModal({
                             <span className="material-symbols-outlined text-[14px]">upload</span>
                           )}
                           Upload
-                          <input type="file" className="hidden" accept="image/*,video/*" onChange={(e) => handleFileUpload(e, "hoverImg")} disabled={isUploadingHoverImg} />
+                          <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(e) => handleFileUpload(e, "hoverImg")} disabled={isUploadingHoverImg} />
                         </label>
                       </div>
                     </div>
@@ -246,7 +257,7 @@ export default function ProductEditorModal({
                       <FieldError message={errors.price?.message} />
                     </div>
                     <div>
-                      <label className="text-[12px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2 block">Sale Price ($)</label>
+                      <label className="text-[12px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2 block">Compare-at Price ($)</label>
                       <input
                         type="number"
                         step="any"

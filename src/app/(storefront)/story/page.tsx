@@ -158,7 +158,7 @@ export default async function StoryPage() {
       <div className="text-center mt-20">
         <Link
           href="/shop"
-          className="group inline-flex items-center space-x-3 px-10 py-4 bg-[#607c64] text-white rounded-full font-bold tracking-[0.2em] text-xs md:text-sm uppercase hover:bg-opacity-95 transition-all duration-500 shadow-lg shadow-[#607c64]/20 cursor-pointer"
+          className="group inline-flex items-center space-x-3 px-10 py-4 bg-[#607c64] text-white rounded-full font-bold tracking-[0.2em] text-xs md:text-sm uppercase hover:bg-[#607c64]/95 transition-all duration-500 shadow-lg shadow-[#607c64]/20 cursor-pointer"
         >
           <span>Explore The Collections</span>
           <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform duration-300" />

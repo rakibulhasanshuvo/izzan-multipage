@@ -1,11 +1,44 @@
 import { NextRequest } from "next/server";
 import { Redis } from "@upstash/redis";
+import RedisResp from "ioredis";
 import { logger } from "./logger";
 
-// Redis client (only initialized if REDIS_URL is present)
-const redis = process.env.REDIS_URL
+/**
+ * Two client types are supported, selected by REDIS_URL scheme:
+ * - https://…  → Upstash REST API (@upstash/redis)
+ * - redis://… / rediss://… → native RESP (ioredis), e.g. docker-compose redis
+ */
+interface RateLimitStore {
+  incr(key: string): Promise<number>;
+  pexpire(key: string, ms: number): Promise<unknown>;
+  ping(): Promise<unknown>;
+}
+
+const upstashClient = process.env.REDIS_URL?.startsWith("http")
   ? new Redis({ url: process.env.REDIS_URL, token: process.env.REDIS_TOKEN || "" })
   : null;
+
+const respClient: RateLimitStore | null =
+  !upstashClient && (process.env.REDIS_URL?.startsWith("redis://") || process.env.REDIS_URL?.startsWith("rediss://"))
+    ? (() => {
+        const client = new RedisResp(process.env.REDIS_URL as string, {
+          lazyConnect: false,
+          maxRetriesPerRequest: 1,
+          // Keep retrying in the background; checkRateLimit has its own
+          // circuit breaker so requests never wait on a doomed connection.
+          enableOfflineQueue: false,
+        });
+        // Without a listener, ioredis 'error' events would surface as
+        // uncaught exceptions; the circuit breaker below handles failures.
+        client.on("error", (error: Error) => {
+          redisDisabledUntil = Date.now() + REDIS_FAILURE_COOLDOWN_MS;
+          logger.error("Rate limiter: Redis connection error", { error: error.message });
+        });
+        return client;
+      })()
+    : null;
+
+const redis: RateLimitStore | null = upstashClient ?? respClient;
 
 // Local fallback Rate limiting state
 export const rateLimitMap = new Map<string, { count: number; resetTime: number }>();

@@ -15,6 +15,18 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const page = Math.min(Math.max(requestedPage, 1), totalPages);
 
+  // KPI cards must reflect the WHOLE customer base, not the current page
+  // slice — computed here via SQL aggregates.
+  const [activeGold, avgSpendAgg] = await Promise.all([
+    prisma.customer.count({ where: { tier: "Gold" } }),
+    prisma.customer.aggregate({ _avg: { totalSpend: true } }),
+  ]);
+  const stats = {
+    total,
+    activeGold,
+    avgLtv: Number((Number(avgSpendAgg._avg.totalSpend ?? 0)).toFixed(2)),
+  };
+
   const customers = await prisma.customer.findMany({
     orderBy: { createdAt: "desc" },
     skip: (page - 1) * PAGE_SIZE,
@@ -29,19 +41,16 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
           <h1 className="font-serif text-[36px] text-zinc-900 dark:text-zinc-100 leading-tight mb-2">Customers</h1>
           <p className="text-[16px] text-zinc-500 dark:text-zinc-400">Manage your high-value client relationships.</p>
         </div>
-        <div className="flex gap-4">
-          <button className="flex items-center gap-2 px-6 py-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-3xl border border-zinc-200/50 dark:border-zinc-700/50 rounded-full text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors font-medium shadow-sm">
-            <span className="material-symbols-outlined text-[18px]">filter_list</span>
-            Filter
-          </button>
-          <button className="flex items-center gap-2 px-6 py-3 bg-zinc-900 dark:bg-white text-white rounded-full hover:bg-zinc-800 transition-colors font-medium shadow-lg shadow-zinc-900/20">
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Add Client
-          </button>
-        </div>
       </div>
 
-      <CustomersTableClient initialCustomers={serializeCustomerList(customers)} page={page} totalPages={totalPages} total={total} />
+      {/* Data Table */}
+      <CustomersTableClient
+        initialCustomers={serializeCustomerList(customers)}
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        stats={stats}
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import { formatMoney } from "@/lib/utils";
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Search as SearchIcon, X, ArrowRight } from "lucide-react";
@@ -13,14 +14,21 @@ export function Search() {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const fetchedOnce = useRef(false);
 
   useEffect(() => {
     if (isOpen && !fetchedOnce.current) {
-      // Flag set synchronously so exactly one attempt happens per mount,
-      // even if the action errors or returns an empty catalog.
+      // Exactly one in-flight attempt per mount; a failed fetch clears the
+      // flag below so the next open retries instead of being stuck empty.
       fetchedOnce.current = true;
-      fetchStorefrontProducts().then((data) => setDbProducts(data as unknown as Product[]));
+      setIsLoading(true);
+      fetchStorefrontProducts()
+        .then((data) => setDbProducts(data as unknown as Product[]))
+        .catch(() => {
+          fetchedOnce.current = false;
+        })
+        .finally(() => setIsLoading(false));
     }
   }, [isOpen]);
 
@@ -124,11 +132,15 @@ export function Search() {
                         </div>
                         <div className="ml-4 flex-1">
                           <h4 className="font-semibold text-sm dark:text-gray-100 group-hover:text-primary transition-colors">{product.name}</h4>
-                          <p className="text-xs text-gray-500 mt-1">${product.price}</p>
+                          <p className="text-xs text-gray-500 mt-1">{formatMoney(product.price)}</p>
                         </div>
                         <ArrowRight size={16} className="text-gray-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                       </Link>
                     ))}
+                  </div>
+                ) : isLoading ? (
+                  <div className="py-12 text-center text-gray-500">
+                    <p>Loading catalog…</p>
                   </div>
                 ) : (
                   <div className="py-12 text-center text-gray-500">

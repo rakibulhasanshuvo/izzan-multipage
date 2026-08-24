@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { updateCMSContent } from "@/app/(admin)/admin/actions";
@@ -36,7 +36,36 @@ export default function CMSManagement({ initialSections }: CMSManagementProps) {
   const [isSaving, setIsSaving] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<string | null>(null);
 
+  // Keys with unsaved local edits. Server data never overwrites these, so a
+  // concurrent admin's change can't silently vanish under half-typed work.
+  const dirtyKeysRef = useRef<Set<string>>(new Set());
+
+  // Re-sync local state whenever fresh server data arrives via
+  // router.refresh() — otherwise editors go stale (last-write-wins).
+  useEffect(() => {
+    setSections(prev => {
+      const next: Record<string, CMSItem[]> = {};
+      let changed = false;
+      for (const [sectionName, items] of Object.entries(initialSections)) {
+        next[sectionName] = items.map(item => {
+          const isMediaField = item.key.includes('_img') || item.key.includes('_video') || item.key.includes('_poster') || item.key.includes('_url');
+          const normalized = { ...item, isLongText: item.value.length > 100 && !isMediaField };
+          const local = prev[sectionName]?.find(i => i.key === item.key);
+          // Adopt server value unless this field has unsaved local edits.
+          if (!local || !dirtyKeysRef.current.has(item.key)) {
+            if (!local || local.value !== normalized.value) changed = true;
+            return normalized;
+          }
+          return local;
+        });
+        if (!prev[sectionName]) changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [initialSections]);
+
   const handleValueChange = (section: string, key: string, newValue: string) => {
+    dirtyKeysRef.current.add(key);
     setSections((prev) => ({
       ...prev,
       [section]: prev[section].map((item) =>
@@ -51,6 +80,9 @@ export default function CMSManagement({ initialSections }: CMSManagementProps) {
       await updateCMSContent(item.id, item.value);
 
       toast.success(`Updated ${item.key}`);
+      // Saved: clear the dirty flag first so the post-refresh server value
+      // (post-sanitization) can be adopted below without being blocked.
+      dirtyKeysRef.current.delete(item.key);
       router.refresh();
     } catch (error) {
       toast.error("Error updating content");

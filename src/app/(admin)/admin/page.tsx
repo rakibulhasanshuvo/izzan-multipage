@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic";
 export default async function AdminOverview() {
   // 1. Basic Stats
   const productCount = await prisma.product.count();
-  const orderCount = await prisma.order.count();
+  // Consistent with the revenue aggregates: cancelled orders are excluded.
+  const orderCount = await prisma.order.count({ where: { status: { not: "Cancelled" } } });
   const customersCount = await prisma.customer.count();
 
   const revenueObj = await prisma.order.aggregate({

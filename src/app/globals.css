@@ -3,6 +3,9 @@
 /* noinspection CssUnknownAtRule */
 /* css-disable-next-line */
 @import "tailwindcss";
+/* Tailwind v4 port of tailwindcss-animate: provides animate-in, fade-in,
+   zoom-in-95, slide-in-from-bottom-* utilities used across the app. */
+@plugin "tw-animate-css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -10,21 +13,27 @@
   --color-primary: #607c64;
   --color-primary-dark: #4a5f4d;
   --color-primary-light: #8ca391;
-  
+
   --color-background-light: #fdfbf7;
   --color-background-dark: #1a1f1b;
-  
+
   --color-secondary-light: #e2e8df;
   --color-secondary-dark: #2d3730;
-  
+
   --color-text-light: #333333;
   --color-text-dark: #ffffff;
-  
+
+  /* Text color used on top of primary-colored surfaces */
+  --color-on-primary: #ffffff;
+
   --color-accent-gold: #d4af37;
   --color-accent-gold-light: #e5c566;
 
   --font-display: var(--font-playfair), serif;
   --font-body: var(--font-lato), sans-serif;
+  --font-serif: var(--font-noto-serif), serif;
+  --font-logo: var(--font-parisienne), cursive;
+  --font-body-md: var(--font-lato), sans-serif;
 }
 
 

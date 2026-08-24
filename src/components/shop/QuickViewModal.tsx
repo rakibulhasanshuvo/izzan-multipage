@@ -3,12 +3,14 @@
 import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import type { ProductView as Product } from "@/lib/serialize";
-import { useCart } from "@/store/cart-store";
+import { useCart, lineCapFor } from "@/store/cart-store";
 import { getProductMetadata } from "@/lib/productDetails";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { X, Plus, Minus, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import FocusTrap from "focus-trap-react";
+import { formatMoney } from "@/lib/utils";
 
 interface QuickViewModalProps {
   product: Product;
@@ -18,6 +20,7 @@ interface QuickViewModalProps {
 export default function QuickViewModal({ product, onClose }: QuickViewModalProps) {
   const { addToCart } = useCart();
   const metadata = useMemo(() => getProductMetadata(product.name), [product.name]);
+  const quantityCap = Math.max(lineCapFor(product.stock), 0);
 
   const [selectedVolume, setSelectedVolume] = useState(() =>
     metadata.volumeOptions && metadata.volumeOptions.length > 0
@@ -39,7 +42,9 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (quantityCap < 1) return;
 
+    const capped = Math.min(quantity, quantityCap);
     const itemWithOption = {
       ...product,
       id: product.id,
@@ -47,18 +52,19 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
       variant: selectedVolume || undefined
     };
 
-    for (let i = 0; i < quantity; i++) {
+    for (let i = 0; i < capped; i++) {
       addToCart(itemWithOption);
     }
 
     toast.success("Added to Cart!", {
-      description: `${quantity}x ${product.name} ${selectedVolume ? `(${selectedVolume})` : ""} successfully added.`
+      description: `${capped}x ${product.name} ${selectedVolume ? `(${selectedVolume})` : ""} successfully added.`
     });
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <FocusTrap focusTrapOptions={{ fallbackFocus: "[aria-label='Close modal']", escapeDeactivates: false, allowOutsideClick: true }}>
+      <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={`Quick view: ${product.name}`}>
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -116,11 +122,11 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             <div className="flex items-center space-x-3 mb-4">
               {product.originalPrice && (
                 <span className="text-gray-400 line-through text-sm font-light">
-                  ${product.originalPrice}
+                  {formatMoney(product.originalPrice)}
                 </span>
               )}
               <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                ${product.price}
+                {formatMoney(product.price)}
               </span>
             </div>
 
@@ -201,8 +207,19 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
                 </span>
                 <button
                   type="button"
-                  onClick={() => setQuantity(q => q + 1)}
+                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <Minus size={14} />
+                </button>
+                <span className="w-8 text-center text-sm font-bold text-gray-800 dark:text-gray-200">
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity(q => Math.min(q + 1, quantityCap))}
+                  disabled={quantity >= quantityCap}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Plus size={14} />
                 </button>
@@ -212,14 +229,16 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             {/* Add to Cart CTA */}
             <button
               onClick={handleAddToCart}
-              className="w-full bg-[#607c64] hover:bg-[#4d6350] text-white py-4 rounded-xl text-xs tracking-[0.25em] font-bold uppercase transition-all shadow-lg shadow-[#607c64]/10 cursor-pointer flex items-center justify-center space-x-2"
+              disabled={quantityCap < 1}
+              className={`w-full py-4 rounded-xl text-xs tracking-[0.25em] font-bold uppercase transition-all shadow-lg shadow-[#607c64]/10 flex items-center justify-center space-x-2 ${quantityCap < 1 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#607c64] hover:bg-[#4d6350] text-white cursor-pointer'}`}
             >
               <ShoppingBag size={14} />
-              <span>Add to Cart - ${(product.price * quantity).toFixed(2)}</span>
+              <span>{quantityCap < 1 ? "Out of Stock" : `Add to Cart - ${formatMoney(product.price * quantity)}`}</span>
             </button>
           </div>
         </div>
       </motion.div>
     </div>
+    </FocusTrap>
   );
 }

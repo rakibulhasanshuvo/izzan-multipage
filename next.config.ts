@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Required by the Dockerfile runner stage (COPY .next/standalone); ignored
+  // by Vercel, which handles its own output.
+  output: "standalone",
   serverExternalPackages: ["@prisma/client"],
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -9,6 +12,13 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
+        pathname: '**',
+      },
+      {
+        // Vercel Blob storage (STORAGE_PROVIDER=vercel) serves uploads from
+        // per-store subdomains like <store>.public.blob.vercel-storage.com
+        protocol: 'https',
+        hostname: '**.public.blob.vercel-storage.com',
         pathname: '**',
       },
     ],

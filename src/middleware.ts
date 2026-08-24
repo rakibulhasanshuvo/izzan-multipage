@@ -3,15 +3,18 @@ import { getToken } from "next-auth/jwt";
 
 const isDev = process.env.NODE_ENV === "development";
 
+// Hosts allowed to serve user-uploaded media through next/image / <video>.
+const MEDIA_HOSTS = "https://lh3.googleusercontent.com https://*.public.blob.vercel-storage.com";
+
 function buildCsp(nonce: string): string {
   if (isDev) {
     return [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data:",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' blob: data: https://lh3.googleusercontent.com",
+      `img-src 'self' blob: data: ${MEDIA_HOSTS}`,
       "font-src 'self' data:",
-      "media-src 'self' blob: data: https://storage.googleapis.com",
+      `media-src 'self' blob: data: https://storage.googleapis.com ${MEDIA_HOSTS}`,
       "connect-src 'self' ws: wss:",
     ].join("; ");
   }
@@ -21,9 +24,9 @@ function buildCsp(nonce: string): string {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     "style-src 'self' 'unsafe-inline'",
     "worker-src 'self' blob:",
-    "img-src 'self' blob: data: https://lh3.googleusercontent.com",
+    `img-src 'self' blob: data: ${MEDIA_HOSTS}`,
     "font-src 'self' data:",
-    "media-src 'self' blob: data: https://storage.googleapis.com",
+    `media-src 'self' blob: data: https://storage.googleapis.com ${MEDIA_HOSTS}`,
     "connect-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",

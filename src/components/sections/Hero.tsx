@@ -64,7 +64,7 @@ export function Hero({ title, subtitle, videoUrl, posterUrl }: { title?: string,
           preload="metadata"
           className="object-cover object-center w-full h-full absolute inset-0"
         >
-          <track kind="captions" srcLang="en" label="English" />
+
           {videoUrl && <source src={videoUrl} type="video/mp4" />}
         </video>
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/30 md:to-transparent dark:from-black/95 dark:via-black/70"></div>

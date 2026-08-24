@@ -22,7 +22,7 @@ const staggerContainer: Variants = {
 const faqs = [
   { question: "How long do your candles burn?", answer: "Our standard 8oz candles offer a clean burn for approximately 45-50 hours when cared for properly." },
   { question: "Are your essential oils safe for pets?", answer: "While our ingredients are 100% natural, some essential oils can be sensitive to certain pets. We recommend consulting your vet and burning in well-ventilated areas." },
-  { question: "What is your return policy?", answer: "We offer a 30-day money-back guarantee. If you don't love your Izzan product, simply return it unused for a full refund." },
+  { question: "What is your return policy?", answer: "Returns are accepted within 14 days of delivery on all unused and unopened items for a full refund." },
 ];
 
 export function FAQ() {

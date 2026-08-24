@@ -9,13 +9,20 @@ interface SalesTargetTrackerProps {
 }
 
 export default function SalesTargetTracker({ currentSales, target = 1000 }: SalesTargetTrackerProps) {
-  const percentage = target > 0 ? Math.min(Math.round((currentSales / target) * 100), 100) : 0;
+  // True percentage (overachievement stays visible); only the ring geometry
+  // is clamped below.
+  const percentage = target > 0 ? Math.round((currentSales / target) * 100) : 0;
+  const ringPercentage = Math.min(Math.max(percentage, 0), 100);
+
+  // Actual days in the current month, so the daily run rate is honest.
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
   // SVG parameters for the circular ring
   const radius = 50;
   const strokeWidth = 8;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const strokeDashoffset = circumference - (ringPercentage / 100) * circumference;
 
   return (
     <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-3xl rounded-3xl p-6 md:p-8 border border-white dark:border-zinc-800 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex flex-col justify-between h-full relative overflow-hidden group">
@@ -99,7 +106,7 @@ export default function SalesTargetTracker({ currentSales, target = 1000 }: Sale
         <div className="flex justify-between items-center text-[12px] text-zinc-500 dark:text-zinc-400">
           <span>Daily Run Rate Target</span>
           <span className="font-semibold text-zinc-800 dark:text-zinc-200 font-mono">
-            ${Math.round(target / 30)} / day
+            ${Math.round(target / daysInMonth)} / day
           </span>
         </div>
       </div>

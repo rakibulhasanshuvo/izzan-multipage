@@ -11,9 +11,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    "*.js",
+    // Root-level config files only — a bare "*.js" would silently exclude
+    // every .js file repo-wide from linting.
+    "/*.js",
     "coverage/**",
     "src/generated/**",
+    "audits/**",
   ]),
 ]);
 

@@ -51,6 +51,9 @@ jobs:
       - name: Typecheck (zero errors)
         run: npx tsc --noEmit
 
+      - name: Lint (zero errors)
+        run: npm run lint
+
       - name: Audit (zero vulnerabilities)
         run: npm audit --audit-level=low
 

@@ -6,7 +6,15 @@ import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
 import { useAdminSidebar } from "./AdminSidebarContext";
 
-export default function TopAppBar() {
+export default function TopAppBar({
+  adminName,
+  adminAvatarUrl,
+}: {
+  /** Saved profile name from AdminSettings (server-provided) */
+  adminName?: string;
+  /** Saved avatar URL from AdminSettings (server-provided) */
+  adminAvatarUrl?: string | null;
+}) {
   const pathname = usePathname();
   const { isOpen, setIsOpen } = useAdminSidebar();
   const { theme, setTheme } = useTheme();
@@ -56,14 +64,20 @@ export default function TopAppBar() {
           <div className="w-6 h-6" aria-hidden="true" />
         )}
 
-        <button aria-label="User Profile" className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-white dark:border-zinc-800 shadow-sm ml-0 md:ml-2 cursor-pointer hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative">
-          <Image
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5Z6EOvrTdFYj2jxBp2kgCLuxY-wuRAOwt4AUKYz3EwVFFwDrRwW5F6R7jKNh38rfSi146wxLCmlH3Neb5PI0o7QJr2zzHDTp87l-LmnZNyH7pbTUJ7EjfhnizZD32u2FoBOuO-Q5TqdK1XRMlQQgBYTMHlaws9KxSUv2ELxyyTZI41WYpEcfEGTIEv8Q_Q6pDylg10n1ub1nbjt5FuTBsuYUF29WQNI83X01ECb_U3TY3UIeg5uJZ1hRRapg_mJrdc0RXHZxotQw"
-            alt="User Profile"
-            fill
-            sizes="(max-width: 768px) 36px, 40px"
-            className="object-cover"
-          />
+        <button aria-label="User Profile" title={adminName || undefined} className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden border-2 border-white dark:border-zinc-800 shadow-sm ml-0 md:ml-2 cursor-pointer hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 relative bg-zinc-100 dark:bg-zinc-800">
+          {adminAvatarUrl ? (
+            <Image
+              src={adminAvatarUrl}
+              alt={adminName || "User Profile"}
+              fill
+              sizes="(max-width: 768px) 36px, 40px"
+              className="object-cover"
+            />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center text-[12px] font-semibold text-zinc-500 dark:text-zinc-300 tracking-wider">
+              {(adminName || "A").split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()}
+            </span>
+          )}
         </button>
       </div>
     </header>

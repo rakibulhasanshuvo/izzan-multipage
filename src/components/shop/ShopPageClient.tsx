@@ -54,15 +54,43 @@ export default function ShopPageClient({ initialProducts }: ShopPageClientProps)
   const [showQuiz, setShowQuiz] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterPending, setNewsletterPending] = useState(false);
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newsletterEmail.trim() === "") return;
-    toast.info("Newsletter coming soon — thanks for your interest!");
+    if (newsletterEmail.trim() === "" || newsletterPending) return;
+    setNewsletterPending(true);
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: newsletterEmail.trim() }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || "Failed to subscribe. Please try again.");
+      }
+      toast.success("You're on the list! Your 15% off code is on its way.");
+      setNewsletterEmail("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to subscribe. Please try again.");
+    } finally {
+      setNewsletterPending(false);
+    }
   };
 
   // Prevent body scroll when mobile drawer is open
   useBodyScrollLock(isMobileFilterOpen);
+
+  // Escape closes the filters drawer
+  useEffect(() => {
+    if (!isMobileFilterOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsMobileFilterOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isMobileFilterOpen]);
 
   // Stable handlers for URL param syncing (stable identities keep the
   // SearchParamsHandler effect from re-firing on every render)
@@ -594,7 +622,7 @@ export default function ShopPageClient({ initialProducts }: ShopPageClientProps)
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Try widening your price range or adjusting active filter selections.</p>
               <button
                 onClick={handleClearAll}
-                className="mt-6 bg-[#607c64] text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.1em] hover:bg-opacity-90 transition-all cursor-pointer"
+                className="mt-6 bg-[#607c64] text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.1em] hover:bg-primary/90 transition-all cursor-pointer"
               >
                 Reset All Filters
               </button>
@@ -630,8 +658,8 @@ export default function ShopPageClient({ initialProducts }: ShopPageClientProps)
       {/* Mobile Drawer (Filters Panel) */}
       <AnimatePresence>
         {isMobileFilterOpen && (
-          <FocusTrap focusTrapOptions={{ fallbackFocus: "body", escapeDeactivates: false }}>
-            <div className="fixed inset-0 z-50 lg:hidden flex justify-end" role="dialog" aria-modal="true" aria-label="Filters Panel">
+          <FocusTrap focusTrapOptions={{ fallbackFocus: "body", escapeDeactivates: false, clickOutsideDeactivates: true }}>
+            <div className="fixed inset-0 z-[80] lg:hidden flex justify-end" role="dialog" aria-modal="true" aria-label="Filters Panel">
               {/* Backdrop */}
               <motion.div
                 initial={{ opacity: 0 }}
@@ -734,9 +762,10 @@ export default function ShopPageClient({ initialProducts }: ShopPageClientProps)
                 />
                 <button
                   type="submit"
-                  className="bg-[#607c64] hover:bg-[#4d6350] text-white px-8 py-3.5 rounded-full text-xs font-bold uppercase tracking-[0.1em] transition-all cursor-pointer shadow-md shadow-[#607c64]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#607c64]"
+                  disabled={newsletterPending}
+                  className="bg-[#607c64] hover:bg-[#4d6350] text-white px-8 py-3.5 rounded-full text-xs font-bold uppercase tracking-[0.1em] transition-all cursor-pointer shadow-md shadow-[#607c64]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#607c64] disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Subscribe
+                  {newsletterPending ? "…" : "Subscribe"}
                 </button>
               </form>
             </motion.div>

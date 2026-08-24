@@ -11,6 +11,7 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { checkoutFormSchema, type CheckoutFormValues } from "@/lib/validation";
 import { useCart } from "@/store/cart-store";
+import { formatMoney } from "@/lib/utils";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -23,8 +24,11 @@ const FieldError = ({ message }: { message?: string }) =>
 export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const { cartItems, cartTotal, clearCart, setCartOpen } = useCart();
   const idempotencyKeyRef = useRef("");
-  // Anti-bot: records when the modal opened so instant submits (bots) are rejected
+  // Anti-bot timing: measured from the FIRST user interaction with the form
+  // (not modal open) so browser-autofill users aren't punished for being fast.
+  // Scripted submissions that never fire input events still fail the check.
   const openedAtRef = useRef(0);
+  const firstInteractionAtRef = useRef<number | null>(null);
   const honeypotRef = useRef<HTMLInputElement>(null);
   const {
     register,
@@ -46,18 +50,39 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      idempotencyKeyRef.current = crypto.randomUUID();
+      idempotencyKeyRef.current =
+        globalThis.crypto?.randomUUID?.() ??
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       openedAtRef.current = Date.now();
+      firstInteractionAtRef.current = null;
     }
   }, [isOpen]);
 
-  // Minimum realistic fill time; scripted submissions are near-instant.
-  const MIN_FILL_MS = 3000;
+  // Escape closes the checkout modal (FocusTrap's escapeDeactivates is off
+  // so focus restoration is handled explicitly here).
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
+
+  const markInteracted = () => {
+    if (firstInteractionAtRef.current === null) {
+      firstInteractionAtRef.current = Date.now();
+    }
+  };
+
+  // Minimum realistic fill time from the first keystroke; scripted
+  // submissions that inject values without events remain near-instant.
+  const MIN_FILL_MS = 1500;
 
   const placeOrder = useMutation({
     mutationFn: async (values: CheckoutFormValues) => {
-      // Minimum realistic fill time; scripted submissions are near-instant.
-      if (Date.now() - openedAtRef.current < MIN_FILL_MS) {
+      const startedAt = firstInteractionAtRef.current ?? openedAtRef.current;
+      if (Date.now() - startedAt < MIN_FILL_MS) {
         throw new Error("Please take a moment to review your details before placing the order.");
       }
 
@@ -127,7 +152,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-2 rounded-full hover:bg-gray-250 dark:hover:bg-gray-800 transition-colors dark:text-gray-400 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors dark:text-gray-400 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     aria-label="Close checkout modal"
                   >
                     <X size={20} />
@@ -135,7 +160,12 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-6 min-h-0">
-                  <form onSubmit={handleSubmit((values) => placeOrder.mutate(values))} className="space-y-4" id="checkout-form">
+                  <form
+                    onSubmit={handleSubmit((values) => placeOrder.mutate(values))}
+                    onInput={markInteracted}
+                    className="space-y-4"
+                    id="checkout-form"
+                  >
                     {/* Honeypot: invisible to humans; bots that autofill it are rejected server-side */}
                     <input
                       ref={honeypotRef}
@@ -277,13 +307,13 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                 <div className="p-6 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Amount:</span>
-                    <span className="text-xl font-bold text-primary">${cartTotal.toFixed(2)}</span>
+                    <span className="text-xl font-bold text-primary">{formatMoney(cartTotal)}</span>
                   </div>
                   <button
                     type="submit"
                     form="checkout-form"
                     disabled={placeOrder.isPending}
-                    className="w-full bg-primary text-white py-3.5 rounded-lg text-sm font-bold uppercase tracking-widest hover:bg-opacity-90 transition-all shadow-md active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full bg-primary text-white py-3.5 rounded-lg text-sm font-bold uppercase tracking-widest hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {placeOrder.isPending ? (
                       <span className="flex items-center gap-2">

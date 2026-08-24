@@ -47,9 +47,10 @@ export default function OverviewClientContainer({
 }: OverviewClientContainerProps) {
   const [activeMetric, setActiveMetric] = useState<"revenue" | "orders">("revenue");
 
-  // Determine top sales zila if any orders exist
+  // Determine top sales zila if any orders exist (cancelled excluded, matching
+  // the revenue cards on this page)
   const zilaCounts = recentOrders.reduce((acc: Record<string, number>, order) => {
-    if (order.zila) {
+    if (order.zila && order.status !== "Cancelled") {
       acc[order.zila] = (acc[order.zila] || 0) + 1;
     }
     return acc;
@@ -227,7 +228,7 @@ export default function OverviewClientContainer({
                     key={product.id}
                     className="flex items-center gap-4 p-1 rounded-xl"
                   >
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-850 flex-shrink-0 relative">
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-800 flex-shrink-0 relative">
                       <Image
                         src={product.img}
                         alt={product.name}
@@ -287,7 +288,7 @@ function InteractiveStatCard({
         isClickable ? "cursor-pointer" : "",
         isActive
           ? "border-primary dark:border-primary -translate-y-1 shadow-[0_20px_40px_rgba(99,102,241,0.08)] bg-primary/[0.02] dark:bg-primary/[0.01]"
-          : "border-white dark:border-zinc-850 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)]"
+          : "border-white dark:border-zinc-800 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)]"
       )}
     >
       {/* Subtle ambient light gradient background for active card */}

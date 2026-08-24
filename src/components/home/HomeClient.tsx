@@ -246,7 +246,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
                 setSearchQuery("");
                 setSortBy("default");
               }}
-              className="mt-6 bg-[#607c64] text-white px-4 md:px-8 lg:px-12 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.1em] hover:bg-opacity-90 transition-all cursor-pointer"
+              className="mt-6 bg-[#607c64] text-white px-4 md:px-8 lg:px-12 py-2.5 rounded-full text-xs font-bold uppercase tracking-[0.1em] hover:bg-primary/90 transition-all cursor-pointer"
             >
               Reset All Filters
             </button>
@@ -314,7 +314,7 @@ export default function HomeClient({ products, cms }: HomeClientProps) {
       <Spotlight product={spotlightProduct} videoUrl={cms.spotlight_video} />
       
       {/* Brand Story Preview */}
-      <div id="story" className="relative py-8 bg-background-light dark:bg-background-dark transition-colors duration-300 scroll-mt-24">
+      <div className="relative py-8 bg-background-light dark:bg-background-dark transition-colors duration-300 scroll-mt-24">
         <Story title={cms.story_title} content={cms.story_content} imgUrl={cms.story_img} />
         <div className="flex justify-center -mt-8 mb-16 relative z-10">
           <Link

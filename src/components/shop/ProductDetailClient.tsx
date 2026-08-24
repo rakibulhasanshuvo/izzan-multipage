@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { formatMoney } from "@/lib/utils";
+
+import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ProductView as Product } from "@/lib/serialize";
-import { useCart } from "@/store/cart-store";
+import { useCart, lineCapFor } from "@/store/cart-store";
 import { getProductMetadata } from "@/lib/productDetails";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { ProductCard } from "@/components/ProductCard";
@@ -31,6 +33,9 @@ interface UserReview {
 export default function ProductDetailClient({ product, relatedProducts }: ProductDetailClientProps) {
   const { addToCart } = useCart();
   const metadata = useMemo(() => getProductMetadata(product.name), [product.name]);
+  // Client ceiling mirrors the server: live stock snapshot capped at the
+  // per-item checkout limit. The server remains authoritative.
+  const quantityCap = Math.max(lineCapFor(product.stock), 0);
 
   const [selectedVolume, setSelectedVolume] = useState(() => 
     metadata.volumeOptions && metadata.volumeOptions.length > 0 
@@ -54,7 +59,19 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
   // Prevent body scroll when review drawer is open (ref-counted shared lock)
   useBodyScrollLock(isWriteReviewOpen);
 
+  // Escape closes the review drawer
+  useEffect(() => {
+    if (!isWriteReviewOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsWriteReviewOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isWriteReviewOpen]);
+
   const handleAddToCart = () => {
+    if (quantityCap < 1) return;
+    const capped = Math.min(quantity, quantityCap);
     const itemWithOption = {
       ...product,
       id: product.id,
@@ -62,12 +79,12 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
       variant: selectedVolume || undefined
     };
 
-    for (let i = 0; i < quantity; i++) {
+    for (let i = 0; i < capped; i++) {
       addToCart(itemWithOption);
     }
 
     toast.success("Added to Cart!", {
-      description: `${quantity}x ${product.name}${selectedVolume ? ` (${selectedVolume})` : ""} successfully added.`
+      description: `${capped}x ${product.name}${selectedVolume ? ` (${selectedVolume})` : ""} successfully added.`
     });
   };
 
@@ -135,7 +152,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
         
         {/* Left Column: Media Gallery */}
         <div className="lg:col-span-6 lg:sticky lg:top-28">
-          <div className="relative w-full min-h-[350px] xs:min-h-[400px] md:min-h-0 md:aspect-[3/4] rounded-3xl overflow-hidden bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] shadow-lg group" style={{ position: "relative" }}>
+          <div className="relative w-full min-h-[350px] md:min-h-0 md:aspect-[3/4] rounded-3xl overflow-hidden bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] shadow-lg group" style={{ position: "relative" }}>
             <Image
               src={product.img}
               alt={product.name}
@@ -165,13 +182,13 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
             </h1>
             <div className="flex items-center space-x-3 mb-2">
               {product.originalPrice && (
-                <span className="text-gray-500 line-through text-lg font-light">${product.originalPrice}</span>
+                <span className="text-gray-500 line-through text-lg font-light">{formatMoney(product.originalPrice)}</span>
               )}
-              <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">${product.price}</span>
+              <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatMoney(product.price)}</span>
             </div>
 
             {/* Stars Summary */}
-            <div className="flex items-center space-x-2.5 text-xs text-gray-550 dark:text-gray-400 select-none">
+            <div className="flex items-center space-x-2.5 text-xs text-gray-500 dark:text-gray-400 select-none">
               <div className="flex text-[#d4af37]">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star 
@@ -232,7 +249,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                     className={`w-full text-left px-5 py-4 border rounded-xl text-xs md:text-sm transition-all cursor-pointer flex justify-between items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                       selectedVolume === opt
                         ? "border-[#607c64] bg-[#607c64]/5 dark:bg-[#607c64]/10 font-bold text-[#607c64] dark:text-[#84a98c]"
-                        : "border-gray-200 dark:border-gray-850 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] text-gray-700 dark:text-gray-300"
+                        : "border-gray-200 dark:border-gray-800 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] text-gray-700 dark:text-gray-300"
                     }`}
                   >
                     <span>{opt}</span>
@@ -247,7 +264,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
           <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center pt-2">
             
             {/* Quantity Selector */}
-            <div className="flex items-center justify-between border border-gray-200 dark:border-gray-850 rounded-xl px-2 h-14 w-full sm:w-36 bg-black/[0.01] dark:bg-white/[0.01]">
+            <div className="flex items-center justify-between border border-gray-200 dark:border-gray-800 rounded-xl px-2 h-14 w-full sm:w-36 bg-black/[0.01] dark:bg-white/[0.01]">
               <button 
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="p-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03] rounded-lg transition-colors cursor-pointer text-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -257,8 +274,9 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
               </button>
               <span className="w-8 text-center text-sm font-semibold dark:text-gray-100">{quantity}</span>
               <button 
-                onClick={() => setQuantity(quantity + 1)}
-                className="p-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03] rounded-lg transition-colors cursor-pointer text-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                onClick={() => setQuantity(Math.min(quantity + 1, quantityCap))}
+                disabled={quantity >= quantityCap}
+                className="p-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03] rounded-lg transition-colors cursor-pointer text-gray-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 disabled:cursor-not-allowed"
                 aria-label="Increase quantity"
               >
                 <Plus size={14} />
@@ -268,10 +286,11 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
             {/* Add to Cart Button */}
             <button
               onClick={handleAddToCart}
-              className="flex-1 bg-[#607c64] text-white hover:bg-opacity-95 font-bold uppercase tracking-[0.2em] text-xs md:text-sm h-14 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-[#607c64]/15 active:scale-[0.99] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              disabled={quantityCap < 1}
+              className={`flex-1 font-bold uppercase tracking-[0.2em] text-xs md:text-sm h-14 rounded-xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-[#607c64]/15 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${quantityCap < 1 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#607c64] text-white hover:bg-[#607c64]/95 cursor-pointer'}`}
             >
               <ShoppingBag size={16} />
-              Add to Cart
+              {quantityCap < 1 ? "Out of Stock" : "Add to Cart"}
             </button>
           </div>
 
@@ -296,9 +315,9 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
           </div>
 
           {/* Scent Specifications & Detail Accordions */}
-          <div className="border-t border-gray-250 dark:border-gray-850 pt-4 space-y-2">
+          <div className="border-t border-gray-200 dark:border-gray-800 pt-4 space-y-2">
                        {/* Accordion: Ingredients */}
-            <div className="border-b border-gray-200 dark:border-gray-850 py-3">
+            <div className="border-b border-gray-200 dark:border-gray-800 py-3">
               <button
                 onClick={() => toggleAccordion("ingredients")}
                 aria-expanded={activeAccordion === "ingredients"}
@@ -317,7 +336,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                   >
                     <p className="mb-2">{metadata.ingredients}</p>
                     {metadata.burnTime && (
-                      <p className="font-semibold text-zinc-850 dark:text-zinc-200 mt-2">Burn Time: <span className="font-light">{metadata.burnTime}</span></p>
+                      <p className="font-semibold text-zinc-800 dark:text-zinc-200 mt-2">Burn Time: <span className="font-light">{metadata.burnTime}</span></p>
                     )}
                   </motion.div>
                 )}
@@ -325,7 +344,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
             </div>
 
             {/* Accordion: Scent Ritual / Care Guide */}
-            <div className="border-b border-gray-200 dark:border-gray-850 py-3">
+            <div className="border-b border-gray-200 dark:border-gray-800 py-3">
               <button
                 onClick={() => toggleAccordion("ritual")}
                 aria-expanded={activeAccordion === "ritual"}
@@ -349,7 +368,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
             </div>
 
             {/* Accordion: Shipping & Returns */}
-            <div className="border-b border-gray-200 dark:border-gray-850 py-3">
+            <div className="border-b border-gray-200 dark:border-gray-800 py-3">
               <button
                 onClick={() => toggleAccordion("shipping")}
                 aria-expanded={activeAccordion === "shipping"}
@@ -378,7 +397,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
       </div>
 
       {/* Customer Reviews Section */}
-      <section id="reviews" className="mt-28 border-t border-gray-250 dark:border-gray-850 pt-16 scroll-mt-24">
+      <section id="reviews" className="mt-28 border-t border-gray-200 dark:border-gray-800 pt-16 scroll-mt-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
           {/* Reviews Rating Graph */}
@@ -480,7 +499,7 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
 
       {/* Upsell Segment: You May Also Like */}
       {relatedProducts.length > 0 && (
-        <div className="mt-28 border-t border-gray-200 dark:border-gray-850 pt-16">
+        <div className="mt-28 border-t border-gray-200 dark:border-gray-800 pt-16">
           <div className="text-center mb-12">
             <span className="text-[#607c64] dark:text-[#84a98c] text-xs font-bold uppercase tracking-[0.25em] block mb-2">
               Curated Recommendations
@@ -501,8 +520,8 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
       {/* Write a Review slide-out Drawer */}
       <AnimatePresence>
         {isWriteReviewOpen && (
-          <FocusTrap focusTrapOptions={{ fallbackFocus: "body", escapeDeactivates: false }}>
-            <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Write a Review">
+          <FocusTrap focusTrapOptions={{ fallbackFocus: "body", escapeDeactivates: false, clickOutsideDeactivates: true }}>
+            <div className="fixed inset-0 z-[80] flex justify-end" role="dialog" aria-modal="true" aria-label="Write a Review">
               {/* Backdrop */}
               <motion.div
                 initial={{ opacity: 0 }}

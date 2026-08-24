@@ -56,7 +56,9 @@ const jsonLd = {
   "@type": "Organization",
   "name": "Izzan",
   "url": siteUrl,
-  "logo": `${siteUrl}/logo.png`,
+  // Real asset (public/images/logo.png does not exist yet); swap when a
+  // dedicated logo is added.
+  "logo": `${siteUrl}/images/hero-poster.png`,
   "description": "Handcrafted, Natural Candles & Essential Oils. Elevate Your Space.",
   "sameAs": [
     "https://instagram.com/izzan_moment",

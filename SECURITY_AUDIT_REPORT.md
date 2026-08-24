@@ -203,3 +203,48 @@ The checkout flow keeps a server-validated field shape ready to extend without b
 attackers can still place small volumes of fake orders within rate limits — mitigated by the
 admin "Check" badge for manual confirmation calls, which is standard practice for COD storefronts.
 
+
+---
+
+## Final Global Audit + Remediation — 2026-08-24
+
+Third full pass (functional bugs, deploy correctness, config/infra) after the two security
+rounds above. Baseline at start: 75/75 tests, tsc clean, lint 0 errors, `npm audit` 0 vulns.
+This round fixed the Vercel deploy blocker plus every remaining finding; post-fix
+verification: **79/79 tests**, tsc clean, lint 0 errors (2 pre-existing React-Compiler
+warnings), production build green.
+
+### Deploy blocker (Vercel)
+
+| Finding | Fix |
+|---|---|
+| `auth-options.ts` threw on missing `NEXTAUTH_SECRET` at module-eval → "Failed to collect page data" killed every Vercel build | Secret now resolved via a lazy getter; build phase (`NEXT_PHASE=phase-production-build`) gets a placeholder, runtime still fails fast in prod |
+
+### Critical
+
+| ID | Finding | Fix |
+|---|---|---|
+| C1 | Contact form toasted success but discarded every submission (no endpoint existed) | New `ContactMessage` model + migration, `/api/contact` route (zod + honeypot + rate limit), form wired with pending/error states |
+| C2 | Newsletter forms collected emails into nowhere | New `NewsletterSubscriber` model, `/api/newsletter` route (upsert), both forms wired |
+| C3 | Dockerfile copied `.next/standalone` but `output: "standalone"` was never set → container deploy broken | Added to `next.config.ts` (ignored by Vercel) |
+| C4 | compose injected `redis://…` but app used `@upstash/redis` (HTTP-only) → shared rate limiting permanently dead | `rate-limit.ts` now branches: `http(s)://` → Upstash REST, `redis://`/`rediss://` → ioredis with error handler + shared circuit breaker |
+
+### High
+
+| ID | Finding | Fix |
+|---|---|---|
+| H1 | Concurrent order cancel/reopen raced: status read outside tx → double stock restore / double spend decrement | Atomic `updateMany({ where: { id, status } })` claim inside tx before side effects; loser aborts cleanly (+ new unit test) |
+| H2 | No client-side stock/qty caps → users hit a generic server error only at submit; out-of-stock products addable | Cart lines carry `maxQuantity = min(stock, 10)` snapshot; store clamps adds/updates; PDP/QuickView/cards disable at stock 0; API now returns truthful zod messages ("Quantity cannot exceed 10 per item") instead of catch-all |
+| H3 | Checkout anti-bot timer measured from modal open → autofill users blocked by 3 s wait | Timer starts at first input event, threshold lowered to 1.5 s; scripted submits (no events) still fail |
+| H4 | No `.dockerignore`: host node_modules/.env/uploads baked into builder layers | Added covering node_modules/.next/.git/.env*/uploads/backups/audits |
+| H5 | `backup.ps1` PBKDF2 defaulted to SHA-1 vs documented openssl SHA-256 → cross-platform restores fail; binary pg_dump piped through PowerShell text pipeline (corruption risk); required missing `gzip.exe` | SHA-256 ctor overload; dump via `pg_dump -f` + `docker cp` (no text pipes, no gzip dependency); restore docs updated |
+| H6 | Blob storage (`STORAGE_PROVIDER=vercel`) URLs not allow-listed → all images would break | `**.public.blob.vercel-storage.com` added to `images.remotePatterns` and CSP `img-src`/`media-src`; `STORAGE_PROVIDER`/`BLOB_READ_WRITE_TOKEN` documented in `.env.example` |
+
+### Medium / Low (grouped)
+
+- **Tailwind v4**: deleted dead `tailwind.config.js`; ported tokens (`font-serif`, `font-logo`, `font-body-md`, `on-primary`) into `@theme`; `tw-animate-css` plugin restores all previously-dead `animate-in/fade-in/slide-in/zoom-in` utilities; removed invalid `hover:bg-opacity-*`, `gray-250/550/850`, `zinc-850`, `xs:` classes.
+- **Admin**: settings-create keeps uploaded avatar (`actions.ts`); orders search/status/date filters moved to URL + server query (whole-dataset results, fresh date anchor, correct counts); customer KPI cards computed via SQL aggregates (were page-slice); CMS editor re-syncs from `router.refresh()` unless field is dirty + tiptap `setContent` sync; "Sale Price" relabelled "Compare-at Price" (+ message fix); settings client schema mirrors `.min(1)`; TopAppBar shows saved name/avatar (was hardcoded); product image uploads restricted to image MIMEs + video-URL preview guard; tracking inputs capped & sync externally-until-touched; Total Orders card excludes Cancelled consistently; Top Sales Region excludes cancelled; sales tracker shows true % overachievement + real month length for run-rate; dead Filter/Add-Client/more_vert controls removed.
+- **Storefront**: shared `formatMoney()` (Intl) kills `$12.5` vs `$12.50` mixing across cart/PDP/quiz/search/admin; Escape-to-close for cart drawer, checkout modal, mobile filters, reviews drawer; FocusTrap added to QuickViewModal/Search-layer; QuickView/filters/reviews overlays raised above BottomNavbar z-index; checkout modal hoisted out of drawer's AnimatePresence (exit-animation cut); return policy unified at 14 days (PDP ↔ FAQ); ScentQuiz empty-catalog state; Search loading state + retry-after-failed-fetch; duplicate `#story` DOM id removed; `crypto.randomUUID()` guarded for non-secure contexts; empty captions `<track>` removed.
+- **Infra/hygiene**: robots.txt now dynamic (runtime `NEXT_PUBLIC_SITE_URL`, no more baked localhost in prod); seed upserts products by unique `name` (`SEED_RESET=true` for wipe) — no more orphaned order history; `Product.name @unique` migration; `.gitignore` covers `/audits`; 3 stray upload binaries untracked from git; `MAX_ORDER_TOTAL` NaN logged once; `prisma.config.ts` throws clear error on missing DATABASE_URL; eslint ignore scoped to root `/*.js`; CI gains lint step; `@types/bcrypt` moved to devDependencies; JSON-LD logo points at existing asset; compose passes `NEXT_PUBLIC_SITE_URL` + documents uploads dir UID 1001 ownership; backup.sh retention comment matches behavior.
+
+**Verification:** `npx prisma validate` ✓ · `tsc --noEmit` ✓ · `eslint` 0 errors ✓ · **79/79 tests** ✓ · `next build` green ✓ (migrations themselves validated by CI's postgres:16 service; local machine has no Postgres daemon).

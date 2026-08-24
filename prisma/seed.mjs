@@ -41,16 +41,24 @@ const productsData = [
 
 async function main() {
   console.log('Start seeding...');
-  
+
   try {
-    // Clear existing data
-    await prisma.product.deleteMany();
-    
+    // Upsert on the product name (natural key) so re-seeding is idempotent:
+    // existing products keep their IDs, which keeps order history and stock
+    // restore intact. Set SEED_RESET=true to wipe first (dev only!).
+    if (process.env.SEED_RESET === "true") {
+      await prisma.product.deleteMany();
+      console.log("SEED_RESET=true → cleared existing products.");
+    }
+
     for (const p of productsData) {
-      const product = await prisma.product.create({
-        data: p,
+      const { name, ...data } = p;
+      const product = await prisma.product.upsert({
+        where: { name },
+        update: data,
+        create: p,
       });
-      console.log(`Created product with id: ${product.id}`);
+      console.log(`Seeded product: ${product.name} (${product.id})`);
     }
 
     const cmsData = [

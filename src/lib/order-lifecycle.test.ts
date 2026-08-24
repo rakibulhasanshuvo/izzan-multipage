@@ -37,16 +37,25 @@ const baseOrder = {
 
 describe('updateOrderStatusWithLifecycle', () => {
   let txMock: any;
+  let claimedStatus: string | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    claimedStatus = undefined;
     txMock = {
       product: { update: vi.fn().mockResolvedValue({ id: 'x', stock: 10 }) },
       customer: { update: vi.fn().mockResolvedValue({}) },
       order: {
-        update: vi.fn().mockImplementation(async ({ data }: any) => ({
+        // Atomic claim of the transition: records the newly-set status so
+        // findUniqueOrThrow can reflect it, and reports whether the row
+        // was still in the expected source status (count === 0 → raced).
+        updateMany: vi.fn().mockImplementation(async ({ data }: any) => {
+          claimedStatus = data.status;
+          return { count: 1 };
+        }),
+        findUniqueOrThrow: vi.fn().mockImplementation(async () => ({
           ...baseOrder,
-          ...data,
+          status: claimedStatus,
         })),
       },
     };
@@ -84,8 +93,8 @@ describe('updateOrderStatusWithLifecycle', () => {
       where: { id: 'cust1' },
       data: { totalSpend: { decrement: totalAmount } },
     });
-    expect(txMock.order.update).toHaveBeenCalledWith({
-      where: { id: 'order1' },
+    expect(txMock.order.updateMany).toHaveBeenCalledWith({
+      where: { id: 'order1', status: 'Pending' },
       data: { status: 'Cancelled' },
     });
   });
@@ -142,7 +151,7 @@ describe('updateOrderStatusWithLifecycle', () => {
     });
   });
 
-  it('refuses to reopen when stock is insufficient (aborts before status change)', async () => {
+  it('refuses to reopen when stock is insufficient (aborts before spend is applied)', async () => {
     prismaMock.order.findUnique.mockResolvedValue({ ...baseOrder, status: 'Cancelled' });
     txMock.product.update.mockResolvedValue({ id: 'prod1', name: 'Product 1', stock: -1 });
 
@@ -150,8 +159,23 @@ describe('updateOrderStatusWithLifecycle', () => {
       /insufficient stock/i
     );
 
-    // Status update must never be reached when reservation fails
-    expect(txMock.order.update).not.toHaveBeenCalled();
+    // Reservation failed → the whole transaction rolls back, so the customer
+    // spend increment must never have been applied.
+    expect(txMock.customer.update).not.toHaveBeenCalled();
+  });
+
+  it('aborts without side effects when another writer claimed the transition first', async () => {
+    prismaMock.order.findUnique.mockResolvedValue({ ...baseOrder });
+    // Simulates a concurrent update that already flipped Pending → Cancelled.
+    txMock.order.updateMany.mockResolvedValue({ count: 0 } as any);
+
+    await expect(updateOrderStatusWithLifecycle('order1', 'Cancelled')).rejects.toThrow(
+      OrderLifecycleError
+    );
+
+    // No stock restore and no spend reversal may run for the losing writer.
+    expect(txMock.product.update).not.toHaveBeenCalled();
+    expect(txMock.customer.update).not.toHaveBeenCalled();
   });
 
   it('handles malformed items JSON gracefully when cancelling', async () => {

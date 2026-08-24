@@ -11,11 +11,14 @@ export default function CustomersTableClient({
   page,
   totalPages,
   total,
+  stats,
 }: {
   initialCustomers: Customer[];
   page: number;
   totalPages: number;
   total: number;
+  /** Whole-dataset KPIs computed server-side (not from the current page slice) */
+  stats?: { total: number; activeGold: number; avgLtv: number };
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -29,10 +32,15 @@ export default function CustomersTableClient({
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const activeGoldCount = customers.filter(c => c.tier === "Gold").length;
-  const avgLTV = customers.length > 0 
-    ? customers.reduce((acc, c) => acc + c.totalSpend, 0) / customers.length 
-    : 0;
+  // Fall back to per-page math only if the server didn't provide aggregates
+  // (e.g. during a stale client bundle right after deploy).
+  const totalClients = stats?.total ?? customers.length;
+  const activeGoldCount = stats?.activeGold ?? customers.filter(c => c.tier === "Gold").length;
+  const avgLTV = stats
+    ? stats.avgLtv
+    : customers.length > 0
+      ? customers.reduce((acc, c) => acc + c.totalSpend, 0) / customers.length
+      : 0;
 
   return (
     <>
@@ -43,7 +51,7 @@ export default function CustomersTableClient({
             <p className="text-[13px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Total Clients</p>
             <span className="material-symbols-outlined text-zinc-400 dark:text-zinc-500">group</span>
           </div>
-          <h3 className="font-serif text-[44px] text-zinc-900 dark:text-zinc-100 leading-none mb-3">{customers.length}</h3>
+          <h3 className="font-serif text-[44px] text-zinc-900 dark:text-zinc-100 leading-none mb-3">{totalClients}</h3>
           <p className="text-[13px] font-medium text-green-600 dark:text-green-400 flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[16px]">trending_up</span>
             Live
@@ -125,9 +133,12 @@ export default function CustomersTableClient({
                     <td className="py-4 px-6 text-right font-medium text-zinc-900 dark:text-zinc-100">${customer.totalSpend.toFixed(2)}</td>
                     <td className="py-4 px-6 text-zinc-500 dark:text-zinc-400">{joinDate}</td>
                     <td className="py-4 px-6 text-right">
-                      <button aria-label="Customer actions" className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full">
-                        <span className="material-symbols-outlined text-[20px]">more_vert</span>
-                      </button>
+                      <span
+                        title={`Lifetime value: ${customer.totalSpend.toFixed(2)}`}
+                        className="text-zinc-300 dark:text-zinc-600 select-none"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">loyalty</span>
+                      </span>
                     </td>
                   </tr>
                 );

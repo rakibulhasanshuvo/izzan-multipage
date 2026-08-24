@@ -1,5 +1,7 @@
 "use client";
 
+import { formatMoney } from "@/lib/utils";
+
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -253,6 +255,21 @@ export default function ScentQuiz({ products, onFilterMatch }: ScentQuizProps) {
         )}
 
         {/* Step 4: Recommendation Results */}
+        {step === 4 && !matchedProduct && (
+          <motion.div
+            key="step-4-empty"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center flex-1 text-center py-12"
+          >
+            <Sparkles size={24} className="text-[#607c64] dark:text-[#84a98c] mb-3" />
+            <p className="font-serif text-xl text-gray-900 dark:text-gray-100 mb-2">No products available yet</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Our catalog is being restocked — check back soon for your scent match.
+            </p>
+          </motion.div>
+        )}
+
         {step === 4 && matchedProduct && (
           <motion.div
             key="step-4"
@@ -288,7 +305,7 @@ export default function ScentQuiz({ products, onFilterMatch }: ScentQuizProps) {
                   {matchedProduct.categories.split(",")[0]}
                 </span>
                 <span className="text-xs font-bold text-gray-700 dark:text-gray-300 block mt-1">
-                  ${matchedProduct.price}
+                  {formatMoney(matchedProduct.price)}
                 </span>
               </div>
             </div>

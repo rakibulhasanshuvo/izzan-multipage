@@ -3,8 +3,24 @@
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import type { ProductView as Product } from "@/lib/serialize";
+import { MAX_QUANTITY_PER_ITEM } from "@/lib/validation";
 
-export type CartItem = Product & { quantity: number; variant?: string };
+export type CartItem = Product & {
+  quantity: number;
+  variant?: string;
+  /** Stock snapshot + server per-item cap, taken when the line was added/updated. */
+  maxQuantity?: number;
+};
+
+/**
+ * Client-side ceiling for a single cart line: the product's current stock
+ * snapshot capped by the server-enforced per-item limit. Keeps the UI honest
+ * (no dead-end rejections at checkout) while the server stays authoritative.
+ */
+export function lineCapFor(stock: number | undefined | null): number {
+  const byStock = typeof stock === "number" && Number.isFinite(stock) ? Math.max(stock, 0) : Infinity;
+  return Math.min(byStock, MAX_QUANTITY_PER_ITEM);
+}
 
 // A cart line is identified by the real product id PLUS its selected variant
 // (e.g. volume option), so distinct variants never merge and every line keeps
@@ -68,6 +84,12 @@ export const useCartStore = create<CartState>()(
       addToCart: (product) =>
         set((state) => {
           const key = cartLineKey(product.id, product.variant);
+          const cap = lineCapFor(product.stock);
+          if (cap < 1) {
+            // Out of stock: nothing to add. Callers disable the button too;
+            // this keeps the store correct even if a caller forgets.
+            return state;
+          }
           const exists = state.cartItems.some(
             (item) => cartLineKey(item.id, item.variant) === key
           );
@@ -75,10 +97,10 @@ export const useCartStore = create<CartState>()(
             cartItems: exists
               ? state.cartItems.map((item) =>
                   cartLineKey(item.id, item.variant) === key
-                    ? { ...item, quantity: item.quantity + 1 }
+                    ? { ...item, quantity: Math.min(item.quantity + 1, item.maxQuantity ?? cap) }
                     : item
                 )
-              : [...state.cartItems, { ...product, quantity: 1 }],
+              : [...state.cartItems, { ...product, quantity: 1, maxQuantity: cap }],
             isCartOpen: true,
           };
         }),
@@ -98,7 +120,9 @@ export const useCartStore = create<CartState>()(
         const key = cartLineKey(productId, variant);
         set((state) => ({
           cartItems: state.cartItems.map((item) =>
-            cartLineKey(item.id, item.variant) === key ? { ...item, quantity } : item
+            cartLineKey(item.id, item.variant) === key
+              ? { ...item, quantity: Math.min(quantity, item.maxQuantity ?? MAX_QUANTITY_PER_ITEM) }
+              : item
           ),
         }));
       },

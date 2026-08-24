@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { cn } from "@/lib/utils";
+import React, { useEffect, useRef, useState } from "react";
+import { cn, formatMoney } from "@/lib/utils";
 import { toast } from "sonner";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { updateOrderStatus } from "@/app/(admin)/admin/actions";
@@ -26,21 +26,35 @@ export default function OrdersTableClient({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  
-  // Search & Filter state
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [dateFilter, setDateFilter] = useState("All");
+
+  // Filters live in the URL and are applied server-side (see orders/page.tsx),
+  // so they operate over the whole dataset instead of just the current page.
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") ?? "");
+  const statusFilter = searchParams.get("status") ?? "All";
+  const dateFilter = searchParams.get("date") ?? "All";
   const [showFilters, setShowFilters] = useState(false);
 
-  // Stable "now" anchor for the date filter, captured in the change handler
-  // (not during render). Null = no window filtering (SSR-safe first paint).
-  const [dateFilterNow, setDateFilterNow] = useState<number | null>(null);
-
-  const applyDateFilter = (value: string) => {
-    setDateFilter(value);
-    setDateFilterNow(value === "All" ? null : Date.now());
+  const setParam = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value && value !== "All") {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    params.delete("page"); // any filter change resets pagination
+    router.push(`${pathname}?${params.toString()}`);
   };
+
+  // Debounced push of the search box into the URL
+  const initialQueryRef = useRef(searchParams.get("q") ?? "");
+  useEffect(() => {
+    if (searchTerm === initialQueryRef.current) return;
+    const timer = setTimeout(() => {
+      setParam("q", searchTerm.trim());
+    }, 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
 
   // Modal State
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -73,28 +87,7 @@ export default function OrdersTableClient({
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  // Filter logic
-  const filteredOrders = initialOrders.filter((order) => {
-    // Search filter
-    const matchesSearch = 
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerPhone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.customerEmail && order.customerEmail.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    // Status filter
-    const matchesStatus = statusFilter === "All" || order.status === statusFilter;
-
-    // Date filter (window anchored to a stable timestamp per filter selection)
-    let matchesDate = true;
-    if (dateFilter !== "All" && dateFilterNow !== null) {
-      const days = dateFilter === "24h" ? 1 : dateFilter === "7d" ? 7 : 30;
-      const orderTime = new Date(order.createdAt).getTime();
-      matchesDate = orderTime <= dateFilterNow && orderTime >= dateFilterNow - days * 86400000;
-    }
-
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+  const filteredOrders = initialOrders;
 
   return (
     <>
@@ -138,7 +131,7 @@ export default function OrdersTableClient({
                   <select 
                     aria-label="Filter by status"
                     value={statusFilter} 
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => setParam("status", e.target.value)}
                     className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-[13px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
                   >
                     <option value="All">All Statuses</option>
@@ -154,7 +147,7 @@ export default function OrdersTableClient({
                   <select 
                     aria-label="Filter by date range"
                     value={dateFilter} 
-                    onChange={(e) => applyDateFilter(e.target.value)}
+                    onChange={(e) => setParam("date", e.target.value)}
                     className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 text-[13px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
                   >
                     <option value="All">All Time</option>
@@ -165,7 +158,7 @@ export default function OrdersTableClient({
                 </div>
                 {(statusFilter !== "All" || dateFilter !== "All") && (
                   <button 
-                    onClick={() => { setStatusFilter("All"); applyDateFilter("All"); }}
+                    onClick={() => { setParam("status", "All"); setParam("date", "All"); }}
                     className="w-full mt-4 text-[12px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 py-1 transition-colors"
                   >
                     Clear Filters
@@ -176,7 +169,7 @@ export default function OrdersTableClient({
           </div>
         </div>
         <div className="flex gap-2">
-          <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900/50 px-4 py-1.5 rounded-full border border-zinc-100 dark:border-zinc-800">{filteredOrders.length} Orders Found</span>
+          <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900/50 px-4 py-1.5 rounded-full border border-zinc-100 dark:border-zinc-800">{total} Orders Found</span>
         </div>
       </div>
 
@@ -230,7 +223,7 @@ export default function OrdersTableClient({
                       </div>
                     </td>
                     <td className="py-4 px-6 text-zinc-500 dark:text-zinc-400">{dateStr}</td>
-                    <td className="py-4 px-6 text-right font-medium text-zinc-900 dark:text-zinc-100">${order.totalAmount.toFixed(2)}</td>
+                    <td className="py-4 px-6 text-right font-medium text-zinc-900 dark:text-zinc-100">{formatMoney(order.totalAmount)}</td>
                     <td className="py-4 px-6 text-center" onClick={(e) => e.stopPropagation()}>
                       <select 
                         aria-label="Update order status"
@@ -274,7 +267,7 @@ export default function OrdersTableClient({
         </div>
         {/* Pagination Footer */}
         <div className="px-6 py-4 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50">
-          <span className="text-[13px] text-zinc-500 dark:text-zinc-400 font-medium">Showing {filteredOrders.length} of {total} orders · Page {page} of {totalPages}</span>
+          <span className="text-[13px] text-zinc-500 dark:text-zinc-400 font-medium">Showing {initialOrders.length} of {total} orders · Page {page} of {totalPages}</span>
           <div className="flex gap-2">
             <button
               aria-label="Previous page"

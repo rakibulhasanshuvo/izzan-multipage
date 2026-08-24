@@ -2,25 +2,68 @@ import React from "react";
 import { prisma } from "@/lib/db";
 import { serializeOrderList } from "@/lib/serialize";
 import { findFlaggedPhones } from "@/lib/fraud-flags";
+import { ORDER_STATUSES } from "@/lib/validation";
 import OrdersTableClient from "@/components/admin/OrdersTableClient";
+import type { Prisma } from "@/generated/client";
 
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
+const DATE_RANGES: Record<string, number> = { "24h": 1, "7d": 7, "30d": 30 };
 
-export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
-  const params = await searchParams;
-  const requestedPage = Number.parseInt(params.page ?? "", 10) || 1;
+// Kept outside the component so no impure calls (Date.now) run in render.
+async function getOrdersPageData(params: { page?: string; q?: string; status?: string; date?: string }) {
+  // Filters are applied server-side so search/status/date operate over the
+  // whole dataset and pagination stays correct (not just the current slice).
+  const where: Prisma.OrderWhereInput = {};
 
-  const total = await prisma.order.count();
+  const q = (params.q ?? "").trim();
+  if (q) {
+    where.OR = [
+      { id: { contains: q, mode: "insensitive" } },
+      { customerName: { contains: q, mode: "insensitive" } },
+      { customerPhone: { contains: q, mode: "insensitive" } },
+      { customerEmail: { contains: q, mode: "insensitive" } },
+    ];
+  }
+
+  const status =
+    params.status && (ORDER_STATUSES as readonly string[]).includes(params.status)
+      ? params.status
+      : null;
+  if (status) {
+    where.status = status;
+  }
+
+  // Window is anchored to "now" at query time, so orders that arrive while
+  // an admin keeps the filter open are never missed.
+  const days = params.date ? DATE_RANGES[params.date] : undefined;
+  if (days) {
+    where.createdAt = { gte: new Date(Date.now() - days * 86400000) };
+  }
+
+  const total = await prisma.order.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const requestedPage = Number.parseInt(params.page ?? "", 10) || 1;
   const page = Math.min(Math.max(requestedPage, 1), totalPages);
 
   const orders = await prisma.order.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     skip: (page - 1) * PAGE_SIZE,
     take: PAGE_SIZE,
   });
+
+  return { total, totalPages, page, orders };
+}
+
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; q?: string; status?: string; date?: string }>;
+}) {
+  const params = await searchParams;
+  const { total, totalPages, page, orders } = await getOrdersPageData(params);
 
   // Phones with several recent active orders get a fraud-review badge in
   // the table.

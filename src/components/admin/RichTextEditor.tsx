@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -107,6 +108,16 @@ export default function RichTextEditor({ value, onChange }: RichTextEditorProps)
       },
     },
   });
+
+  // Keep the editor in sync with externally-refreshed content (e.g. after a
+  // save, when the server returns sanitized HTML, or another admin edits).
+  // Skipped while the editor has focus so typing is never clobbered.
+  useEffect(() => {
+    if (!editor || editor.isFocused || editor.isDestroyed) return;
+    if (value !== editor.getHTML()) {
+      editor.commands.setContent(value, { emitUpdate: false });
+    }
+  }, [value, editor]);
 
   return (
     <div className="border border-zinc-200/80 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-950/50 overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/30 transition-all">

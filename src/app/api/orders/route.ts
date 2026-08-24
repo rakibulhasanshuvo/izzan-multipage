@@ -50,7 +50,13 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
   const data = await req.json();
   const validationResult = checkoutSchema.safeParse(data);
   if (!validationResult.success) {
-    return NextResponse.json({ error: "Missing required fields or empty cart" }, { status: 400 });
+    // Surface our own static field message (never internals) so users see
+    // e.g. "Quantity cannot exceed 10 per item" instead of a generic failure.
+    const firstIssue = validationResult.error.issues[0]?.message;
+    return NextResponse.json(
+      { error: firstIssue || "Missing required fields or empty cart" },
+      { status: 400 }
+    );
   }
 
   const { name, phone, email, zila, upozila, shippingAddress, items, idempotencyKey, companyWebsite } = validationResult.data;
@@ -200,7 +206,14 @@ export const POST = apiHandler(async function POST(req: NextRequest) {
 
       // Sanity ceiling against bulk fake orders / client bugs. The real
       // defense is DB-side pricing; this only blocks absurd aggregate totals.
-      const maxOrderTotal = Number(process.env.MAX_ORDER_TOTAL ?? "");
+      const maxOrderTotalRaw = process.env.MAX_ORDER_TOTAL ?? "";
+      const maxOrderTotal = Number(maxOrderTotalRaw);
+      if (maxOrderTotalRaw !== "" && !Number.isFinite(maxOrderTotal)) {
+        // Misconfigured value would otherwise silently disable the ceiling.
+        logger.warn("MAX_ORDER_TOTAL is set but not a valid number; ceiling disabled", {
+          raw: maxOrderTotalRaw,
+        });
+      }
       if (Number.isFinite(maxOrderTotal) && maxOrderTotal > 0 && calculatedTotal > maxOrderTotal) {
         throw new Error("Order total exceeds the maximum allowed for a single order.");
       }

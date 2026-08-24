@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 import type { OrderView as Order } from "@/lib/serialize";
 import OrderDetailModal from "./OrderDetailModal";
 
@@ -58,7 +58,7 @@ export default function RecentOrdersTableClient({ recentOrders }: { recentOrders
                   <td className="py-5 px-4">{order.customerName}</td>
                   <td className="py-5 px-4 text-zinc-500 dark:text-zinc-400">{dateStr}</td>
                   <td className="py-5 px-4 text-right font-medium">
-                    ${order.totalAmount.toFixed(2)}
+                    {formatMoney(order.totalAmount)}
                   </td>
                   <td className="py-5 px-4 pr-0 text-right rounded-r-2xl">
                     <span
